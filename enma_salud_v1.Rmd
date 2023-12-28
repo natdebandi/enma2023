@@ -15,6 +15,7 @@ library(readr)
 
 ## Capitulo de salud - ENMA 2023
 
+
 Creemos un marckdown por capitulo donde se incluya:
 - procesamientos o construccion de variables
 - exportacion de datos para excel/csv para los equipos 
@@ -26,9 +27,11 @@ Creemos un marckdown por capitulo donde se incluya:
 enma <-  read_csv2("datos\\ENMA_v1.csv",col_names = TRUE,col_types = NULL)
 ```
 
-## Including Plots
+##	¿Cuál es su principal cobertura de salud? (q36_salud)
 
-You can also embed plots, for example:
+### Analisis univariado
+
+
 
 ```{r pressure}
 ##cruce univariado
@@ -41,6 +44,8 @@ consulta
 write.csv2(consulta,"tables/q36_salud_univ.csv", row.names = FALSE)
 
 ```
+
+### Cobertura de salud según género
 
 ```{r}
 
