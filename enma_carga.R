@@ -1,8 +1,6 @@
 
 
-# Install and load the necessary packages if not already installed
-# install.packages("dplyr")
-# install.packages("readr")
+
 library(dplyr)
 library(readr)
 
@@ -15,15 +13,26 @@ enma <-  read_csv2("datos\\ENMA_v1.csv",col_names = TRUE,col_types = NULL)
 # Display the structure of the data
 str(enma)
 
-# Example: Create a grouped variable based on an existing variable
-# Replace "existing_variable" with the name of the variable you want to group by
-consulta <- data %>% 
+##prueba pregunta q36_salud
+
+##Las bases tienen dos columnas de calibración al final, 
+#'weightvec': que calibra por variables sociodemograficas y corrige los pesos por nacionalidad
+# y  'weightvec_0' que solo calibra las variables sociodemograficas al interior de cada nacionalidad
+#, y mantiene el numero de n en la muestra para cada nacionalidad. 
+
+
+consulta <- enma %>% 
+  group_by(q36_salud) %>% 
+  summarise (n = sum(weightvec)) %>%
+  mutate(freq = n / sum(n) *100)
+
+
+consulta
+
+
+consulta <- enma %>% 
   group_by(Genero_i,edad_i) %>% 
   summarise (n = sum(pesos_para_estimaciones_totales)) %>%
   mutate(freq = n / sum(n) *100)
-
-# Display the modified data
-consulta
-
 
 
