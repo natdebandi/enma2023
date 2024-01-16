@@ -12,8 +12,8 @@ library(eph)
 library(dplyr)
 library(readr)
 library(xlsx)
+library(tidyr)
 
-library(tibble)
 
 #devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
 library(userfriendlyscience)
@@ -29,16 +29,13 @@ library(ggplot2)
 
 
 
-```{r carga_datos}
+```{r carga_datos, include=FALSE}
 
 #Cargo los datos ENMA
 enma <-  read_csv2("datos\\ENMA_v1.csv",col_names = TRUE,col_types = NULL)
 
 #names(enma) 
 print("ENMA 2023")
-
-
-
 
 
 ```
@@ -73,12 +70,11 @@ consulta <- enma %>%
   group_by(nacionalidad_var) %>% 
   summarise (cantidad = n()) 
 
-
 print(consulta)
 
-write.xlsx2(as.data.frame(consulta), "tables\\muestra.xlsx", row.names = FALSE, sheetName = "nacionalidad") 
+write.xlsx2(as.data.frame(consulta), "tables\\sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "nacionalidad") 
 
-nacionalidad_desagregada
+
 
 ```
 
@@ -94,7 +90,7 @@ consulta <- enma %>%
 
 print(consulta)
 
-write.xlsx2(as.data.frame(consulta), "tables\\muestra.xlsx", row.names = FALSE, sheetName = "nacionalidad_det") 
+write.xlsx2(as.data.frame(consulta), "tables\\sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "nac_desagregada") 
 
 
 
@@ -108,7 +104,7 @@ write.xlsx2(as.data.frame(consulta), "tables\\muestra.xlsx", row.names = FALSE, 
 cc<- calculate_tabulates(base = enma, x = 'edad_ag_var', y = 'genero_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
 
 
-write.xlsx2(as.data.frame(cc), "tables\\q4_genero_edad.xlsx", row.names = FALSE, sheetName = "todas")    
+write.xlsx2(as.data.frame(cc), "tables\\sociodemograficos\\\\q4_genero_edad.xlsx", row.names = FALSE, sheetName = "todas")    
 
 print(cc)
 
