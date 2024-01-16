@@ -1,0 +1,144 @@
+---
+title: "ENMA 2023 - Análisis"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(eph)
+library(dplyr)
+library(readr)
+library(xlsx)
+
+library(tibble)
+
+#devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
+library(userfriendlyscience)
+library(ggplot2)
+
+
+
+#rm(list = ls())
+```
+
+# ENMA 2023 - analisis por capítulos
+## Datos sociodemográficos
+
+
+
+```{r carga_datos}
+
+#Cargo los datos ENMA
+enma <-  read_csv2("datos\\ENMA_v1.csv",col_names = TRUE,col_types = NULL)
+
+#names(enma) 
+print("ENMA 2023")
+
+
+
+
+
+```
+### Cantidad de respuestas por día
+
+```{r}
+# Datos con fechas y variables. La columna 'date' (fecha) es de clase "Date"
+
+enma<-enma %>%
+    mutate(fecha=as.Date(start))
+
+
+consulta <- enma %>% 
+  group_by(fecha) %>% 
+  summarise (cantidad = n()) 
+
+
+#ggplot(consulta, aes(x = fecha, y = cantidad)) +
+#  geom_line()
+
+# Barplot
+ggplot(consulta, aes(x=fecha, y=cantidad)) + 
+  geom_bar(stat = "identity")
+
+```
+### Cantidad de casos por nacionalidad - sin ponderar
+
+```{r}
+# 
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var) %>% 
+  summarise (cantidad = n()) 
+
+
+print(consulta)
+
+write.xlsx2(as.data.frame(consulta), "tables\\muestra.xlsx", row.names = FALSE, sheetName = "nacionalidad") 
+
+nacionalidad_desagregada
+
+```
+
+### muestra - nacionalidades detalle sin ponderar
+
+```{r}
+# 
+
+consulta <- enma %>% 
+  group_by(nacionalidad_desagregada) %>% 
+  summarise (cantidad = n()) 
+
+
+print(consulta)
+
+write.xlsx2(as.data.frame(consulta), "tables\\muestra.xlsx", row.names = FALSE, sheetName = "nacionalidad_det") 
+
+
+
+```
+
+### Distribución de la población por género y grupos de edad
+
+```{r q4_genero_edad}
+
+  #creo un excel con y la primera solapa es el cruce de todas las nac.
+cc<- calculate_tabulates(base = enma, x = 'edad_ag_var', y = 'genero_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+
+write.xlsx2(as.data.frame(cc), "tables\\q4_genero_edad.xlsx", row.names = FALSE, sheetName = "todas")    
+
+print(cc)
+
+```
+
+### Nacionalidades según género
+
+```{r nacionalidad_genero}
+
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,genero_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+
+consulta_w<-consulta %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+print(consulta_w)
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\genero_nacionalidad.xlsx", row.names = FALSE, sheetName = "absolutos")  
+
+
+  #creo un excel con y la primera solapa es el cruce de todas las nac.
+cc<- calculate_tabulates(base = enma, x = 'genero_var', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
+
+
+write.xlsx2(as.data.frame(cc), "tables\\genero_nacionalidad.xlsx", row.names = FALSE, sheetName = "distribucion",append = TRUE)    
+
+print(cc)
+
+
+```
+
+
