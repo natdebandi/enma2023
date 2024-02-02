@@ -1,0 +1,278 @@
+---
+title: "Pedidos grales"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## PEDIDO PROCESAMIENTO DIMENSIÓN EDUCACIÓN
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+
+
+```
+
+
+Leo base de datos con nuevas variables:
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+##PEDIDOS ESPECIALES EDUCACIÓN
+
+###Pedido36: Inconvenientes para el acceso a la educacion de les hijes según tenencia de DNI del/la padre/madre
+
+
+```{r q36, warning=FALSE, message=FALSE}
+
+enma<-enma %>% 
+  mutate(q33_incoveniente_educacion_no=case_when(
+    q33_incoveniente_educacion_no==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_incoveniente_educacion_cupo=case_when(
+    q33_incoveniente_educacion_cupo==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_inconveniente_educacion_inscripcion=case_when(
+    q33_inconveniente_educacion_inscripcion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_inconveniente_educacion_dni=case_when(
+    q33_inconveniente_educacion_dni==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q33_inconveniente_educacion_documentacion_origen=case_when(
+    q33_inconveniente_educacion_documentacion_origen==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q33_inconveniente_educacion_documentacion_argentina=case_when(
+    q33_inconveniente_educacion_documentacion_argentina==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q33_inconveniente_educacion_otro=case_when(
+    q33_inconveniente_educacion_otro==1 ~ 1,
+    TRUE ~0))
+
+
+
+#Resultados
+pedido36<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_incoveniente_educacion_no==1]),
+            cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
+            inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
+            dni = sum(weightvec[q33_inconveniente_educacion_dni == 1]),
+            doc_origen = sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),
+             doc_arg = sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),
+            doc_otro = sum(weightvec[q33_inconveniente_educacion_otro== 1]),
+      'Ninguno'  = round(no/Poblacion*100,1),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido36), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido36",append = TRUE)
+
+```
+
+
+```{r p36, message=FALSE, warning=FALSE}
+
+
+#Resultados con variable q33 recodificada en sí o no
+pedido36_v2<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_no==1]),
+            si = sum(weightvec[q33_si == 1]),
+            'Ninguno'  = round(no/Poblacion*100,1),
+            'Problemas'= round(si/Poblacion*100,1))
+
+write.xlsx2(as.data.frame(pedido36_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido36_v2",append = TRUE)
+
+```
+
+
+
+###Pedido37: Inconvenientes para el acceso a la educacion de les hijes según situación ocupacional del/la padre/madre
+
+
+```{r p37, message=FALSE, warning=FALSE}
+
+#Resultados
+pedido37<- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_incoveniente_educacion_no==1]),
+            cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
+            inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
+            dni = sum(weightvec[q33_inconveniente_educacion_dni == 1]),
+            doc_origen = sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),
+             doc_arg = sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),
+            doc_otro = sum(weightvec[q33_inconveniente_educacion_otro== 1]),
+      'Ninguno'  = round(no/Poblacion*100,1),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+
+
+
+#Resultados con variable q33 recodificada en sí o no
+pedido37_v2<- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_no==1]),
+            si = sum(weightvec[q33_si == 1]),
+            'Ninguno'  = round(no/Poblacion*100,1),
+            'Problemas'= round(si/Poblacion*100,1))
+
+write.xlsx2(as.data.frame(pedido37), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido37",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido37_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido37_v2",append = TRUE)
+
+
+```
+
+
+###Pedido38: Inconvenientes para el acceso a la educacion de les hijes según nivel de comprensión de castellano del/la padre/madre
+
+```{r p38, message=FALSE, warning=FALSE}
+
+#Resultados
+pedido38<- enma %>% 
+  group_by(q7_nivel_castellano) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_incoveniente_educacion_no==1]),
+            cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
+            inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
+            dni = sum(weightvec[q33_inconveniente_educacion_dni == 1]),
+            doc_origen = sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),
+             doc_arg = sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),
+            doc_otro = sum(weightvec[q33_inconveniente_educacion_otro== 1]),
+      'Ninguno'  = round(no/Poblacion*100,1),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+
+
+#Resultados
+pedido38_v2<- enma %>% 
+  group_by(q7_nivel_castellano) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_no==1]),
+            si = sum(weightvec[q33_si == 1]),
+            'Ninguno'  = round(no/Poblacion*100,1),
+            'Problemes'= round(si/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido38), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido38",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido38_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido38_v2",append = TRUE)
+
+
+```
+
+
+
+###Pedido39: Experiencia de discriminación en la escuela según descendencia étnica del/la padre/madre
+
+```{r p39, message=FALSE, warning=FALSE}
+
+enma<-enma %>% 
+  mutate(q5_descendencia_indigena=case_when(
+    q5_descendencia_indigena==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q5_descendencia_afro=case_when(
+    q5_descendencia_afro==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q5_descendencia_asiatica=case_when(
+    q5_descendencia_asiatica==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_ninguno=case_when(
+    q5_descendencia_ninguno==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_otro=case_when(
+    q5_descendencia_otro==1 ~ 1,
+    TRUE ~ 0))
+  
+pedido39 <- enma %>% 
+  group_by(q35_educacion_discriminacion) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido39), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido39",append = TRUE)
+
+
+```
+
+###Pedido41: Experiencia de discriminación en la escuela según situación ocupacional del/la padre/madre
+
+```{r p41, message=FALSE, warning=FALSE}
+
+pedido41<-calculate_tabulates(base=enma,
+                            x="q35_educacion_discriminacion",
+                            y="q51_situacion_ocupacional",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")  
+
+pedido41_tot<-calculate_tabulates(base=enma,
+                            x="q35_educacion_discriminacion",
+                            y="q51_situacion_ocupacional",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+write.xlsx2(as.data.frame(pedido41), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido41",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido41_tot), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido41_tot",append = TRUE)
+
+```
+
+ 
+ 
