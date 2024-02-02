@@ -274,9 +274,9 @@ write.xlsx2(as.data.frame(pedido41_tot), "tables/3.Educación/cuadros_educacion.
 
 ```
 
+##Pedido42: Población que se encuentra actualmente estudiando en Argentina según motivo de la migración (q47 y q14)
  
- 
-```{r}
+```{r 42,  message=FALSE, warning=FALSE}
 
 
 
@@ -350,6 +350,57 @@ pedido42 <- enma %>%
 
 
 write.xlsx2(as.data.frame(pedido42), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido42",append = TRUE)
+
+```
+ 
+##Pedido44: Inconveniente para la inscrición al sistema educativo según tenencia de dni (q50 y q17)
+ 
+```{r}
+
+
+enma<-enma %>% 
+  mutate(q50_problemas_titulos_origen=case_when(
+    q50_problemas_titulos_origen==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q50_problemas_dni=case_when(
+    q50_problemas_dni==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q50_problemas_doc_escolar=case_when(
+    q50_problemas_doc_escolar==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q50_problemas_inscripcion_online=case_when(
+    q50_problemas_inscripcion_online==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q50_problemas_costos=case_when(
+    q50_problemas_costos==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q50_problemas_discriminacion=case_when(
+    q50_problemas_discriminacion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q50_problemas_otros=case_when(
+    q50_problemas_otros==1 ~ 1,
+    TRUE ~ 0))
+  
+pedido44 <- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            titulo  = sum(weightvec[q50_problemas_titulos_origen==1]),
+            dni = sum(weightvec[q50_problemas_dni == 1]),
+            doc_escolar = sum(weightvec[q50_problemas_doc_escolar == 1]),
+            inscripcion         = sum(weightvec[q50_problemas_inscripcion_online == 1]),
+            costos         = sum(weightvec[q50_problemas_costos == 1]),
+            discriminacion         = sum(weightvec[q50_problemas_discriminacion == 1]),
+            otros = sum(weightvec[q50_problemas_otros == 1]),
+      'Título origen'  = round(titulo/Poblacion*100,1),
+      'DNI'          = round(dni/Poblacion*100,1),
+'Documentación escolar'          = round(doc_escolar/Poblacion*100,1),
+   'Inscripción online'          = round(inscripcion/Poblacion*100,1),
+'Costos'          = round(costos/Poblacion*100,1),
+      'Discriminació'            = round(discriminacion/Poblacion*100,1),
+'Otros'          = round(otros/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido44), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido44",append = TRUE)
 
 ```
  
