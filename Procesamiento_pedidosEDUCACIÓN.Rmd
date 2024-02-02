@@ -276,3 +276,81 @@ write.xlsx2(as.data.frame(pedido41_tot), "tables/3.Educación/cuadros_educacion.
 
  
  
+```{r}
+
+
+
+enma<-enma %>% 
+  mutate(q14_motivos_estudio =case_when(
+    q14_motivos_estudio==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q14_motivos_mejor_trabajo=case_when(
+    q14_motivos_mejor_trabajo==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q14_motivos_nuevas_experiencias=case_when(
+    q14_motivos_nuevas_experiencias==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_violencia_genero=case_when(
+    q14_motivos_violencia_genero==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_orientacion_sexual=case_when(
+    q14_motivos_orientacion_sexual==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_persecucion=case_when(
+    q14_motivos_persecucion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_salud=case_when(
+    q14_motivos_salud==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_habitat=case_when(
+    q14_motivos_habitat==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_necesidades_basicas=case_when(
+    q14_motivos_necesidades_basicas==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_reunificacion=case_when(
+    q14_motivos_reunificacion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_acompañar_otrx=case_when(
+    q14_motivos_acompañar_otrx==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_otros=case_when(
+    q14_motivos_otros==1 ~ 1,
+    TRUE ~ 0))
+
+
+
+pedido42 <- enma %>% 
+  group_by(q47_estudiando_argentina) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Estudio  = sum(weightvec[q14_motivos_estudio==1]),
+            Trabajo = sum(weightvec[q14_motivos_mejor_trabajo == 1]),
+            Experiencia = sum(weightvec[q14_motivos_nuevas_experiencias == 1]),
+            VBG        = sum(weightvec[q14_motivos_violencia_genero == 1]),
+            Orientacion        = sum(weightvec[q14_motivos_orientacion_sexual == 1]),
+            persecusion        = sum(weightvec[q14_motivos_persecucion == 1]),
+            salud        = sum(weightvec[q14_motivos_salud == 1]),
+            habitat        = sum(weightvec[q14_motivos_habitat == 1]),
+            NecBas       = sum(weightvec[q14_motivos_necesidades_basicas == 1]),
+            reunificacion       = sum(weightvec[q14_motivos_reunificacion == 1]),
+            Acomp        = sum(weightvec[q14_motivos_acompañar_otrx == 1]),
+            otros = sum(weightvec[q14_motivos_otros == 1]),
+      'Estutios'  = round(Estudio/Poblacion*100,1),
+      'Mejor trabajo'          = round(Trabajo/Poblacion*100,1),
+'Nuevas experiencias'          = round(Experiencia/Poblacion*100,1),
+'Violencia Género'          = round(VBG/Poblacion*100,1),
+'Orientación sexual'          = round(Orientacion/Poblacion*100,1),
+'Persecusión'          = round(persecusion/Poblacion*100,1),
+      'Salud'            = round(salud/Poblacion*100,1),
+'Habitat'            = round(habitat/Poblacion*100,1),
+'Necesidades básicas'            = round(NecBas/Poblacion*100,1),
+'Reunificación'            = round(reunificacion/Poblacion*100,1),
+'Acompañar a otrx'            = round(Acomp/Poblacion*100,1),
+'Otros'          = round(otros/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido42), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido42",append = TRUE)
+
+```
+ 
+ 
