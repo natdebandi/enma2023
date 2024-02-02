@@ -1,0 +1,69 @@
+---
+title: "Procesamiento_pedidos"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## PEDIDO PROCESAMIENTO VARIOS
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+
+
+```
+
+
+Leo base de datos con nuevas variables:
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+##PEDIDOS ESPECIALES DOCUMENTACIÓN
+
+```{r}
+
+pedido20<-enma %>% 
+  group_by(nac_agrupada,q17_dni_tenencia, tiempo_residencia_3_var) %>% 
+  summarise(n=sum(weightvec)) %>%  pivot_wider(names_from = nac_agrupada, values_from = n)
+
+                            
+pedido21<-enma %>% 
+  group_by(nacionalidad_var,q17_dni_tenencia, tiempo_residencia_3_var) %>%   summarise(n=sum(weightvec)) %>%  pivot_wider(names_from = nacionalidad_var, values_from = n)
+
+
+
+write.xlsx2(as.data.frame(pedido20), "tables/2.Documentación/cuadros_documentación.xlsx", row.names = FALSE, sheetName ="pedido20",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido21), "tables/2.Documentación/cuadros_documentación.xlsx", row.names = FALSE, sheetName ="pedido21",append = TRUE)
+
+
+unique(enma$tiempo_residencia_5_var)
+
+```
+

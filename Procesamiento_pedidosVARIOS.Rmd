@@ -1,0 +1,73 @@
+---
+title: "Procesamiento_pedidos"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## PEDIDO PROCESAMIENTO VARIOS
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+
+
+```
+
+
+Leo base de datos con nuevas variables:
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+##PEDIDOS ESPECIALES VARIOS
+
+```{r}
+
+
+pedido43<-calculate_tabulates(base=enma,
+                            x="region_var",
+                            y="q31_hijos_menores_exterior",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+pedido43_tot<-calculate_tabulates(base=enma,
+                            x="region_var",
+                            y="q31_hijos_menores_exterior",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+write.xlsx2(as.data.frame(pedido43), "tables/cuadros_varios.xlsx", row.names = FALSE, sheetName ="pedido43",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido43_tot), "tables/cuadros_varios.xlsx", row.names = FALSE, sheetName ="pedido43_tot",append = TRUE)
+
+
+```
+
