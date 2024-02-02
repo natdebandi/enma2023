@@ -4,14 +4,20 @@ output: html_document
 date: "2023-12-28"
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+
+#INSTALO LIBRERIAS QUE VOY A USAR
 
 library(eph)
 library(dplyr)
 library(readr)
+library(xlsx)
+library(kableExtra)
+library(userfriendlyscience)
 
 ```
+
 
 ## Capitulo de salud - ENMA 2023
 
@@ -24,8 +30,22 @@ Creemos un marckdown por capitulo donde se incluya:
 ```{r carga_datos}
 
 #Cargo los datos ENMA
-enma <-  read_csv2("datos\\ENMA_v1.csv",col_names = TRUE,col_types = NULL)
+#enma <-  read_csv2("datos\\ENMA_v1.csv",col_names = TRUE,col_types = NULL)
 ```
+
+#Cargo nueva base de datos con variables pedidas agregadas
+Leo base de datos con nuevas variables:
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+```
+
+
 
 ##	¿Cuál es su principal cobertura de salud? (q36_salud)
 
@@ -53,6 +73,394 @@ saludxgenero=calculate_tabulates(base = enma, x = 'q36_salud', y = 'genero_var',
 saludxgenero
 
 
+
+```
+
+
+
+## PEDIDO PROCESAMIENTO DIMENSIÓN SALUD
+
+
+
+
+##PEDIDOS ESPECIALES SALUD
+
+###Pedido7: cobertura de salud según situación documentaria (q36 y q17)
+```{r}
+#porcentaje
+pedido7 <- calculate_tabulates(base= enma,
+                    x="q36_salud",
+                    y="q17_dni_tenencia",
+                    add.percentage = 'col',
+                    add.totals='row',
+                    weights = "weightvec")
+
+#absolutos
+pedido7_tot <- calculate_tabulates(base= enma,
+                    x="q36_salud",
+                    y="q17_dni_tenencia",
+                    add.totals = 'row',
+                    weights = "weightvec")
+
+write.xlsx(as.data.frame(pedido7), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido7",append = TRUE)
+write.xlsx(as.data.frame(pedido7_tot), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido7_tot",append = TRUE)
+
+
+pedido7
+pedido7_tot
+
+
+```
+
+##Pedidoi 8: Resolver problema acceso salud según situación documentaria (q38 y q17)
+
+```{r}
+
+
+
+
+enma<-enma %>% 
+  mutate(q38_salud_resolver_problema_no=case_when(
+    q38_salud_resolver_problema_no==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q38_salud_resolver_problema_hospitalpub=case_when(
+    q38_salud_resolver_problema_hospitalpub==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q38_salud_resolver_problema_cen_ate_prim=case_when(
+    q38_salud_resolver_problema_cen_ate_prim==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q38_salud_resolver_problema_prepaga=case_when(
+    q38_salud_resolver_problema_prepaga==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q38_salud_resolver_problema_pago_consulta=case_when(
+    q38_salud_resolver_problema_pago_consulta==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q38_salud_resolver_problema_recomendaciones=case_when(
+    q38_salud_resolver_problema_recomendaciones==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q38_salud_resolver_problema_tracional=case_when(
+    q38_salud_resolver_problema_tracional==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q38_salud_resolver_problema_imposibilidad=case_when(
+    q38_salud_resolver_problema_imposibilidad==1~ 1,
+    TRUE~0)) %>% 
+  mutate(q38_salud_resolver_problema_otro=case_when(
+    q38_salud_resolver_problema_otro==1~1,
+    TRUE ~0))
+
+
+
+#Resultados
+pedido8<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no_problema = sum(weightvec[q38_salud_resolver_problema_no==1]),
+            hospital = sum(weightvec[q38_salud_resolver_problema_hospitalpub == 1]),
+            CEP = sum(weightvec[q38_salud_resolver_problema_cen_ate_prim == 1]),
+            prepaga = sum(weightvec[q38_salud_resolver_problema_prepaga == 1]),
+            privado = sum(weightvec[q38_salud_resolver_problema_pago_consulta == 1]),
+            tradicional = sum(weightvec[q38_salud_resolver_problema_tracional == 1]),
+            recomendacion = sum(weightvec[q38_salud_resolver_problema_recomendaciones== 1]),
+             imposibilidad = sum(weightvec[q38_salud_resolver_problema_imposibilidad== 1]),
+            otro = sum(weightvec[q38_salud_resolver_problema_otro== 1]),
+      'No necesite'  = round(no_problema/Poblacion*100,1),
+      'Hospital público'          = round(hospital/Poblacion*100,1),
+'Centro de atención primaria'          = round(CEP/Poblacion*100,1),
+      'Prepaga'            = round(prepaga/Poblacion*100,1),
+'Pago particular'          = round(privado/Poblacion*100,1),
+      'Tradicional'            = round(tradicional/Poblacion*100,1),
+'Recomendación familiar'            = round(recomendacion/Poblacion*100,1),
+'No me pude atender'            = round(imposibilidad/Poblacion*100,1),
+'Otra'            = round(otro/Poblacion*100,1))
+
+
+
+write.xlsx(as.data.frame(pedido8), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido8",append = TRUE)
+
+
+
+```
+
+##Pedido9: Difucultades en el acceso a la salud según situación documentaria (q40 y q17)
+
+
+```{r}
+
+enma<-enma %>% 
+  mutate(q40_dni=case_when(
+    q40_salud_acceso_dificultades_dni==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_domicilio=case_when(
+    q40_salud_acceso_dificultades_domicilio==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_maltrato=case_when(
+    q40_salud_acceso_dificultades_maltrato==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_pago=case_when(
+    q40_salud_acceso_dificultades_pago==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q40_desconoc=case_when(
+    q40_salud_acceso_dificultades_desconocimiento==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q40_turnos=case_when(
+    q40_salud_acceso_dificultades_turnos==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q40_idioma=case_when(
+    q40_salud_acceso_dificultades_idioma==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q40_otra=case_when(
+    q40_salud_acceso_dificultades_otra==1~ 1,
+    TRUE~0))
+
+
+
+#Resultados
+pedido9<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            DNI = sum(weightvec[q40_dni==1]),
+            domicilio = sum(weightvec[q40_domicilio == 1]),
+            maltrato = sum(weightvec[q40_maltrato == 1]),
+            pago = sum(weightvec[q40_pago == 1]),
+            desconocimiento = sum(weightvec[q40_desconoc == 1]),
+            turnos = sum(weightvec[q40_turnos == 1]),
+            idioma = sum(weightvec[q40_idioma== 1]),
+            otra = sum(weightvec[q40_otra== 1]),
+      'prob_dni'  = round(DNI/Poblacion*100,1),
+      'prob_domicilio'          = round(domicilio/Poblacion*100,1),
+'prob_maltrato'          = round(maltrato/Poblacion*100,1),
+      'prob_pago'            = round(pago/Poblacion*100,1),
+'prob_desconocimiento'          = round(desconocimiento/Poblacion*100,1),
+      'prob_turnos'            = round(turnos/Poblacion*100,1),
+'prob_idioma'            = round(idioma/Poblacion*100,1),
+'prob_otra'            = round(otra/Poblacion*100,1))
+
+write.xlsx(as.data.frame(pedido9), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido9",append = TRUE)
+
+```
+
+##Pedido 10: Cobertura de salud según tenencia de hijes (q36 y q29)
+
+```{r}
+
+pedido10<- calculate_tabulates(base = enma, 
+                              x = 'q36_salud', 
+                              y = 'q29_hijos_num', 
+                              add.percentage ='col', 
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#valores absolutos
+
+pedido10_tot <- calculate_tabulates(base= enma,
+                    x="q36_salud",
+                    y="q29_hijos_num",
+                    add.totals = 'row',
+                    weights = "weightvec")
+
+write.xlsx(as.data.frame(pedido10), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido10",append = TRUE)
+write.xlsx(as.data.frame(pedido10_tot), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido10_tot",append = TRUE)
+
+```
+
+##Pedido 11: Resolver problemas de salud según tenencia de hijes (q38 y q29)
+
+```{r}
+
+
+enma<-enma %>% 
+  mutate(q38_salud_resolver_problema_no=case_when(
+    q38_salud_resolver_problema_no==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q38_salud_resolver_problema_hospitalpub=case_when(
+    q38_salud_resolver_problema_hospitalpub==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q38_salud_resolver_problema_cen_ate_prim=case_when(
+    q38_salud_resolver_problema_cen_ate_prim==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q38_salud_resolver_problema_prepaga=case_when(
+    q38_salud_resolver_problema_prepaga==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q38_salud_resolver_problema_pago_consulta=case_when(
+    q38_salud_resolver_problema_pago_consulta==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q38_salud_resolver_problema_recomendaciones=case_when(
+    q38_salud_resolver_problema_recomendaciones==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q38_salud_resolver_problema_tracional=case_when(
+    q38_salud_resolver_problema_tracional==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q38_salud_resolver_problema_imposibilidad=case_when(
+    q38_salud_resolver_problema_imposibilidad==1~ 1,
+    TRUE~0)) %>% 
+  mutate(q38_salud_resolver_problema_otro=case_when(
+    q38_salud_resolver_problema_otro==1~1,
+    TRUE ~0))
+
+
+
+#Resultados
+Indicadores2_q38<- enma %>% 
+  group_by(q29_hijos_num) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no_problema = sum(weightvec[q38_salud_resolver_problema_no==1]),
+            hospital = sum(weightvec[q38_salud_resolver_problema_hospitalpub == 1]),
+            CEP = sum(weightvec[q38_salud_resolver_problema_cen_ate_prim == 1]),
+            prepaga = sum(weightvec[q38_salud_resolver_problema_prepaga == 1]),
+            privado = sum(weightvec[q38_salud_resolver_problema_pago_consulta == 1]),
+            tradicional = sum(weightvec[q38_salud_resolver_problema_tracional == 1]),
+            recomendacion = sum(weightvec[q38_salud_resolver_problema_recomendaciones== 1]),
+             imposibilidad = sum(weightvec[q38_salud_resolver_problema_imposibilidad== 1]),
+            otro = sum(weightvec[q38_salud_resolver_problema_otro== 1]),
+      'No necesite'  = round(no_problema/Poblacion*100,1),
+      'Hospital público'          = round(hospital/Poblacion*100,1),
+'Centro de atención primaria'          = round(CEP/Poblacion*100,1),
+      'Prepaga'            = round(prepaga/Poblacion*100,1),
+'Pago particular'          = round(privado/Poblacion*100,1),
+      'Tradicional'            = round(tradicional/Poblacion*100,1),
+'Recomendación familiar'            = round(recomendacion/Poblacion*100,1),
+'No me pude atender'            = round(imposibilidad/Poblacion*100,1),
+'Otra'            = round(otro/Poblacion*100,1))
+  
+write.xlsx(as.data.frame(pedido11), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido11",append = TRUE)
+
+```
+
+#Pedido12: Dificultades en el acceso a servicios según tenencia de hijes (q40 y q29)
+
+```{r}
+
+enma<-enma %>% 
+  mutate(q40_dni=case_when(
+    q40_salud_acceso_dificultades_dni==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_domicilio=case_when(
+    q40_salud_acceso_dificultades_domicilio==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_maltrato=case_when(
+    q40_salud_acceso_dificultades_maltrato==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_pago=case_when(
+    q40_salud_acceso_dificultades_pago==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q40_desconoc=case_when(
+    q40_salud_acceso_dificultades_desconocimiento==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q40_turnos=case_when(
+    q40_salud_acceso_dificultades_turnos==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q40_idioma=case_when(
+    q40_salud_acceso_dificultades_idioma==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q40_otra=case_when(
+    q40_salud_acceso_dificultades_otra==1~ 1,
+    TRUE~0))
+
+
+
+#Resultados
+pedido12<- enma %>% 
+  group_by(q29_hijos_num) %>% 
+  summarise(Poblacion= sum(weightvec),
+            DNI = sum(weightvec[q40_dni==1]),
+            domicilio = sum(weightvec[q40_domicilio == 1]),
+            maltrato = sum(weightvec[q40_maltrato == 1]),
+            pago = sum(weightvec[q40_pago == 1]),
+            desconocimiento = sum(weightvec[q40_desconoc == 1]),
+            turnos = sum(weightvec[q40_turnos == 1]),
+            idioma = sum(weightvec[q40_idioma== 1]),
+            otra = sum(weightvec[q40_otra== 1]),
+      'prob_dni'  = round(DNI/Poblacion*100,1),
+      'prob_domicilio'          = round(domicilio/Poblacion*100,1),
+'prob_maltrato'          = round(maltrato/Poblacion*100,1),
+      'prob_pago'            = round(pago/Poblacion*100,1),
+'prob_desconocimiento'          = round(desconocimiento/Poblacion*100,1),
+      'prob_turnos'            = round(turnos/Poblacion*100,1),
+'prob_idioma'            = round(idioma/Poblacion*100,1),
+'prob_otra'            = round(otra/Poblacion*100,1))
+
+write.xlsx(as.data.frame(pedido12), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido12",append = TRUE)
+```
+
+#Pedido34: Acceso a salud según nivel de castellano (q30 y q7)
+```{r}
+
+#Resultados
+
+pedido34<- calculate_tabulates(base = enma, 
+                              x = 'q39_salud_acceso', 
+                              y = 'q7_nivel_castellano', 
+                              add.percentage ='col', 
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#valores absolutos
+
+pedido34_tot <- calculate_tabulates(base= enma,
+                     x = 'q39_salud_acceso', 
+                    y = 'q7_nivel_castellano',
+                    add.totals = 'row',
+                    weights = "weightvec")
+
+write.xlsx(as.data.frame(pedido34), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido34",append = TRUE)
+
+write.xlsx(as.data.frame(pedido34_tot), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido34_tot",append = TRUE)
+```
+
+#Pedido 35: Dificultades en el acceso a la salud según nivel de castellano (q40 y q7)
+ 
+```{r}
+
+enma<-enma %>% 
+  mutate(q40_dni=case_when(
+    q40_salud_acceso_dificultades_dni==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_domicilio=case_when(
+    q40_salud_acceso_dificultades_domicilio==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_maltrato=case_when(
+    q40_salud_acceso_dificultades_maltrato==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q40_pago=case_when(
+    q40_salud_acceso_dificultades_pago==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q40_desconoc=case_when(
+    q40_salud_acceso_dificultades_desconocimiento==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q40_turnos=case_when(
+    q40_salud_acceso_dificultades_turnos==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q40_idioma=case_when(
+    q40_salud_acceso_dificultades_idioma==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q40_otra=case_when(
+    q40_salud_acceso_dificultades_otra==1~ 1,
+    TRUE~0))
+
+
+
+#Resultados
+pedido35<- enma %>% 
+  group_by(q7_nivel_castellano) %>% 
+  summarise(Poblacion= sum(weightvec),
+            DNI = sum(weightvec[q40_dni==1]),
+            domicilio = sum(weightvec[q40_domicilio == 1]),
+            maltrato = sum(weightvec[q40_maltrato == 1]),
+            pago = sum(weightvec[q40_pago == 1]),
+            desconocimiento = sum(weightvec[q40_desconoc == 1]),
+            turnos = sum(weightvec[q40_turnos == 1]),
+            idioma = sum(weightvec[q40_idioma== 1]),
+            otra = sum(weightvec[q40_otra== 1]),
+      'prob_dni'  = round(DNI/Poblacion*100,1),
+      'prob_domicilio'          = round(domicilio/Poblacion*100,1),
+'prob_maltrato'          = round(maltrato/Poblacion*100,1),
+      'prob_pago'            = round(pago/Poblacion*100,1),
+'prob_desconocimiento'          = round(desconocimiento/Poblacion*100,1),
+      'prob_turnos'            = round(turnos/Poblacion*100,1),
+'prob_idioma'            = round(idioma/Poblacion*100,1),
+'prob_otra'            = round(otra/Poblacion*100,1))
+
+write.xlsx(as.data.frame(pedido35), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido35",append = TRUE)
 
 ```
 
