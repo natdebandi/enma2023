@@ -229,25 +229,36 @@ Se recodifica en dos categorías: SÍ (quienes tuvieron algún problema) y NO (q
 ```{r, warning=FALSE, message=FALSE}
 #Creo nuevas variables
 
+#enma<-enma %>% 
+#  mutate(q33_no=case_when(
+#    (q33_incoveniente_educacion_no==1 & (q33_inconveniente_educacion_dni!=1 & q33_incoveniente_educacion_cupo!=1 & q33_inconveniente_educacion_inscripcion!=1   & q33_inconveniente_educacion_documentacion_origen!=1  &
+#      q33_inconveniente_educacion_documentacion_argentina!=1 &
+#      q33_inconveniente_educacion_otro!=1)) ~ 1,
+#    TRUE ~0)) %>% 
+#  mutate(q33_si=case_when(
+#    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~1,
+#    TRUE ~ 0))
+
+
 enma<-enma %>% 
-  mutate(q33_no=case_when(
+  mutate(q33_recod=case_when(
     (q33_incoveniente_educacion_no==1 & (q33_inconveniente_educacion_dni!=1 & q33_incoveniente_educacion_cupo!=1 & q33_inconveniente_educacion_inscripcion!=1   & q33_inconveniente_educacion_documentacion_origen!=1  &
       q33_inconveniente_educacion_documentacion_argentina!=1 &
       q33_inconveniente_educacion_otro!=1)) ~ 1,
-    TRUE ~0)) %>% 
-  mutate(q33_si=case_when(
-    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~1,
+    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~2,
     TRUE ~ 0))
+
 
 
 #Resultados
 q33 <- enma %>%
-  group_by(q33_si, q33_no) %>% 
+  group_by(q33_recod) %>% 
   summarise(Frecuencia = sum(weightvec)) %>% 
   mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) %>% 
   kable()
 
 q33
+
 
 
 ```
@@ -445,6 +456,7 @@ no_contributivas
 
 
 ```
+
 
 
 ## Guardo base de datos con nuevas variables
