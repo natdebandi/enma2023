@@ -145,7 +145,15 @@ enma<-enma %>%
     TRUE ~0)) %>% 
   mutate(Ayudas= case_when(
     Ayuda_estatal==1 | Ayuda_organizaciones==1 ~ 1,
-    TRUE ~0))
+    TRUE ~0))%>% 
+  mutate(Prefiero_no_responder=case_when(
+    Prefiero_no_reponder==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(Ninguna_anteriores=case_when(
+    Ninguna==1 ~ 1,
+    TRUE ~ 0))
+
+
 
 
 ```
@@ -366,7 +374,7 @@ desocupado
 
 ##REGIÓN CABA + GBA + RESTO REGIONES
 
-```{r}
+```{r region, warning=FALSE, message=FALSE}
 
 #Construyo nueva variable de región
 
@@ -393,6 +401,48 @@ region <- enma %>%
   kable()
 
 region
+
+```
+
+
+
+## Subsidios
+
+Se recodifica la variable q60 en subsidios o prestaciones según sean contributivas o no contributivas.
+
+
+```{r}
+
+#Recodifico q60
+
+enma<-enma %>% 
+  mutate(q60_no_contributivas=case_when(
+    q60_subsidios_auh==1 | q60_subsidios_embarazo==1 | q60_subsidios_jubilacion==1 | q60_subsidios_pension_no_contrib==1 | q60_subsidios_progresar==1 | q60_subsidios_potenciar_trabajo==1 | q60_subsidios_inclusion_joven==1 | q60_subsidios_pieza==1 | q60_subsidios_tarjeta_alimentar==1~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q60_contributivas= case_when(
+    q60_subsidios_desempleo==1 | q60_subsidios_pension==1 ~ 1,
+    TRUE ~0 ))
+
+
+
+#Resultados
+contributivas<- enma %>%
+  group_by(q60_contributivas) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje=Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+#Resultados2
+no_contributivas <- enma %>%
+  group_by(q60_no_contributivas) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje=Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+contributivas
+no_contributivas
+
+
 
 ```
 
