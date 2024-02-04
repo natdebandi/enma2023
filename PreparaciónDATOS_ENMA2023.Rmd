@@ -244,9 +244,9 @@ enma<-enma %>%
   mutate(q33_recod=case_when(
     (q33_incoveniente_educacion_no==1 & (q33_inconveniente_educacion_dni!=1 & q33_incoveniente_educacion_cupo!=1 & q33_inconveniente_educacion_inscripcion!=1   & q33_inconveniente_educacion_documentacion_origen!=1  &
       q33_inconveniente_educacion_documentacion_argentina!=1 &
-      q33_inconveniente_educacion_otro!=1)) ~ 1,
-    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~2,
-    TRUE ~ 0))
+      q33_inconveniente_educacion_otro!=1)) ~ "No tuvo inconveniente",
+    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~"Sí, tuvo inconveniente",
+    TRUE ~ NA))
 
 
 
