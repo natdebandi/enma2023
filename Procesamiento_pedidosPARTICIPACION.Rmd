@@ -1,0 +1,119 @@
+---
+title: "Procesamiento_pedidos"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## PEDIDO PROCESAMIENTO VARIOS
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+
+
+```
+
+
+Leo base de datos con nuevas variables:
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+##PEDIDOS ESPECIALES PARTICIPACIÓN
+
+###Pedido3: Participación elecciones locales según región (CABA + GBA)
+```{r p3, message=FALSE, warning=FALSE}
+
+pedido3<-calculate_tabulates(base=enma,
+                            x="region_CABA_var",
+                            y="q68_participacion_elecciones_locales",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+
+pedido3_tot<-calculate_tabulates(base=enma,
+                            x="region_CABA_var",
+                            y="q68_participacion_elecciones_locales",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+write.xlsx2(as.data.frame(pedido3), "tables/8.Participación/cuadros_participacion.xlsx", row.names = FALSE, sheetName ="pedido41",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido3_tot), "tables/8.Participación/cuadros_participacion.xlsx", row.names = FALSE, sheetName ="pedido41_tot",append = TRUE)
+
+```
+
+
+
+
+
+
+
+write.xlsx2(as.data.frame(region_caba), "tables/REGIONES.xlsx", row.names = FALSE, sheetName ="BA",append = TRUE)
+
+
+enma<-enma %>% 
+  mutate(p20=case_when(
+    tiempo_residencia_3_var=="0 Hasta 5 años" & nac_agrupada=="MERCOSUR" ~ "MERCOSUR / 0-5 años",
+    tiempo_residencia_3_var=="1 Entre 5 y 9 años" & nac_agrupada=="MERCOSUR" ~ "MERCOSUR / 5-9 años",
+    tiempo_residencia_3_var=="2 Más de 10 años" & nac_agrupada== "MERCOSUR" ~ "MERCOSUR / 10+ años",
+    tiempo_residencia_3_var=="0 Hasta 5 años" & nac_agrupada=="Extra MERCOSUR europeos" ~ "Extra MERCOSUR europeos / 0-5 años",
+    tiempo_residencia_3_var=="1 Entre 5 y 9 años" & nac_agrupada=="Extra MERCOSUR europeos" ~ "Extra MERCOSUR europeos / 5-9 años",
+    tiempo_residencia_3_var=="2 Más de 10 años" & nac_agrupada== "Extra MERCOSUR europeos" ~ "Extra MERCOSUR europeos / 10+ años",
+   tiempo_residencia_3_var=="0 Hasta 5 años" & nac_agrupada=="Extra MERCOSUR no europeos" ~ "Extra MERCOSUR no europeos / 0-5 años",
+    tiempo_residencia_3_var=="1 Entre 5 y 9 años" & nac_agrupada=="Extra MERCOSUR no europeos" ~ "Extra MERCOSUR no europeos / 5-9 años",
+    tiempo_residencia_3_var=="2 Más de 10 años" & nac_agrupada== "Extra MERCOSUR no europeos" ~ "Extra MERCOSUR no europeos / 10+ años",
+   TRUE ~ "NA"))
+  
+
+pedido20_f<-calculate_tabulates(base=enma,
+                            x="q17_dni_tenencia",
+                            y="p20",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+                            
+pedido21<-enma %>% 
+  group_by(nacionalidad_var,q17_dni_tenencia, tiempo_residencia_3_var) %>%   summarise(n=sum(weightvec)) %>%  pivot_wider(names_from = nacionalidad_var, values_from = n)
+
+
+
+write.xlsx2(as.data.frame(pedido20_f), "tables/2.Documentación/cuadros_documentación.xlsx", row.names = FALSE, sheetName ="pedido20b",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido21), "tables/2.Documentación/cuadros_documentación.xlsx", row.names = FALSE, sheetName ="pedido21",append = TRUE)
+
+
+unique(enma$tiempo_residencia_5_var)
+
+```
+

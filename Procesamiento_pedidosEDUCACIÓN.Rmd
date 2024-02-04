@@ -112,6 +112,7 @@ pedido36_v2<- enma %>%
             'Ninguno'  = round(no/Poblacion*100,1),
             'Problemas'= round(si/Poblacion*100,1))
 
+
 write.xlsx2(as.data.frame(pedido36_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido36_v2",append = TRUE)
 
 ```
@@ -254,15 +255,17 @@ write.xlsx2(as.data.frame(pedido39), "tables/3.Educación/cuadros_educacion.xlsx
 ```{r p41, message=FALSE, warning=FALSE}
 
 pedido41<-calculate_tabulates(base=enma,
-                            x="q35_educacion_discriminacion",
-                            y="q51_situacion_ocupacional",
+                            x="q51_situacion_ocupacional",
+                            y="q35_educacion_discriminacion",
                             add.percentage = 'col',
                             add.totals = 'row',
                             weights = "weightvec")  
 
+
+
 pedido41_tot<-calculate_tabulates(base=enma,
-                            x="q35_educacion_discriminacion",
-                            y="q51_situacion_ocupacional",
+                            x="q51_situacion_ocupacional",
+                            y="q35_educacion_discriminacion",
                             add.totals = 'row',
                             weights = "weightvec")
 

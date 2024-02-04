@@ -38,7 +38,7 @@ A continuación se incluye la construcción de nuevas variables solicitadas para
 
 # Lectura de archivo CSV
 
-enma <-  read_csv2("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -363,6 +363,38 @@ desocupado
 
 ```
 
+
+##REGIÓN CABA + GBA + RESTO REGIONES
+
+```{r}
+
+#Construyo nueva variable de región
+
+enma<-enma %>% 
+  mutate(region_CABA_var=case_when(
+    region_var=="Buenos Aires" & region_amba_var=="Resto Pampeana" ~ "Resto Buenos Aires",
+    region_var=="Buenos Aires" & region_amba_var=="AMBA" ~ "GBA", 
+    region_var=="Resto Pampeana" & region_amba_var=="Resto Pampeana" ~ "Resto Pampeana",
+    region_var=="CABA" & region_amba_var=="AMBA" ~ "CABA",
+    region_var=="NEA" & region_amba_var=="NEA" ~ "NEA",
+    region_var=="NOA" & region_amba_var=="NOA" ~ "NOA",
+    region_var=="CUYO" & region_amba_var=="CUYO" ~ "CUYO",
+    region_var=="Patagonia" & region_amba_var=="Patagonia" ~ "Patagonia",
+    region_var=="Buenos Aires" & region_amba_var==99 ~ "Resto Buenos Aires",
+    region_var=="Buenos Aires" & is.na(region_amba_var) ~ "Resto Buenos Aires",
+  TRUE ~ NA))
+
+
+#Resultados
+region <- enma %>%
+  group_by(region_CABA_var) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje=Frecuencia/sum(Frecuencia)*100)%>% 
+  kable()
+
+region
+
+```
 
 
 ## Guardo base de datos con nuevas variables
