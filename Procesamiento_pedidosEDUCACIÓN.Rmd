@@ -32,7 +32,7 @@ Leo base de datos con nuevas variables:
 # Lectura de archivo CSV
 
 
-enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -76,14 +76,23 @@ enma<-enma %>%
 
 enma<- enma %>% 
   mutate(q32_num=case_when(
-    q32_asistencia_educacion=="Sí, al menos alguno/a" ~ 1,
+    q32_asistencia_educacion=="Si, al menos alguno/a" ~ 1,
     q32_asistencia_educacion=="No, ninguno" ~ 0,
     TRUE ~ NA))
 
-#Resultados
+
+q32_check<-enma %>% 
+  calculate_tabulates(base = enma, 
+                              x = 'q17_dni_tenencia', 
+                              y = 'q32_num', 
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#Resultados ##REVISAR!!
 pedido36<- enma %>% 
   group_by(q17_dni_tenencia) %>% 
-  summarise(Poblacion = sum(weightvec[q32_num==1]), #REVISAR!!!!
+  filter(q32_num==1) %>% 
+  summarise(Poblacion = sum(weightvec),
             no = sum(weightvec[q33_incoveniente_educacion_no==1]),
             cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
             inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),

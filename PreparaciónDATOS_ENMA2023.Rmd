@@ -432,7 +432,10 @@ enma<-enma %>%
     TRUE ~ 0)) %>% 
   mutate(q60_contributivas= case_when(
     q60_subsidios_desempleo==1 | q60_subsidios_pension==1 ~ 1,
-    TRUE ~0 ))
+    TRUE ~0 )) %>% 
+  mutate(q60_no_recibe= case_when(
+    q60_subsidios_no==1 & q60_no_contributivas!=1 & q60_contributivas!=1 ~1,
+    TRUE ~0))
 
 
 
