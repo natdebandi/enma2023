@@ -153,7 +153,7 @@ enma<- enma %>% mutate(activo=case_when(
   filter(genero_var=="Mujer"|genero_var=="Varón") |>
   #group_by(genero_var) |>
    summarise(total= sum(weightvec['51_situacion_ocupacional'!="Otra"]),
-              ocupados=sum(weightvec[enma$ocupado==1]),
+              ocupados=sum(weightvec[ocupado==1]),
               pea=sum(weightvec[activo==1]),
               desempleados=sum(weightvec[desempleado==1]),
               t_actividad=round((pea/total)*100,2),
