@@ -1,0 +1,582 @@
+---
+title: "ENMA 2023 - nacionalidades de interés"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(eph)
+library(dplyr)
+library(readr)
+library(xlsx)
+library(tidyr)
+
+#devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
+library(userfriendlyscience)
+
+
+#rm(list = ls())
+```
+
+# Nacionalidades de interés
+## Situación socioeconómica
+
+
+
+```{r carga_datos}
+
+#Cargo los datos ENMA
+enma <-  read_csv2("datos\\ENMA_v2.csv",col_names = TRUE,col_types = NULL)
+
+#names(enma) 
+
+#nacionalidades<-c("COLOMBIA","VENEZUELA","HAITÍ","REPÚBLICA DOMINICANA","CUBA")
+
+```
+
+### tasa de actividad, ocupacion y desocupacion
+
+51.	Actualmente, usted se encuentra… (*)  
+Elija la opción que mejor describe su situación ocupacional  
+Con trabajo y una remuneración fija (*)  
+Con trabajo por cuenta propia (*)  
+Venta ambulante (*)  
+Realizando changas, trabajos esporádicos o subempleado (*)  
+Realizando trabajos sin remuneración (*)  
+Desempleado/a buscando trabajo  
+Sin trabajar con licencia (*)  
+Jubilado/a, retirado/a  
+Estudiando  
+Otra    
+
+Revisar la decisión sobre como calcular actividad, desempleo y ocupación  
+
+
+
+```{r indicadores}
+
+consulta <- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+## la ENMA indaga sobr mayores a 18 años, ese es el recorte que se toma para los 3 indicadores
+
+## actividad 
+
+## No s eincluye como ocupado ni activo Trabajo sin remuneracion
+
+
+enma<- enma %>% mutate(activo=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 1,
+    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+## ocupacion
+
+##habria que filtrarlo por edad para que sea mejor... revisar esto
+enma<- enma %>%
+  mutate(ocupado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 0,
+    q51_situacion_ocupacional=="Estudiando" ~ 1,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 1,
+    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+## desempleado
+enma<- enma %>%
+  mutate(desempleado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 0,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 0,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+#    q51_situacion_ocupacional=="Estudiando" ~ 0,
+#    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 0,
+ #   q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 1,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 0,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 0,
+ #   q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+
+
+```
+
+
+### Actividad
+
+
+```{r actividad}
+
+cc<- calculate_tabulates(base = enma, x = 'activo', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="actividad",append = TRUE)    
+
+print(cc)
+
+
+```
+
+### Ocupados   
+
+Esto está calculado excluyendo jubiladxs pero hay que revisarlo 
+
+
+
+```{r ocupados}
+
+cc<- calculate_tabulates(base = enma, x = 'ocupado', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="ocupado",append = TRUE)    
+
+print(cc)
+
+```
+### desempleados   
+
+Esto está calculado excluyendo jubiladxs pero hay que revisarlo 
+
+
+```{r desempleados}
+
+cc<- calculate_tabulates(base = enma, x = 'desempleado', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="desempleado",append = TRUE)    
+
+print(cc)
+
+```
+### situación ocupacional
+
+Absolutos
+
+
+```{r q51_situacion_ocupacional}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q51_situacion_ocupacional) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q51_situacion_ocupacional, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q51_situacionl",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q51_situacion_ocupacional_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q51_situacion_ocupacional', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q51_situacion_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+
+### Distribución según ocupación
+
+
+Absolutos  
+
+
+```{r q52_trabaja}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q52_trabaja) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q52_trabaja, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q52_trabaja",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q52_trabaja_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q52_trabaja', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q52_trabaja_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+
+### Porcentaje de población ocupada que su actividad laboral no está registrada  
+
+
+Absolutos  
+
+
+```{r q53_trabajo_formal}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q53_trabajo_formal) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q53_trabajo_formal, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q53_registro",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q53_trabajo_formal_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q53_trabajo_formal', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q53_registro_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+
+### Porcentaje de población que en Argentina logró trabajar en el área u oficio correspondiente con sus conocimientos y/o experiencia  
+
+Absolutos  
+
+
+```{r q55_experiencia}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q55_experiencia) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q55_experiencia, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q55_experiencia",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q55_experiencia_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q55_experiencia', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q55_experiencia_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+### Porcentaje de población que ha tenido dificultades para acceder a un trabajo en Argentina
+
+Absolutos  
+
+
+```{r q56_ocupacion_dificultad}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q56_ocupacion_dificultad) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q56_ocupacion_dificultad, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q56_dificultad",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q56_ocupacion_dificultad_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q56_ocupacion_dificultad', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q56_difi_prop",append = TRUE)    
+
+print(cc)
+
+```
+### Principales dificultades para acceder a un trabajo en Argentina
+
+Pregunta de selección múltiple
+
+
+```{r q57_dificultad_trabajo}
+
+
+
+## la primera es con todas las nacionalidades
+dificultades<-multiResponse(enma, items = c(
+"q57_dificultad_titulos",
+"q57_dificultad_discriminacion",
+"q57_dificultad_hogar",
+"q57_dificultad_sexual",
+"q57_dificultad_documentacion",
+"q57_dificultad_idioma",
+"q57_dificultad_edad",
+"q57_dificultad_inexperiencia",
+"q57_dificultad_falta_oferta",
+"q57_dificultad_salud",
+"q57_dificultad_desconocimiento",
+"q57_dificultad_prefiero_no" ),
+                          endorsedOption = 1)
+print("todas las nacionalidades")
+print(dificultades)
+
+write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q57_dificultad.xlsx", row.names = FALSE, sheetName ="todos",append = TRUE)    
+
+
+for (nac in nacionalidades) {
+  
+  enma_nac<-enma %>% filter(nacionalidad_var==nac)
+
+dificultades<-multiResponse(enma_nac, items = c(
+"q57_dificultad_titulos",
+"q57_dificultad_discriminacion",
+"q57_dificultad_hogar",
+"q57_dificultad_sexual",
+"q57_dificultad_documentacion",
+"q57_dificultad_idioma",
+"q57_dificultad_edad",
+"q57_dificultad_inexperiencia",
+"q57_dificultad_falta_oferta",
+"q57_dificultad_salud",
+"q57_dificultad_desconocimiento",
+"q57_dificultad_prefiero_no"),
+                          endorsedOption = 1)
+  
+  write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q57_dificultad.xlsx", row.names = FALSE, sheetName = nac, append = TRUE) 
+ 
+  print(nac)
+  print(dificultades)
+
+}
+
+
+```
+
+## Porcentaje de población que recibe subsidios o prestaciones sociales del Estado argentino
+
+
+Creo una variable subsidio=si o NO  
+
+
+
+```{r q60_subsidios}
+
+
+##creo una variable subsidio y contabilizo los que dijeron alguno
+## exccluyo los que no quisieron responder y los missing
+
+enma<- enma %>% mutate(subsidio=case_when(
+    q60_subsidios_no==1 ~ 0,
+    q60_subsidios_auh==1 ~ 1,
+    q60_subsidios_embarazo==1 ~ 1,
+    q60_subsidios_jubilacion==1 ~ 1,
+    q60_subsidios_pension==1 ~ 1,
+    q60_subsidios_pension_no_contrib==1 ~ 1,
+    q60_subsidios_progresar==1 ~ 1,
+    q60_subsidios_potenciar_trabajo==1 ~ 1,
+    q60_subsidios_inclusion_joven==1 ~ 1,
+    q60_subsidios_tarjeta_alimentar==1 ~ 1,
+    q60_subsidios_pieza==1 ~ 1,
+    q60_subsidios_desempleo==1 ~ 1,
+    q60_subsidios_otro==1 ~ 1,
+    TRUE ~ NA
+  ))
+
+
+```
+
+Absolutos  
+
+
+```{r q60_subsidios_abs}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,subsidio) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = subsidio, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="subsidio",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q60_subsidios_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'subsidio', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="subsidio_prop",append = TRUE)    
+
+print(cc)
+
+```
+###  Principales subsidios o prestaciones que recibe la población migrante del Estado argentino 
+
+Se presentan los % sobre quienes indicaron algun tipo de subsidio.  
+Se exluyen quienes no quisieron contestar y quienes indicaron no teners subsidio  
+
+
+
+```{r q60_subsidios_detalle}
+
+##excluyo de la seleccion multiple los que NO tienen subsidios y los que prefieren no contestar
+
+
+## la primera es con todas las nacionalidades
+dificultades<-multiResponse(enma, items = c(
+"q60_subsidios_auh",
+"q60_subsidios_embarazo",
+"q60_subsidios_jubilacion",
+"q60_subsidios_pension",
+"q60_subsidios_pension_no_contrib",
+"q60_subsidios_progresar",
+"q60_subsidios_potenciar_trabajo",
+"q60_subsidios_inclusion_joven",
+"q60_subsidios_tarjeta_alimentar",
+"q60_subsidios_pieza",
+"q60_subsidios_desempleo",
+"q60_subsidios_otro"),
+                          endorsedOption = 1)
+print("todas las nacionalidades")
+print(dificultades)
+
+write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q60_subsidios.xlsx", row.names = FALSE, sheetName ="todos",append = TRUE)    
+
+
+for (nac in nacionalidades) {
+  
+  enma_nac<-enma %>% filter(nacionalidad_var==nac)
+
+dificultades<-multiResponse(enma_nac, items = c(
+"q60_subsidios_auh",
+"q60_subsidios_embarazo",
+"q60_subsidios_jubilacion",
+"q60_subsidios_pension",
+"q60_subsidios_pension_no_contrib",
+"q60_subsidios_progresar",
+"q60_subsidios_potenciar_trabajo",
+"q60_subsidios_inclusion_joven",
+"q60_subsidios_tarjeta_alimentar",
+"q60_subsidios_pieza",
+"q60_subsidios_desempleo",
+"q60_subsidios_otro"),
+                          endorsedOption = 1)
+  
+  write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q60_subsidios.xlsx", row.names = FALSE, sheetName = nac, append = TRUE) 
+ 
+  print(nac)
+  print(dificultades)
+
+}
+
+
+```
+
+
+### Distribución de las dificultades que ha tenido la población para gestionar subsidios o prestaciones sociales del Estado argentino
+
+
+
+
+
+Absolutos  
+
+
+```{r q61_subsidios_problemas}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q61_subsidios_problemas) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q61_subsidios_problemas, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q61_subsidios_pbm",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q61_subsidios_problemas_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q61_subsidios_problemas', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q61_subss_pbm_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

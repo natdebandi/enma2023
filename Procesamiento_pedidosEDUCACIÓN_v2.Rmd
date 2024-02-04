@@ -1,0 +1,461 @@
+---
+title: "Pedidos grales"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## PEDIDO PROCESAMIENTO DIMENSIÓN EDUCACIÓN
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+
+
+```
+
+
+Leo base de datos con nuevas variables:
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+##PEDIDOS ESPECIALES EDUCACIÓN
+
+###Pedido36: Inconvenientes para el acceso a la educacion de les hijes según tenencia de DNI del/la padre/madre
+
+
+33.	¿Tuvo algún inconveniente para el acceso a la educación (con alguno de sus hijos/as)?  
+●	No, ninguno  
+●	Sí, problemas de cupo en la escuela   
+●	Sí, con la inscripción   
+●	Sí, por la falta de DNI argentino  
+●	Sí, con la documentación escolar del país de origen   
+●	Sí, por falta de documentación escolar argentina (certificado de finalización de estudios primarios/secundarios)  
+●	Otros problemas __________  
+
+33_agrupada  
+
+No
+Si
+```{r}
+
+
+####AYE MIRAR ESTO
+
+
+enma<-enma %>% 
+  mutate(q33_agrup=case_when(
+    
+    q33_incoveniente_educacion_no==1 ~ 0,
+    (q33_incoveniente_educacion_cupo==1  | 
+    q33_inconveniente_educacion_inscripcion==1 | 
+    q33_inconveniente_educacion_dni==1 | 
+    q33_inconveniente_educacion_documentacion_origen==1 |
+    q33_inconveniente_educacion_documentacion_argentina==1  |
+    q33_inconveniente_educacion_otro==1) ~ 1,
+    TRUE ~ NA))
+
+temp_qry <- enma %>% 
+ group_by(q33_agrup) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+temp_qry
+```
+```{r}
+q33_nuevo <- enma %>% 
+ group_by(q33_agrup,q17_dni_tenencia) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+
+
+q33_nuevo<-q33_nuevo %>% pivot_wider(names_from = q17_dni_tenencia, values_from = cantidad)
+
+q33_nuevo
+
+```
+
+
+
+```{r q36, warning=FALSE, message=FALSE}
+
+enma<-enma %>% 
+  mutate(q33_incoveniente_educacion_no=case_when(
+    q33_incoveniente_educacion_no==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_incoveniente_educacion_cupo=case_when(
+    q33_incoveniente_educacion_cupo==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_inconveniente_educacion_inscripcion=case_when(
+    q33_inconveniente_educacion_inscripcion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_inconveniente_educacion_dni=case_when(
+    q33_inconveniente_educacion_dni==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q33_inconveniente_educacion_documentacion_origen=case_when(
+    q33_inconveniente_educacion_documentacion_origen==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q33_inconveniente_educacion_documentacion_argentina=case_when(
+    q33_inconveniente_educacion_documentacion_argentina==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q33_inconveniente_educacion_otro=case_when(
+    q33_inconveniente_educacion_otro==1 ~ 1,
+    TRUE ~0))
+
+
+
+#Resultados
+pedido36<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_incoveniente_educacion_no==1]),
+            cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
+            inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
+            dni = sum(weightvec[q33_inconveniente_educacion_dni == 1]),
+            doc_origen = sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),
+             doc_arg = sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),
+            doc_otro = sum(weightvec[q33_inconveniente_educacion_otro== 1]),
+      'Ninguno'  = round(no/Poblacion*100,1),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+
+
+write.xlsx2(as.data.frame(pedido36), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido36",append = TRUE)
+
+```
+
+
+```{r p36, message=FALSE, warning=FALSE}
+
+
+#Resultados con variable q33 recodificada en sí o no
+pedido36_v2<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_no==1]),
+            si = sum(weightvec[q33_si == 1]),
+            'Ninguno'  = round(no/Poblacion*100,1),
+            'Problemas'= round(si/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido36_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido36_v2",append = TRUE)
+
+```
+
+
+
+###Pedido37: Inconvenientes para el acceso a la educacion de les hijes según situación ocupacional del/la padre/madre
+
+
+```{r p37, message=FALSE, warning=FALSE}
+
+#Resultados
+pedido37<- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_incoveniente_educacion_no==1]),
+            cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
+            inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
+            dni = sum(weightvec[q33_inconveniente_educacion_dni == 1]),
+            doc_origen = sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),
+             doc_arg = sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),
+            doc_otro = sum(weightvec[q33_inconveniente_educacion_otro== 1]),
+      'Ninguno'  = round(no/Poblacion*100,1),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+
+
+
+#Resultados con variable q33 recodificada en sí o no
+pedido37_v2<- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_no==1]),
+            si = sum(weightvec[q33_si == 1]),
+            'Ninguno'  = round(no/Poblacion*100,1),
+            'Problemas'= round(si/Poblacion*100,1))
+
+write.xlsx2(as.data.frame(pedido37), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido37",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido37_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido37_v2",append = TRUE)
+
+
+```
+
+
+###Pedido38: Inconvenientes para el acceso a la educacion de les hijes según nivel de comprensión de castellano del/la padre/madre
+
+```{r p38, message=FALSE, warning=FALSE}
+
+#Resultados
+pedido38<- enma %>% 
+  group_by(q7_nivel_castellano) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_incoveniente_educacion_no==1]),
+            cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
+            inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
+            dni = sum(weightvec[q33_inconveniente_educacion_dni == 1]),
+            doc_origen = sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),
+             doc_arg = sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),
+            doc_otro = sum(weightvec[q33_inconveniente_educacion_otro== 1]),
+      'Ninguno'  = round(no/Poblacion*100,1),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+
+
+#Resultados
+pedido38_v2<- enma %>% 
+  group_by(q7_nivel_castellano) %>% 
+  summarise(Poblacion= sum(weightvec),
+            no = sum(weightvec[q33_no==1]),
+            si = sum(weightvec[q33_si == 1]),
+            'Ninguno'  = round(no/Poblacion*100,1),
+            'Problemes'= round(si/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido38), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido38",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido38_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido38_v2",append = TRUE)
+
+
+```
+
+
+
+###Pedido39: Experiencia de discriminación en la escuela según descendencia étnica del/la padre/madre
+
+```{r p39, message=FALSE, warning=FALSE}
+
+enma<-enma %>% 
+  mutate(q5_descendencia_indigena=case_when(
+    q5_descendencia_indigena==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q5_descendencia_afro=case_when(
+    q5_descendencia_afro==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q5_descendencia_asiatica=case_when(
+    q5_descendencia_asiatica==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_ninguno=case_when(
+    q5_descendencia_ninguno==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_otro=case_when(
+    q5_descendencia_otro==1 ~ 1,
+    TRUE ~ 0))
+  
+pedido39 <- enma %>% 
+  group_by(q35_educacion_discriminacion) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido39), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido39",append = TRUE)
+
+
+```
+
+###Pedido41: Experiencia de discriminación en la escuela según situación ocupacional del/la padre/madre
+
+```{r p41, message=FALSE, warning=FALSE}
+
+pedido41<-calculate_tabulates(base=enma,
+                            x="q51_situacion_ocupacional",
+                            y="q35_educacion_discriminacion",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")  
+
+
+
+pedido41_tot<-calculate_tabulates(base=enma,
+                            x="q51_situacion_ocupacional",
+                            y="q35_educacion_discriminacion",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+write.xlsx2(as.data.frame(pedido41), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido41",append = TRUE)
+
+
+write.xlsx2(as.data.frame(pedido41_tot), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido41_tot",append = TRUE)
+
+```
+
+##Pedido42: Población que se encuentra actualmente estudiando en Argentina según motivo de la migración (q47 y q14)
+ 
+```{r 42,  message=FALSE, warning=FALSE}
+
+
+
+enma<-enma %>% 
+  mutate(q14_motivos_estudio =case_when(
+    q14_motivos_estudio==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q14_motivos_mejor_trabajo=case_when(
+    q14_motivos_mejor_trabajo==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q14_motivos_nuevas_experiencias=case_when(
+    q14_motivos_nuevas_experiencias==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_violencia_genero=case_when(
+    q14_motivos_violencia_genero==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_orientacion_sexual=case_when(
+    q14_motivos_orientacion_sexual==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_persecucion=case_when(
+    q14_motivos_persecucion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_salud=case_when(
+    q14_motivos_salud==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_habitat=case_when(
+    q14_motivos_habitat==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_necesidades_basicas=case_when(
+    q14_motivos_necesidades_basicas==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_reunificacion=case_when(
+    q14_motivos_reunificacion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_acompañar_otrx=case_when(
+    q14_motivos_acompañar_otrx==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q14_motivos_otros=case_when(
+    q14_motivos_otros==1 ~ 1,
+    TRUE ~ 0))
+
+
+
+pedido42 <- enma %>% 
+  group_by(q47_estudiando_argentina) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Estudio  = sum(weightvec[q14_motivos_estudio==1]),
+            Trabajo = sum(weightvec[q14_motivos_mejor_trabajo == 1]),
+            Experiencia = sum(weightvec[q14_motivos_nuevas_experiencias == 1]),
+            VBG        = sum(weightvec[q14_motivos_violencia_genero == 1]),
+            Orientacion        = sum(weightvec[q14_motivos_orientacion_sexual == 1]),
+            persecusion        = sum(weightvec[q14_motivos_persecucion == 1]),
+            salud        = sum(weightvec[q14_motivos_salud == 1]),
+            habitat        = sum(weightvec[q14_motivos_habitat == 1]),
+            NecBas       = sum(weightvec[q14_motivos_necesidades_basicas == 1]),
+            reunificacion       = sum(weightvec[q14_motivos_reunificacion == 1]),
+            Acomp        = sum(weightvec[q14_motivos_acompañar_otrx == 1]),
+            otros = sum(weightvec[q14_motivos_otros == 1]),
+      'Estutios'  = round(Estudio/Poblacion*100,1),
+      'Mejor trabajo'          = round(Trabajo/Poblacion*100,1),
+'Nuevas experiencias'          = round(Experiencia/Poblacion*100,1),
+'Violencia Género'          = round(VBG/Poblacion*100,1),
+'Orientación sexual'          = round(Orientacion/Poblacion*100,1),
+'Persecusión'          = round(persecusion/Poblacion*100,1),
+      'Salud'            = round(salud/Poblacion*100,1),
+'Habitat'            = round(habitat/Poblacion*100,1),
+'Necesidades básicas'            = round(NecBas/Poblacion*100,1),
+'Reunificación'            = round(reunificacion/Poblacion*100,1),
+'Acompañar a otrx'            = round(Acomp/Poblacion*100,1),
+'Otros'          = round(otros/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido42), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido42",append = TRUE)
+
+```
+ 
+##Pedido44: Inconveniente para la inscrición al sistema educativo según tenencia de dni (q50 y q17)
+ 
+```{r}
+
+
+enma<-enma %>% 
+  mutate(q50_problemas_titulos_origen=case_when(
+    q50_problemas_titulos_origen==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q50_problemas_dni=case_when(
+    q50_problemas_dni==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q50_problemas_doc_escolar=case_when(
+    q50_problemas_doc_escolar==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q50_problemas_inscripcion_online=case_when(
+    q50_problemas_inscripcion_online==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q50_problemas_costos=case_when(
+    q50_problemas_costos==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q50_problemas_discriminacion=case_when(
+    q50_problemas_discriminacion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q50_problemas_otros=case_when(
+    q50_problemas_otros==1 ~ 1,
+    TRUE ~ 0))
+  
+pedido44 <- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            titulo  = sum(weightvec[q50_problemas_titulos_origen==1]),
+            dni = sum(weightvec[q50_problemas_dni == 1]),
+            doc_escolar = sum(weightvec[q50_problemas_doc_escolar == 1]),
+            inscripcion         = sum(weightvec[q50_problemas_inscripcion_online == 1]),
+            costos         = sum(weightvec[q50_problemas_costos == 1]),
+            discriminacion         = sum(weightvec[q50_problemas_discriminacion == 1]),
+            otros = sum(weightvec[q50_problemas_otros == 1]),
+      'Título origen'  = round(titulo/Poblacion*100,1),
+      'DNI'          = round(dni/Poblacion*100,1),
+'Documentación escolar'          = round(doc_escolar/Poblacion*100,1),
+   'Inscripción online'          = round(inscripcion/Poblacion*100,1),
+'Costos'          = round(costos/Poblacion*100,1),
+      'Discriminació'            = round(discriminacion/Poblacion*100,1),
+'Otros'          = round(otros/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido44), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido44",append = TRUE)
+
+```
+ 
+ 

@@ -1,0 +1,233 @@
+---
+title: "ENMA 2023 - nacionalidades de interés"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(eph)
+library(dplyr)
+library(readr)
+library(xlsx)
+library(tidyr)
+
+#devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
+library(userfriendlyscience)
+
+
+#rm(list = ls())
+```
+
+
+
+
+
+Leo base de datos con nuevas variables:
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+# INFORME MUJERES - ENMA
+
+
+## Situación socioeconómica
+
+
+### tasa de actividad, ocupacion y desocupacion
+
+Se parte de los conpetos de la EPH:  
+https://www.indec.gob.ar/ftp/cuadros/menusuperior/eph/EPH_Conceptos.pdf  
+
+Hay que tener en cuenta que la población de la ENMA es de 18 años o más.  
+
+
+```{r indicadores}
+
+
+##creo variables:
+#- PEA: población economicamente activa
+#- ocupado
+#- desempleado
+#para facilitar el cálculo de los indicadores
+
+consulta <- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+#consulta
+
+# Población Económicamente Activa (PEA) o Fuerza de Trabajo: esta compuesta por
+# todas las personas que aportan su trabajo (lo consigan o no) para producir bienes y servicios
+# económicos, definidos según y como lo hacen los sistemas de cuentas nacionales durante un
+# período de referencia determinado. 
+
+# en la EPH se asume como parte de la PEA a todas las
+# personas de 10 años y más que en un período de referencia corto tienen trabajo y aquellos que
+# sin tenerlo están disponibles y buscan activamente un trabajo. Son parte de la PEA tanto los
+# ocupados como los desocupados. 
+
+
+##Ocupado. Se excluyen jubilados/as, estudiantes, trabajos sin remuneración y desempleados
+enma<- enma %>%
+  mutate(ocupado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 0,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/a" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+#    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+
+## desempleado. Se toma solamente la categoria seleccionada como desempleado/buscando empleo
+
+enma<- enma %>%
+  mutate(desempleado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 0,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 0,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/a" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 0,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 0,
+#    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+##PEA : activo.. parte de la PEA. Se excluye jubilades, estuduantes y trabajo sin remuneracion
+
+enma<- enma %>% mutate(activo=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/a" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+ #   q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+
+```
+
+
+### CALCULO DE TASAS
+
+```{r}
+
+# Tasa de Empleo: se calcula como porcentaje entre la población ocupada y la población
+# total (puede recalcularse según distintos límites de edad). 
+
+#Tasa de Actividad: se calcula como porcentaje entre la población económicamente activa
+#y la población total (puede recalcularse según distintos límites de edad). 
+
+# Tasa de Desocupación: se calcula como porcentaje entre la población desocupada y la
+# población económicamente activa. 
+
+
+## VER PORQUE NO ME ANDAAAAAAAAAAAAAA
+
+  indicadores <-enma |> 
+  filter(genero_var=="Mujer"|genero_var=="Varón") |>
+  #group_by(genero_var) |>
+   summarise(total= sum(weightvec['51_situacion_ocupacional'!="Otra"]),
+              ocupados=sum(weightvec[enma$ocupado==1]),
+              pea=sum(weightvec[activo==1]),
+              desempleados=sum(weightvec[desempleado==1]),
+              t_actividad=round((pea/total)*100,2),
+              t_empleo=round((ocupados/total) *100,2),
+              t_desempleo=round((desempleados/pea) *100,2)
+              )
+
+#Tasa de Actividad: se calcula como porcentaje entre la población económicamente activa
+#y la población total (puede recalcularse según distintos límites de edad). 
+
+t_actividad <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(activo,genero_var) %>%
+ summarise(cantidad= sum(weightvec)) 
+
+
+t_actividad<-t_actividad %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+
+t_actividad
+
+
+write.xlsx2(as.data.frame(t_actividad), "temp_output\\indicadores_1.xlsx", row.names = FALSE, sheetName ="actividad",append = TRUE)
+
+# Tasa de Empleo: se calcula como porcentaje entre la población ocupada y la población
+# total (puede recalcularse según distintos límites de edad). 
+
+
+t_empleo <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(ocupado,genero_var) %>%
+ summarise(cantidad= sum(weightvec)) 
+
+
+t_empleo<-t_empleo %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+
+t_empleo
+
+
+write.xlsx2(as.data.frame(t_empleo), "temp_output\\indicadores_1.xlsx", row.names = FALSE, sheetName ="ocupacion",append = TRUE)
+
+# Tasa de Desocupación: se calcula como porcentaje entre la población desocupada y la
+# población económicamente activa. 
+
+t_desempleo <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(desempleado,genero_var) %>%
+ summarise(cantidad= sum(weightvec)) 
+
+
+t_desempleo<-t_desempleo %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+
+t_desempleo
+
+
+write.xlsx2(as.data.frame(t_desempleo), "temp_output\\indicadores_1.xlsx", row.names = FALSE, sheetName ="desempleo",append = TRUE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

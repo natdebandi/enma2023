@@ -1,0 +1,229 @@
+---
+title: "ENMA 2023 - nacionalidades de interés"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(eph)
+library(dplyr)
+library(readr)
+library(xlsx)
+library(tidyr)
+
+#devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
+library(userfriendlyscience)
+
+
+#rm(list = ls())
+```
+
+
+
+
+
+Leo base de datos con nuevas variables:
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+#str(enma)
+
+```
+# INFORME MUJERES - ENMA
+
+
+## Familia
+
+### Hogar; familia e hijes
+
+### Principales indicadores de conformación del hogar
+
+1 Promedio de personas en el hogar  
+2 Promedio de cantidad de hijes nacidos en Argentina  
+3 Promedio de cantidad de hijes nacidos en el extranjero  
+4 Proporción de hogares con hijes  
+5 proporción de hogares con hijes nacidos en el extranjero  
+6 proporción de hogares con hijos menores de 18 años que viven en el extranjero  
+
+Total de la base  
+
+
+```{r familia_personas_total}
+# q26_hogar_personas
+# q29_hijos_num
+# q30_hijos_arg
+# q30_hijos_exterior
+# q31_hijos_menores_exterior
+
+### Como es un cruce por nacionalidad debo utilizar el ponderador weightvec_0
+
+
+consulta <- enma %>% 
+  summarise (promedio_personas = round(mean(q26_hogar_personas,na.rm = TRUE),0),
+             promedio_hijes_nac_arg = round(mean(q30_hijos_arg,na.rm = TRUE),0),
+             promedio_hijes_nac_ext = round(mean(q30_hijos_exterior,na.rm = TRUE),0),
+             hogar_con_hijes=round(sum((q29_hijos_num=="Si")*weightvec,na.rm=TRUE),0),
+             hogar_con_hijes_mig=round(sum((q30_hijos_exterior>0)*weightvec,na.rm=TRUE),0),
+             hogar_menores_ext=round(sum((q31_hijos_menores_exterior=="Si")*weightvec,na.rm=TRUE),0),
+             total=round(sum(weightvec),0)
+             ) %>%
+   mutate(prop_hog_hijes = round(hogar_con_hijes / total *100,2),
+          prop_hog_hijes_nac_ext=round(hogar_con_hijes_mig / total *100,2),
+          prop_hog_hijes_menores_ext=round(hogar_menores_ext / total *100,2)
+          )   
+
+consulta
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "total",append = TRUE) 
+
+
+```
+
+
+
+
+
+```{r familia_personas_pais}
+# q26_hogar_personas
+# q29_hijos_num
+# q30_hijos_arg
+# q30_hijos_exterior
+# q31_hijos_menores_exterior
+
+### Como es un cruce por nacionalidad debo utilizar el ponderador weightvec_0
+
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var) %>% 
+  summarise (promedio_personas = round(mean(q26_hogar_personas,na.rm = TRUE)),
+             promedio_hijes_nac_arg = round(mean(q30_hijos_arg,na.rm = TRUE),0),
+             promedio_hijes_nac_ext = round(mean(q30_hijos_exterior,na.rm = TRUE),0),
+             hogar_con_hijes=round(sum((q29_hijos_num=="Si")*weightvec_0,na.rm=TRUE),0),
+             hogar_con_hijes_mig=round(sum((q30_hijos_exterior>0)*weightvec_0,na.rm=TRUE),0),
+             hogar_menores_ext=round(sum((q31_hijos_menores_exterior=="Si")*weightvec_0,na.rm=TRUE),0),
+             total=round(sum(weightvec_0),0)
+             ) %>%
+   mutate(prop_hog_hijes = round(hogar_con_hijes / total *100,2),
+          prop_hog_hijes_nac_ext=round(hogar_con_hijes_mig / total *100,2),
+          prop_hog_hijes_menores_ext=round(hogar_menores_ext / total *100,2)
+          )   
+
+consulta
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "absolutos",append = TRUE) 
+
+consulta <- consulta  %>% 
+  select(nacionalidad_var,promedio_personas,promedio_hijes_nac_arg,
+                   promedio_hijes_nac_ext,
+                   prop_hog_hijes,prop_hog_hijes_nac_ext,
+                   prop_hog_hijes_menores_ext)
+
+#consulta<-t(consulta)
+print(consulta)
+
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "indicadores",append = TRUE) 
+
+
+```
+
+
+```{r}
+
+convivencia <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(q28_hogar_convivencia,genero_var) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+
+convivencia<-convivencia %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+
+convivencia
+
+#exporto el csv
+write.xlsx2(as.data.frame(convivencia), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "convivencia",append = TRUE) 
+
+```
+
+### tipología familia 1
+
+Sin conyuge/pareja ni hijos
+Sin conyuge/pareja con hijos
+Con conyuge/pareja y Sin hijos
+Con conyuge/pareja con  hijos
+
+
+
+```{r}
+
+enma<-enma %>% 
+  mutate(
+    
+    familia_hijos=case_when(
+        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="No") ~ "Sin conyuge/pareja ni hijos",
+        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="Si") ~ "Sin conyuge/pareja con hijos",
+        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="No") ~ "Con conyuge/pareja y Sin hijos",
+        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="Si") ~ "Con conyuge/pareja con  hijos",
+    TRUE ~ NA))
+
+temp_qry <- enma %>% 
+ group_by(familia_hijos) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+temp_qry
+
+
+#exporto el csv
+write.xlsx2(as.data.frame(temp_qry), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "familia_total",append = TRUE) 
+
+```
+## cruzo por género
+
+
+```{r}
+
+familia <- enma %>% 
+  filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(familia_hijos,genero_var) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+
+
+familia<-familia %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+
+familia
+
+
+#exporto el csv
+write.xlsx2(as.data.frame(familia), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "familia_genero",append = TRUE) 
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
