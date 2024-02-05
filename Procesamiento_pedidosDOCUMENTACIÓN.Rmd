@@ -88,3 +88,232 @@ unique(enma$tiempo_residencia_5_var)
 
 ```
 
+
+
+
+
+```{r}
+enma<-enma %>% 
+  mutate(q33_recod=case_when(
+    (q33_incoveniente_educacion_no==1 & (q33_inconveniente_educacion_dni!=1 & q33_incoveniente_educacion_cupo!=1 & q33_inconveniente_educacion_inscripcion!=1   & q33_inconveniente_educacion_documentacion_origen!=1  &
+      q33_inconveniente_educacion_documentacion_argentina!=1 &
+      q33_inconveniente_educacion_otro!=1)) ~ 1,
+    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~2,
+    TRUE ~ 0))
+
+q33_ver<-enma %>% 
+  group_by(q33_recod) %>%   summarise(n=sum(weightvec))
+
+
+```
+
+##PEDIDO Q25: NATURALIZACIÓN
+
+¿Sabía usted que, a partir de los dos años de residencia continua en el país, puede naturalizarse y adquirir así la nacionalidad argentina?
+
+```{r}
+names(enma)
+
+q25<-enma %>% 
+  group_by(q25_naturalizacion) %>%   summarise(n=sum(weightvec))
+
+q25<-calculate_tabulates(base=enma,
+                            x="q25_naturalización",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+```
+
+
+##PEDIDO RECODIFICACIÓN Q21
+```{r}
+
+
+q20_q17<-calculate_tabulates(base=enma,
+                             x="q20_dni_dificultad_binaria",
+                            y="q17_dni_tenencia",
+                               add.totals = 'row',
+                               weights = 'weightvec')
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q20_q17), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q20_q17",append = TRUE)
+
+
+#Resultados 
+q21rec<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q21rec), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q21",append = TRUE)
+
+#Resultados por tenencia dni
+
+q21_dni<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q21_dni), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q21_dni",append = TRUE)
+
+#Resultados según situación documentaria
+
+unique(enma$q17_dni_tenencia)
+q21_sitdoc<- enma %>% 
+  group_by(q19_situacion_documentaria) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1)) %>% 
+  slice(1:8)
+
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q21_sitdoc), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q21_sitdoc",append = TRUE)
+
+```
+
+
+##PEDIDO DE RECODIFICACIÓN Q25
+
+```{r}
+#Propuesta 1: recodificación. La opción "No, y no tengo intención de naturalizarme" quedaría bajo la categoría "No quiere naturalizarse".
+
+enma<-enma %>% 
+  mutate(q25_rec= case_when(
+    q25_naturalizacion== "No, y no tengo intención de naturalizarme" | q25_naturalizacion=="Sí, pero no quiero naturalizarme" ~ "No quiere naturalizarse",
+    q25_naturalizacion== "Sí, pero no entiendo bien en qué consiste el trámite" | q25_naturalizacion== "No, y no tengo intención de naturalizarme" | q25_naturalizacion=="No, y tendría interés en naturalizarme" ~ "Le falta información",
+    q25_naturalizacion== "Sí, ya inicié el trámite de naturalización" ~ "Inició el trámite",
+    q25_naturalizacion=="Sí, ya estoy naturalizado/a" ~ "Sí, ya estoy naturalizado/a",
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~ "No cumple con los requisitos"))
+
+consulta <- enma %>% 
+  group_by(q25_rec) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+unique(enma$q25_naturalizacion)
+
+#Opción2: genero una variable de respuesta múltiple
+
+enma<-enma %>% 
+  mutate(No_quiere_naturaliZarse= case_when(
+    q25_naturalizacion== "No, y no tengo intención de naturalizarme" ~ 1,
+    q25_naturalizacion== "Sí, pero no quiero naturalizarme" ~ 1,
+    q25_naturalizacion=="No, y tendría interés en naturalizarme" ~0,
+    q25_naturalizacion== "Sí, ya inicié el trámite de naturalización" ~0,
+    q25_naturalizacion== "Sí, pero no entiendo bien en qué consiste el trámite" ~0,
+    q25_naturalizacion== "Sí, ya estoy naturalizado/a" ~ 0,
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~ 0)) %>% 
+  mutate(Falta_info=case_when(
+        q25_naturalizacion== "No, y no tengo intención de naturalizarme" ~ 1,
+    q25_naturalizacion== "Sí, pero no quiero naturalizarme" ~ 0,
+    q25_naturalizacion=="No, y tendría interés en naturalizarme" ~1,
+    q25_naturalizacion== "Sí, ya inicié el trámite de naturalización" ~0,
+    q25_naturalizacion== "Sí, pero no entiendo bien en qué consiste el trámite" ~1,
+    q25_naturalizacion== "Sí, ya estoy naturalizado/a" ~ 0,
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~ 0)) %>%  mutate(Naturalizado=case_when(q25_naturalizacion== "No, y no tengo intención de naturalizarme" ~ 0,
+    q25_naturalizacion== "Sí, pero no quiero naturalizarme" ~ 0,
+    q25_naturalizacion=="No, y tendría interés en naturalizarme" ~0,
+    q25_naturalizacion== "Sí, ya inicié el trámite de naturalización" ~0,
+    q25_naturalizacion== "Sí, pero no entiendo bien en qué consiste el trámite" ~0,
+    q25_naturalizacion== "Sí, ya estoy naturalizado/a" ~ 1,
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~ 0))%>% 
+  mutate(Inicio_tramite=case_when(
+        q25_naturalizacion== "No, y no tengo intención de naturalizarme" ~ 0,
+    q25_naturalizacion== "Sí, pero no quiero naturalizarme" ~ 0,
+    q25_naturalizacion=="No, y tendría interés en naturalizarme" ~0,
+    q25_naturalizacion== "Sí, ya inicié el trámite de naturalización" ~1,
+    q25_naturalizacion== "Sí, pero no entiendo bien en qué consiste el trámite" ~0,
+    q25_naturalizacion== "Sí, ya estoy naturalizado/a" ~ 0,
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~ 0)) %>%  mutate(no_cumple_req=case_when(
+    q25_naturalizacion== "No, y no tengo intención de naturalizarme" ~ 0,
+    q25_naturalizacion== "Sí, pero no quiero naturalizarme" ~ 0,
+    q25_naturalizacion=="No, y tendría interés en naturalizarme" ~0,
+    q25_naturalizacion== "Sí, ya inicié el trámite de naturalización" ~0,
+    q25_naturalizacion== "Sí, pero no entiendo bien en qué consiste el trámite" ~0,
+    q25_naturalizacion== "Sí, ya estoy naturalizado/a" ~ 0,
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~ 1))
+
+
+
+
+#Resultados 
+q25rec<- enma %>% 
+    summarise(Poblacion= sum(weightvec),
+            no_quiere  = sum(weightvec[No_quiere_naturaliZarse==1]),
+            falta_info = sum(weightvec[Falta_info == 1]),
+            naturalizade = sum(weightvec[Naturalizado == 1]),
+            inicio_tram= sum(weightvec[Inicio_tramite == 1]),
+            No_cumple_requisito = sum(weightvec[no_cumple_req == 1]),
+      'No quiere naturalizarse'  = round(no_quiere/Poblacion*100,1),
+      'Falta de información'          = round(falta_info/Poblacion*100,1),
+      'Naturalizado/a'          = round(naturalizade/Poblacion*100,1),
+      'Inció trámite naturalización'          = round(inicio_tram/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_requisito/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q25rec), "tables/2.Documentación/cuadros_pedido51.xlsx", row.names = FALSE, sheetName ="univariado",append = TRUE)
+
+
+
+#Resultados 
+q25rec_dni<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+    summarise(Poblacion= sum(weightvec),
+            no_quiere  = sum(weightvec[No_quiere_naturaliZarse==1]),
+            falta_info = sum(weightvec[Falta_info == 1]),
+            naturalizade = sum(weightvec[Naturalizado == 1]),
+            inicio_tram= sum(weightvec[Inicio_tramite == 1]),
+            No_cumple_requisito = sum(weightvec[no_cumple_req == 1]),
+      'No quiere naturalizarse'  = round(no_quiere/Poblacion*100,1),
+      'Falta de información'          = round(falta_info/Poblacion*100,1),
+      'Naturalizado/a'          = round(naturalizade/Poblacion*100,1),
+      'Inció trámite naturalización'          = round(inicio_tram/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_requisito/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q25rec_dni), "tables/2.Documentación/cuadros_pedido51.xlsx", row.names = FALSE, sheetName ="dni",append = TRUE)
+
+#Resultados 
+q25rec_edad<- enma %>% 
+  group_by(edad_ag2_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            no_quiere  = sum(weightvec[No_quiere_naturaliZarse==1]),
+            falta_info = sum(weightvec[Falta_info == 1]),
+            naturalizade = sum(weightvec[Naturalizado == 1]),
+            inicio_tram= sum(weightvec[Inicio_tramite == 1]),
+            No_cumple_requisito = sum(weightvec[no_cumple_req == 1]),
+      'No quiere naturalizarse'  = round(no_quiere/Poblacion*100,1),
+      'Falta de información'          = round(falta_info/Poblacion*100,1),
+      'Naturalizado/a'          = round(naturalizade/Poblacion*100,1),
+      'Inció trámite naturalización'          = round(inicio_tram/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_requisito/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q25rec_edad), "tables/2.Documentación/cuadros_pedido51.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+
+```
+

@@ -32,7 +32,7 @@ Leo base de datos con nuevas variables:
 # Lectura de archivo CSV
 
 
-enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -74,11 +74,25 @@ enma<-enma %>%
     TRUE ~0))
 
 
+enma<- enma %>% 
+  mutate(q32_num=case_when(
+    q32_asistencia_educacion=="Si, al menos alguno/a" ~ 1,
+    q32_asistencia_educacion=="No, ninguno" ~ 0,
+    TRUE ~ NA))
 
-#Resultados
+
+q32_check<-enma %>% 
+  calculate_tabulates(base = enma, 
+                              x = 'q17_dni_tenencia', 
+                              y = 'q32_num', 
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#Resultados ##REVISAR!!
 pedido36<- enma %>% 
   group_by(q17_dni_tenencia) %>% 
-  summarise(Poblacion= sum(weightvec),
+  filter(q32_num==1) %>% 
+  summarise(Poblacion = sum(weightvec),
             no = sum(weightvec[q33_incoveniente_educacion_no==1]),
             cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
             inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
@@ -104,13 +118,20 @@ write.xlsx2(as.data.frame(pedido36), "tables/3.Educación/cuadros_educacion.xlsx
 
 
 #Resultados con variable q33 recodificada en sí o no
-pedido36_v2<- enma %>% 
-  group_by(q17_dni_tenencia) %>% 
-  summarise(Poblacion= sum(weightvec),
-            no = sum(weightvec[q33_no==1]),
-            si = sum(weightvec[q33_si == 1]),
-            'Ninguno'  = round(no/Poblacion*100,1),
-            'Problemas'= round(si/Poblacion*100,1))
+#pedido36_v2<- enma %>% 
+#  group_by(q17_dni_tenencia) %>% 
+#  summarise(Poblacion= sum(weightvec),
+#            no = sum(weightvec[q33_no==1]),
+#            si = sum(weightvec[q33_si == 1]),
+#            'Ninguno'  = round(no/Poblacion*100,1),
+#            'Problemas'= round(si/Poblacion*100,1))
+
+pedido33_rev<-calculate_tabulates(base=enma,
+                            x="q33_recod",
+                            y="q17_dni_tenencia",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
 
 
 write.xlsx2(as.data.frame(pedido36_v2), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido36_v2",append = TRUE)
@@ -123,6 +144,8 @@ write.xlsx2(as.data.frame(pedido36_v2), "tables/3.Educación/cuadros_educacion.x
 
 
 ```{r p37, message=FALSE, warning=FALSE}
+
+###revisar!!!!!!!!!!!!!!!!!!!!!
 
 #Resultados
 pedido37<- enma %>% 
@@ -146,14 +169,13 @@ pedido37<- enma %>%
 
 
 
-#Resultados con variable q33 recodificada en sí o no
-pedido37_v2<- enma %>% 
-  group_by(q51_situacion_ocupacional) %>% 
-  summarise(Poblacion= sum(weightvec),
-            no = sum(weightvec[q33_no==1]),
-            si = sum(weightvec[q33_si == 1]),
-            'Ninguno'  = round(no/Poblacion*100,1),
-            'Problemas'= round(si/Poblacion*100,1))
+pedido37_rev<-calculate_tabulates(base=enma,
+                            x="q33_recod",
+                            y="q51_situacion_ocupacional",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
 
 write.xlsx2(as.data.frame(pedido37), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido37",append = TRUE)
 
@@ -171,7 +193,7 @@ write.xlsx2(as.data.frame(pedido37_v2), "tables/3.Educación/cuadros_educacion.x
 #Resultados
 pedido38<- enma %>% 
   group_by(q7_nivel_castellano) %>% 
-  summarise(Poblacion= sum(weightvec),
+  summarise(Poblacion= sum(weightvec), ###REVISAR!!
             no = sum(weightvec[q33_incoveniente_educacion_no==1]),
             cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
             inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
@@ -190,14 +212,20 @@ pedido38<- enma %>%
 
 
 #Resultados
-pedido38_v2<- enma %>% 
-  group_by(q7_nivel_castellano) %>% 
-  summarise(Poblacion= sum(weightvec),
-            no = sum(weightvec[q33_no==1]),
-            si = sum(weightvec[q33_si == 1]),
-            'Ninguno'  = round(no/Poblacion*100,1),
-            'Problemes'= round(si/Poblacion*100,1))
+#pedido38_v2<- enma %>% 
+#  group_by(q7_nivel_castellano) %>% 
+#  summarise(Poblacion= sum(weightvec),
+#            no = sum(weightvec[q33_no==1]),
+#            si = sum(weightvec[q33_si == 1]),
+#            'Ninguno'  = round(no/Poblacion*100,1),
+#            'Problemes'= round(si/Poblacion*100,1))
 
+
+pedido38_rev<-calculate_tabulates(base=enma,
+                            x="q33_recod",
+                            y="q7_nivel_castellano",
+                            add.totals = 'row',
+                            weights = "weightvec")
 
 write.xlsx2(as.data.frame(pedido38), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido38",append = TRUE)
 
@@ -243,6 +271,7 @@ pedido39 <- enma %>%
 'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
       'Ninguna'            = round(Ninguno/Poblacion*100,1),
 'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
 
 
 write.xlsx2(as.data.frame(pedido39), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido39",append = TRUE)
@@ -361,6 +390,19 @@ write.xlsx2(as.data.frame(pedido42), "tables/3.Educación/cuadros_educacion.xlsx
 ```{r}
 
 
+pedido44_rev<-calculate_tabulates(base=enma,
+                            x="q49_estudiando_inconvenientes",
+                            y="q17_dni_tenencia",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+q47<-enma %>% 
+  group_by(q47_estudiando_argentina) %>% 
+  summarise(n=sum(weightvec))
+q49<-enma %>% 
+  group_by(q49_estudiando_inconvenientes, q17_dni_tenencia) %>% 
+  summarise(n=sum(weightvec))
+
 enma<-enma %>% 
   mutate(q50_problemas_titulos_origen=case_when(
     q50_problemas_titulos_origen==1 ~ 1,
@@ -383,10 +425,19 @@ enma<-enma %>%
   mutate(q50_problemas_otros=case_when(
     q50_problemas_otros==1 ~ 1,
     TRUE ~ 0))
-  
+
+enma<-enma %>% 
+  mutate(q49_estudiando_inconvenientes=case_when(
+    q49_estudiando_inconvenientes=="Sí" ~ 1,
+    q49_estudiando_inconvenientes=="No tuve ningún problema" ~ 2,
+    TRUE ~ NA))
+
+REVISION<-enma %>% group_by(q17_dni_tenencia) %>% 
+  summarise(n=sum(weightvec[q49_estudiando_inconvenientes==1]))
+
+
 pedido44 <- enma %>% 
-  group_by(q17_dni_tenencia) %>% 
-  summarise(Poblacion= sum(weightvec),
+  summarise(Poblacion= sum(weightvec[q49_estudiando_inconvenientes==1]),
             titulo  = sum(weightvec[q50_problemas_titulos_origen==1]),
             dni = sum(weightvec[q50_problemas_dni == 1]),
             doc_escolar = sum(weightvec[q50_problemas_doc_escolar == 1]),

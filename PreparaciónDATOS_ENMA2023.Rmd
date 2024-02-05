@@ -244,9 +244,9 @@ enma<-enma %>%
   mutate(q33_recod=case_when(
     (q33_incoveniente_educacion_no==1 & (q33_inconveniente_educacion_dni!=1 & q33_incoveniente_educacion_cupo!=1 & q33_inconveniente_educacion_inscripcion!=1   & q33_inconveniente_educacion_documentacion_origen!=1  &
       q33_inconveniente_educacion_documentacion_argentina!=1 &
-      q33_inconveniente_educacion_otro!=1)) ~ 1,
-    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~2,
-    TRUE ~ 0))
+      q33_inconveniente_educacion_otro!=1)) ~ "No tuvo inconveniente",
+    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~"Sí, tuvo inconveniente",
+    TRUE ~ NA))
 
 
 
@@ -432,7 +432,10 @@ enma<-enma %>%
     TRUE ~ 0)) %>% 
   mutate(q60_contributivas= case_when(
     q60_subsidios_desempleo==1 | q60_subsidios_pension==1 ~ 1,
-    TRUE ~0 ))
+    TRUE ~0 )) %>% 
+  mutate(q60_no_recibe= case_when(
+    q60_subsidios_no==1 & q60_no_contributivas!=1 & q60_contributivas!=1 ~1,
+    TRUE ~0))
 
 
 
@@ -455,6 +458,38 @@ no_contributivas
 
 
 
+```
+
+
+##RECODIFICO Q21: Problemas para tramitar documentación argentina
+
+Tuve problemas con:
+ Los turnos de Migraciones
+ La demora en los trámites de Migraciones y/o RENAPER
+ La falta de internet, teléfono, computadora.
+ El costo de los trámites
+ La documentación de mi país de origen 
+ El sistema online para el trámite (RADEX)
+ La falta de información
+ La inscripción de mi identidad de género 
+ Otros: 
+
+```{r}
+
+names(enma)
+enma<-enma %>% 
+  mutate(q21_burocratico_adm=case_when(
+    q21_dni_dificultad_turnos==1 | q21_dni_dificultad_demora==1 | q21_dni_dificultad_costo==1 | q21_dni_dificultad_turnos.1==1 | q21_dni_dificultad_identidad_genero==1~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q21_falta_info= case_when(
+    q21_dni_dificultad_falta_info==1 ~ 1,
+    TRUE ~0 )) %>% 
+  mutate(q21_no_cumple_req=case_when(
+    q21_dni_dificultad_internet==1 | q21_dni_dificultad_documentacion_origen==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q21_otros= case_when(
+    q21_dni_dificultad_otros==1 ~ 1,
+    TRUE ~0))
 ```
 
 

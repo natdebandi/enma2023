@@ -41,7 +41,7 @@ Leo base de datos con nuevas variables:
 # Lectura de archivo CSV
 
 
-enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 ```
 
@@ -356,11 +356,21 @@ enma<-enma %>%
     q40_salud_acceso_dificultades_otra==1~ 1,
     TRUE~0))
 
+enma<-enma %>% mutate(q39_recod= case_when(
+  q39_salud_acceso=="Siempre" | q39_salud_acceso=="Frecuentemente" | q39_salud_acceso=="Alguna vez" ~ 1,
+  TRUE ~ 0))
 
+q39_check<- calculate_tabulates(base = enma, 
+                              x = 'q39_salud_acceso', 
+                              y = 'q39_recod', 
+                              add.totals = 'row',
+                              weights = 'weightvec')
+  
 
 #Resultados
 pedido12<- enma %>% 
-  group_by(q29_hijos_num) %>% 
+  group_by(q29_hijos_num) %>%
+  filter(q39_recod==1) %>% 
   summarise(Poblacion= sum(weightvec),
             DNI = sum(weightvec[q40_dni==1]),
             domicilio = sum(weightvec[q40_domicilio == 1]),
@@ -442,6 +452,7 @@ enma<-enma %>%
 #Resultados
 pedido35<- enma %>% 
   group_by(q7_nivel_castellano) %>% 
+  filter(q39_recod==1) %>%
   summarise(Poblacion= sum(weightvec),
             DNI = sum(weightvec[q40_dni==1]),
             domicilio = sum(weightvec[q40_domicilio == 1]),
