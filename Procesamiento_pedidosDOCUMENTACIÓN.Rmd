@@ -137,7 +137,7 @@ q20_q17<-calculate_tabulates(base=enma,
                                weights = 'weightvec')
 
 #guardo tabulado
-write.xlsx2(as.data.frame(q20_q17), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q20",append = TRUE)
+write.xlsx2(as.data.frame(q20_q17), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q20_q17",append = TRUE)
 
 
 #Resultados 
@@ -190,10 +190,6 @@ q21_sitdoc<- enma %>%
 'Otras dificultades' = round(Otros/Poblacion*100,1)) %>% 
   slice(1:8)
 
-temp_qry <- enma %>% 
- group_by(q19_situacion_documentaria, q20_dni_dificultad_binaria) %>%
- summarise(cantidad= round(sum(weightvec),0)) 
-temp_qry
 
 #guardo tabulado
 write.xlsx2(as.data.frame(q21_sitdoc), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q21_sitdoc",append = TRUE)
