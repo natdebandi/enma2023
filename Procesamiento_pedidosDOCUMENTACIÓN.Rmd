@@ -125,7 +125,78 @@ q25<-calculate_tabulates(base=enma,
 
 ```
 
+
+##PEDIDO RECODIFICACIÓN Q21
 ```{r}
+
+
+q20_q17<-calculate_tabulates(base=enma,
+                             x="q20_dni_dificultad_binaria",
+                            y="q17_dni_tenencia",
+                               add.totals = 'row',
+                               weights = 'weightvec')
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q20_q17), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q20",append = TRUE)
+
+
+#Resultados 
+q21rec<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q21rec), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q21",append = TRUE)
+
+#Resultados por tenencia dni
+
+q21_dni<- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q21_dni), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q21_dni",append = TRUE)
+
+#Resultados según situación documentaria
+
+unique(enma$q17_dni_tenencia)
+q21_sitdoc<- enma %>% 
+  group_by(q19_situacion_documentaria) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1)) %>% 
+  slice(1:8)
+
+temp_qry <- enma %>% 
+ group_by(q19_situacion_documentaria, q20_dni_dificultad_binaria) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+temp_qry
+
+#guardo tabulado
+write.xlsx2(as.data.frame(q21_sitdoc), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="q21_sitdoc",append = TRUE)
 
 ```
 

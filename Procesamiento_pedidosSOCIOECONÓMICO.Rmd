@@ -373,7 +373,7 @@ write.xlsx2(as.data.frame(pedido60_explor), "tables/5.Socioeconómica/cuadros_pe
 #Resultados univariado
 pedido60 <- enma %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -387,7 +387,7 @@ write.xlsx2(as.data.frame(pedido60), "tables/5.Socioeconómica/cuadros_pedido60.
 pedido60_genero <- enma %>% 
   group_by(genero_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -401,7 +401,7 @@ write.xlsx2(as.data.frame(pedido60_genero), "tables/5.Socioeconómica/cuadros_pe
 pedido60_edad <- enma %>% 
   group_by(edad_ag_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -415,7 +415,7 @@ write.xlsx2(as.data.frame(pedido60_edad), "tables/5.Socioeconómica/cuadros_pedi
 pedido60_edad10 <- enma %>% 
   group_by(edad_10_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -429,7 +429,7 @@ write.xlsx2(as.data.frame(pedido60_edad10), "tables/5.Socioeconómica/cuadros_pe
 pedido60_edad2 <- enma %>% 
   group_by(edad_ag2_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -443,7 +443,7 @@ write.xlsx2(as.data.frame(pedido60_edad2), "tables/5.Socioeconómica/cuadros_ped
 pedido60_tiempores <- enma %>% 
   group_by(tiempo_residencia_3_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -459,7 +459,7 @@ write.xlsx2(as.data.frame(pedido60_tiempores), "tables/5.Socioeconómica/cuadros
 pedido60_tiempores2 <- enma %>% 
   group_by(tiempo_residencia_5_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -474,7 +474,7 @@ write.xlsx2(as.data.frame(pedido60_tiempores2), "tables/5.Socioeconómica/cuadro
 pedido60_migrec <- enma %>% 
   group_by(migracion_reciente_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -490,7 +490,7 @@ write.xlsx2(as.data.frame(pedido60_migrec), "tables/5.Socioeconómica/cuadros_pe
 pedido60_niveled <- enma %>% 
   group_by(nivel_educativo_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -507,7 +507,7 @@ write.xlsx2(as.data.frame(pedido60_niveled), "tables/5.Socioeconómica/cuadros_p
 pedido60_seccomp <- enma %>% 
   group_by(secundario_completo_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -524,7 +524,7 @@ write.xlsx2(as.data.frame(pedido60_seccomp), "tables/5.Socioeconómica/cuadros_p
 pedido60_region <- enma %>% 
   group_by(region_CABA_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -540,7 +540,7 @@ write.xlsx2(as.data.frame(pedido60_region), "tables/5.Socioeconómica/cuadros_pe
 pedido60_MERCOSUR<- enma %>% 
   group_by(nac_agrupada) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -556,7 +556,7 @@ write.xlsx2(as.data.frame(pedido60_MERCOSUR), "tables/5.Socioeconómica/cuadros_
 pedido60_nacionalidad<- enma %>% 
   group_by(nacionalidad_var) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
@@ -572,7 +572,7 @@ write.xlsx2(as.data.frame(pedido60_nacionalidad), "tables/5.Socioeconómica/cuad
 pedido60_dni <- enma %>% 
   group_by(q17_dni_tenencia) %>% 
   summarise(Poblacion= sum(weightvec),
-            No_recibe  = sum(weightvec[q60_subsidios_no==1]),
+            No_recibe  = sum(weightvec[q60_no_recibe==1]),
             Prestacion_contributiva = sum(weightvec[q60_contributivas == 1]),
             Prestacion_no_contributiva = sum(weightvec[q60_no_contributivas == 1]),
       'No recibe subsidios/prestaciones'  = round(No_recibe/Poblacion*100,1),
