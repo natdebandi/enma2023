@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 ---
 
 
-## PEDIDO PROCESAMIENTO DIMENSIÓN EDUCACIÓN
+## PEDIDO PROCESAMIENTO SOCIOECONOMICAS
 
 
 ```{r setup, message=FALSE, warning=FALSE}
@@ -32,7 +32,6 @@ Leo base de datos con nuevas variables:
 
 # Lectura de archivo CSV
 
-
 enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 
@@ -46,6 +45,7 @@ str(enma)
 
 ##PEDIDOS ESPECIALES 
 
+
 ###Pedido59: ESTRATEGIAS PARA CUBRIR GASTOS
 ```{r q59, warning=FALSE, message=FALSE}
 
@@ -57,11 +57,12 @@ pedido59_explor<-multiResponse(enma, items = c("Ahorro", "Prestamo_entorno", "Ay
                                    "Prefiero_no_reponder"),
                    endorsedOption = 1)
 
+pedido59_explor
 
 #guardo tabulado
 write.xlsx2(as.data.frame(pedido59_explor), "tables/5.Socioeconómica/cuadros_pedido59.xlsx", row.names = FALSE, sheetName ="exploratorio",append = TRUE)
 
-
+### me parece que Poblacion aca abajo, por ahi no exlcuye los missing no?
 
 #Resultados
 pedido59 <- enma %>%
@@ -353,6 +354,40 @@ write.xlsx2(as.data.frame(pedido59_dni), "tables/5.Socioeconómica/cuadros_pedid
 
 
 ```
+```{r}
+#análisis exploratorio de respuesta múltiple
+
+pedido60_explor<-multiResponse(enma, items = c(
+  "q60_subsidios_no", 
+  "q60_subsidios_auh", 
+  "q60_subsidios_embarazo", 
+  "q60_subsidios_jubilacion", 
+  "q60_subsidios_pension", 
+  "q60_subsidios_pension_no_contrib", 
+  "q60_subsidios_progresar", 
+  "q60_subsidios_potenciar_trabajo", 
+  "q60_subsidios_inclusion_joven", 
+  "q60_subsidios_tarjeta_alimentar", 
+  "q60_subsidios_pieza", 
+  "q60_subsidios_desempleo", 
+  "q60_subsidios_otro", 
+  "q60_subsidios_prefiero_no"),
+                   endorsedOption = 1)
+
+
+pedido60_explor
+
+
+
+```
+
+```{r}
+temp_qry<-enma %>%
+  group_by(q60_subsidios_no) %>%
+  summarise(tota=sum(weightvec))
+
+temp_qry
+```
 
 
 
@@ -361,10 +396,24 @@ write.xlsx2(as.data.frame(pedido59_dni), "tables/5.Socioeconómica/cuadros_pedid
 
 #análisis exploratorio de respuesta múltiple
 
-pedido60_explor<-multiResponse(enma, items = c("q60_subsidios_no", "q60_subsidios_auh", "q60_subsidios_embarazo", "q60_subsidios_jubilacion", "q60_subsidios_pension", "q60_subsidios_pension_no_contrib", "q60_subsidios_progresar", "q60_subsidios_potenciar_trabajo", "q60_subsidios_inclusion_joven", "q60_subsidios_tarjeta_alimentar", "q60_subsidios_pieza", "q60_subsidios_desempleo", "q60_subsidios_otro", "q60_subsidios_prefiero_no"),
+pedido60_explor<-multiResponse(enma, items = c(
+  "q60_subsidios_no", 
+  "q60_subsidios_auh", 
+  "q60_subsidios_embarazo", 
+  "q60_subsidios_jubilacion", 
+  "q60_subsidios_pension", 
+  "q60_subsidios_pension_no_contrib", 
+  "q60_subsidios_progresar", 
+  "q60_subsidios_potenciar_trabajo", 
+  "q60_subsidios_inclusion_joven", 
+  "q60_subsidios_tarjeta_alimentar", 
+  "q60_subsidios_pieza", 
+  "q60_subsidios_desempleo", 
+  "q60_subsidios_otro", 
+  "q60_subsidios_prefiero_no"),
                    endorsedOption = 1)
 
-
+pedido60_explor
 #guardo tabulado
 write.xlsx2(as.data.frame(pedido60_explor), "tables/5.Socioeconómica/cuadros_pedido60.xlsx", row.names = FALSE, sheetName ="exploratorio",append = TRUE)
 
