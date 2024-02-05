@@ -32,7 +32,7 @@ Leo base de datos con nuevas variables:
 # Lectura de archivo CSV
 
 
-enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -94,7 +94,7 @@ enma<- enma %>%
     q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
     q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
 #    q51_situacion_ocupacional=="Otra" ~ 0,
-    TRUE ~ NA
+    TRUE ~ 0
   ))
 
 
@@ -111,7 +111,7 @@ enma<- enma %>%
     q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
     q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 0,
 #    q51_situacion_ocupacional=="Otra" ~ 0,
-    TRUE ~ NA
+    TRUE ~ 0
   ))
 
 ##PEA : activo.. parte de la PEA. Se excluye jubilades, estuduantes y trabajo sin remuneracion
@@ -126,7 +126,7 @@ enma<- enma %>% mutate(activo=case_when(
     q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
     q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
  #   q51_situacion_ocupacional=="Otra" ~ 0,
-    TRUE ~ NA
+    TRUE ~ 0
   ))
 
 
@@ -149,25 +149,46 @@ enma<- enma %>% mutate(activo=case_when(
 
 ## VER PORQUE NO ME ANDAAAAAAAAAAAAAA
 
-  indicadores <-enma |> 
-  filter(genero_var=="Mujer"|genero_var=="Varón") |>
-  #group_by(genero_var) |>
-   summarise(total= sum(weightvec['51_situacion_ocupacional'!="Otra"]),
-              ocupados=sum(weightvec[enma$ocupado==1]),
-              pea=sum(weightvec[activo==1]),
-              desempleados=sum(weightvec[desempleado==1]),
-              t_actividad=round((pea/total)*100,2),
-              t_empleo=round((ocupados/total) *100,2),
-              t_desempleo=round((desempleados/pea) *100,2)
-              )
+#tasas de para toda la población
+
+indicadores_tot <-enma %>% 
+  filter((genero_var=="Mujer"|genero_var=="Varón")& (q51_situacion_ocupacional!="Otra")) %>% 
+  #group_by(genero_var) %>% 
+   summarise(total= sum(weightvec),
+             ocupados=sum(weightvec[ocupado==1]),
+             pea=sum(weightvec[activo==1]),
+             desempleados=sum(weightvec[desempleado==1]),
+             t_actividad=round((pea/total)*100,2),
+             t_empleo=round((ocupados/total) *100,2),
+             t_desempleo=round((desempleados/pea) *100,2))
+
+
+#tasas según género (varón/mujer)
+
+indicadores_genero <-enma %>% 
+  filter((genero_var=="Mujer"|genero_var=="Varón")& (q51_situacion_ocupacional!="Otra")) %>% 
+  group_by(genero_var) %>% 
+   summarise(total= sum(weightvec),
+             ocupados=sum(weightvec[ocupado==1]),
+             pea=sum(weightvec[activo==1]),
+             desempleados=sum(weightvec[desempleado==1]),
+             t_actividad=round((pea/total)*100,2),
+             t_empleo=round((ocupados/total) *100,2),
+             t_desempleo=round((desempleados/pea) *100,2))
+
 
 #Tasa de Actividad: se calcula como porcentaje entre la población económicamente activa
 #y la población total (puede recalcularse según distintos límites de edad). 
 
 t_actividad <- enma %>% 
  filter(genero_var=="Mujer"|genero_var=="Varón") %>%
- group_by(activo,genero_var) %>%
- summarise(cantidad= sum(weightvec)) 
+ group_by(actividad,genero_var) %>%
+ summarise(cantidad= sum(weightvec))
+
+t_actividad <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(genero_var) %>%
+ summarise(cantidad= sum(weightvec))
 
 
 t_actividad<-t_actividad %>% pivot_wider(names_from = genero_var, values_from = cantidad)
