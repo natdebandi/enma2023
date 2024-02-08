@@ -492,7 +492,7 @@ enma<-enma %>%
     TRUE ~0))
 ```
 
-##RECODIFICO Q69.
+##RECODIFICO Q69. Pedido 48
 
 Pedido 48: Agrupar pregunta q68 (aparece como q69) en Desinformación, Desinteres, No cumple requisitos, Obstáculos materiales
 
@@ -518,6 +518,40 @@ enma<-enma %>%
   mutate(q69_obs_materiales=case_when(q69_participacion_no_lejania==1 | q69_participacion_no_permiso==1 ~ 1,
                                       TRUE ~ 0))
 ```
+
+
+#RECODIFICO Q34. Pedido 47
+
+q34_razon_no_asisten	Agrupar las respuestas en 3 categorias: Son mayores.../ Aun no están en edad.../ Tercera categoria que agrupe las 6 opciones (otros motivos, dejaron de asistir, cupo, documentacion, inscripcion, certificados)
+
+
+```{r q34}
+
+enma<-enma %>% 
+  mutate(q34_rec=case_when(q34_asistencia_educacion_razon=="Son mayores y ya finalizaron la escuela"~ "Son mayores y ya finalizaron la escuela",
+                           q34_asistencia_educacion_razon=="Aún no están en edad escolar" ~ "Aún no están en edad escolar",
+                           NA ~ NA,
+                           TRUE ~ "Otras"))
+
+
+```
+
+
+##Pedido 45: recodifico tipo de estudio. q48
+Agrupar las respuestas en las siguientes 4 categorías: Primario / Secundario / Superior (incluyendo Terciario, Universitario y Postgrado) / Capacitaciones
+
+```{r}
+
+
+enma<-enma %>% 
+  mutate(q48_estudiando_superior=case_when(q48_estudiando_nivel_ter==1 | q48_estudiando_nivel_uni==1 | q48_estudiando_nivel_postgrado==1 ~ 1,
+                                           TRUE ~ 0))
+
+
+```
+
+
+
 
 
 
