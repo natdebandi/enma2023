@@ -1,0 +1,614 @@
+---
+title: "Procesamiento_pedidos"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## PEDIDO PROCESAMIENTO DISCRIMINACIÓN
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(readr)
+
+
+```
+
+
+Leo base de datos con nuevas variables:
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+##PEDIDOS ESPECIALES DISCRIMINACIÓN
+
+Pedido 16: Cruce preguntas discriminación por tenencia de DNI. Incluye preguntas q62, q63 y q64
+
+```{r}
+
+#recodifico q62 en dos categorías (LA CATEGORÍA "PREFIERO NO RESPONDER QUEDA DENTRO DE SÍ")
+
+enma<-enma %>% 
+  mutate(q62_new=case_when(q62_discriminacion=="Sí, frecuentemente" | q62_discriminacion=="Sí, alguna vez" | q62_discriminacion=="Prefiero no responder"~ "Al menos alguna vez",
+                           q62_discriminacion=="No, nunca" ~ "No, nunca",
+                           TRUE ~ NA))
+
+check_q62new<-calculate_tabulates(base=enma,
+                            x="q62_discriminacion",
+                            y="q62_new",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+#q62
+pedido16_q62<-calculate_tabulates(base=enma,
+                            x="q62_new",
+                            y="q17_dni_tenencia",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+pedido16_q62tot<-calculate_tabulates(base=enma,
+                            x="q62_new",
+                            y="q17_dni_tenencia",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+
+pedido16_q62tot2<-calculate_tabulates(base=enma,
+                            x="q62_discriminacion",
+                            y="q17_dni_tenencia",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+#resultados
+
+#pedido16_q62<-enma %>% 
+#  filter(q62_new!="NA") %>% 
+#  group_by(q17_dni_tenencia) %>% 
+#  summarise(total= sum(weightvec),
+#            q62_si=sum(weightvec[q62_new=="Al menos alguna vez"]),
+#            q62_no=sum(weightvec[q62_new=="No, nunca"]),
+#            prop_si=round(q62_si/total*100,1),
+#            prop_no=round(q62_no/total*100,1))
+
+
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido16_q62), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido16_q62",append = TRUE)
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido16_q62tot), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido16_q62tot",append = TRUE)
+
+
+```
+
+
+Pedido16: cruce q63 y q17
+```{r}
+
+#q63
+
+#limpio NA 
+enma<-enma %>% 
+  mutate(q63_discriminacion_estado=case_when(
+    q63_discriminacion_estado==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_fuerzas=case_when(
+    q63_discriminacion_fuerzas==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_atencion_medica=case_when(
+    q63_discriminacion_atencion_medica==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_educacion=case_when(
+    q63_discriminacion_educacion==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_calle=case_when(
+    q63_discriminacion_calle==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_trabajo=case_when(
+    q63_discriminacion_trabajo==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_grupos_sociales=case_when(
+    q63_discriminacion_grupos_sociales==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_transporte=case_when(
+    q63_discriminacion_transporte==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_medios_comunicacion=case_when(
+    q63_discriminacion_medios_comunicacion==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_otros=case_when(
+    q63_discriminacion_otros==1 ~1,
+    TRUE ~ 0))
+
+#RESULTADOS
+pedido16_q63<- enma %>% 
+  filter(q62_new=="Al menos alguna vez") %>% 
+  group_by(q17_dni_tenencia) %>%
+    summarise(Poblacion= sum(weightvec),
+            Estado  = sum(weightvec[q63_discriminacion_estado==1]),
+            Fuerzas  = sum(weightvec[q63_discriminacion_fuerzas==1]),
+            Atencion_medica  = sum(weightvec[q63_discriminacion_atencion_medica==1]),
+            Educacion  = sum(weightvec[q63_discriminacion_educacion==1]),
+            Calle = sum(weightvec[q63_discriminacion_calle==1]),
+            Trabajo = sum(weightvec[q63_discriminacion_trabajo==1]),
+            Grupos_soc = sum(weightvec[q63_discriminacion_grupos_sociales==1]),
+            Transporte = sum(weightvec[q63_discriminacion_transporte==1]),
+            Medios_com= sum(weightvec[q63_discriminacion_medios_comunicacion==1]),
+            Otros = sum(weightvec[q63_discriminacion_otros==1]),
+      'Discriminación Estado'  = round(Estado/Poblacion*100,1),
+      'Discriminación fuerzas de seguridad'          = round(Fuerzas/Poblacion*100,1),
+'Discriminación atención médica'          = round(Atencion_medica/Poblacion*100,1),
+'Dscriminación educación' = round(Educacion/Poblacion*100,1),
+      'Discriminación en la cale'  = round(Calle/Poblacion*100,1),
+      'Discriminación en el trabajo'          = round(Trabajo/Poblacion*100,1),
+'Discriminación en grupos sociales'          = round(Grupos_soc/Poblacion*100,1),
+'Discriminación en el transporte público'          = round(Transporte/Poblacion*100,1),
+'Discriminación en medios de comunicación'          = round(Medios_com/Poblacion*100,1),
+'Discriminación en otros espacios' = round(Otros/Poblacion*100,1))
+
+write.xlsx2(as.data.frame(pedido16_q63), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido16_q63",append = TRUE)
+
+```
+
+
+pedido 16: cruce q64 por q17
+
+```{r}
+#Recodifico variable q64 según pedido.
+
+enma<-enma %>% 
+  mutate(q64_new=case_when(q64_violencia_fuerza_seguridad=="No, nunca" ~ "No, nunca",
+                           q64_violencia_fuerza_seguridad=="Sí, alguna vez" | q64_violencia_fuerza_seguridad=="Sí, frecuentemente" | q64_violencia_fuerza_seguridad=="Prefiero no responder"~ "Al menos alguna vez",
+                           TRUE ~ NA))
+
+#q64
+pedido16_q64<-calculate_tabulates(base=enma,
+                            x="q64_new",
+                            y="q17_dni_tenencia",
+                            add.percentage = 'col',
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+pedido16_q64tot<-calculate_tabulates(base=enma,
+                            x="q64_new",
+                            y="q17_dni_tenencia",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+pedido16_q64tot2<-calculate_tabulates(base=enma,
+                            x="q64_violencia_fuerza_seguridad",
+                            y="q17_dni_tenencia",
+                            add.totals = 'row',
+                            weights = "weightvec")
+
+
+write.xlsx2(as.data.frame(pedido16_q64), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido16_q64",append = TRUE)
+write.xlsx2(as.data.frame(pedido16_q64tot), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido16_q64tot",append = TRUE)
+
+
+
+#resultados
+
+#pedido16_q64b<-enma %>% 
+#  filter(q64_new!="NA") %>% 
+#  group_by(q17_dni_tenencia) %>% 
+#  summarise(total= sum(weightvec),
+#            q64_si=sum(weightvec[q64_new=="Al menos alguna vez"]),
+#            q64_no=sum(weightvec[q64_new=="No, nunca"]),
+#            prop_si=round(q64_si/total*100,1),
+#            prop_no=round(q64_no/total*100,1))
+
+
+
+```
+
+
+
+###PEDIDO 17 Discriminación y violencia según ascendencia étnica
+
+
+```{r}
+
+#convierto q5 en numérica y elimino NA
+
+enma<-enma %>% 
+  mutate(q5_descendencia_indigena=case_when(
+    q5_descendencia_indigena==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q5_descendencia_afro=case_when(
+    q5_descendencia_afro==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q5_descendencia_asiatica=case_when(
+    q5_descendencia_asiatica==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_ninguno=case_when(
+    q5_descendencia_ninguno==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_otro=case_when(
+    q5_descendencia_otro==1 ~ 1,
+    TRUE ~ 0))
+  
+#resultados
+pedido17_q62<- enma %>%
+  filter(q62_new=="Al menos alguna vez" | q62_new=="No, nunca") %>% 
+  group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido17_q62), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido17_q62",append = TRUE)
+
+
+```
+
+cruce q63 por q5
+```{r}
+#versión 1
+#Lugares o espacios donde experimento discriminación según descendencia
+
+pedido17_q63a<- enma %>% 
+  filter(q62_new=="Al menos alguna vez") %>%
+  group_by(q5_descendencia_indigena) %>%
+    summarise(Poblacion= sum(weightvec),
+            Estado  = sum(weightvec[q63_discriminacion_estado==1]),
+            Fuerzas  = sum(weightvec[q63_discriminacion_fuerzas==1]),
+            Atencion_medica  = sum(weightvec[q63_discriminacion_atencion_medica==1]),
+            Educacion  = sum(weightvec[q63_discriminacion_educacion==1]),
+            Calle = sum(weightvec[q63_discriminacion_calle==1]),
+            Trabajo = sum(weightvec[q63_discriminacion_trabajo==1]),
+            Grupos_soc = sum(weightvec[q63_discriminacion_grupos_sociales==1]),
+            Transporte = sum(weightvec[q63_discriminacion_transporte==1]),
+            Medios_com= sum(weightvec[q63_discriminacion_medios_comunicacion==1]),
+            Otros = sum(weightvec[q63_discriminacion_otros==1]),
+      'Discriminación Estado'  = round(Estado/Poblacion*100,1),
+      'Discriminación fuerzas de seguridad'          = round(Fuerzas/Poblacion*100,1),
+'Discriminación atención médica'          = round(Atencion_medica/Poblacion*100,1),
+'Dscriminación educación' = round(Educacion/Poblacion*100,1),
+      'Discriminación en la cale'  = round(Calle/Poblacion*100,1),
+      'Discriminación en el trabajo'          = round(Trabajo/Poblacion*100,1),
+'Discriminación en grupos sociales'          = round(Grupos_soc/Poblacion*100,1),
+'Discriminación en el transporte público'          = round(Transporte/Poblacion*100,1),
+'Discriminación en medios de comunicación'          = round(Medios_com/Poblacion*100,1),
+'Discriminación en otros espacios' = round(Otros/Poblacion*100,1))
+
+rownames(pedido17_q63a)<-"índigena"
+
+  filter(q5_descendencia_indigena==1) %>% 
+  rename("Descendencia"=q5_descendencia_indigena)
+
+pedido17_q63b<- enma %>% 
+  filter(q62_new=="Al menos alguna vez" & q5_descendencia_afro==1) %>% 
+  #group_by(q5_descendencia_afro) %>%
+    summarise(Poblacion= sum(weightvec),
+            Estado  = sum(weightvec[q63_discriminacion_estado==1]),
+            Fuerzas  = sum(weightvec[q63_discriminacion_fuerzas==1]),
+            Atencion_medica  = sum(weightvec[q63_discriminacion_atencion_medica==1]),
+            Educacion  = sum(weightvec[q63_discriminacion_educacion==1]),
+            Calle = sum(weightvec[q63_discriminacion_calle==1]),
+            Trabajo = sum(weightvec[q63_discriminacion_trabajo==1]),
+            Grupos_soc = sum(weightvec[q63_discriminacion_grupos_sociales==1]),
+            Transporte = sum(weightvec[q63_discriminacion_transporte==1]),
+            Medios_com= sum(weightvec[q63_discriminacion_medios_comunicacion==1]),
+            Otros = sum(weightvec[q63_discriminacion_otros==1]),
+      'Discriminación Estado'  = round(Estado/Poblacion*100,1),
+      'Discriminación fuerzas de seguridad'          = round(Fuerzas/Poblacion*100,1),
+'Discriminación atención médica'          = round(Atencion_medica/Poblacion*100,1),
+'Dscriminación educación' = round(Educacion/Poblacion*100,1),
+      'Discriminación en la cale'  = round(Calle/Poblacion*100,1),
+      'Discriminación en el trabajo'          = round(Trabajo/Poblacion*100,1),
+'Discriminación en grupos sociales'          = round(Grupos_soc/Poblacion*100,1),
+'Discriminación en el transporte público'          = round(Transporte/Poblacion*100,1),
+'Discriminación en medios de comunicación'          = round(Medios_com/Poblacion*100,1),
+'Discriminación en otros espacios' = round(Otros/Poblacion*100,1))
+
+rownames(pedido17_q63b)<-"afro"
+
+pedido17_q63c<- enma %>% 
+  filter(q62_new=="Al menos alguna vez" & q5_descendencia_asiatica==1) %>% 
+  #group_by(q5_descendencia_asiatica) %>%
+    summarise(Poblacion= sum(weightvec),
+            Estado  = sum(weightvec[q63_discriminacion_estado==1]),
+            Fuerzas  = sum(weightvec[q63_discriminacion_fuerzas==1]),
+            Atencion_medica  = sum(weightvec[q63_discriminacion_atencion_medica==1]),
+            Educacion  = sum(weightvec[q63_discriminacion_educacion==1]),
+            Calle = sum(weightvec[q63_discriminacion_calle==1]),
+            Trabajo = sum(weightvec[q63_discriminacion_trabajo==1]),
+            Grupos_soc = sum(weightvec[q63_discriminacion_grupos_sociales==1]),
+            Transporte = sum(weightvec[q63_discriminacion_transporte==1]),
+            Medios_com= sum(weightvec[q63_discriminacion_medios_comunicacion==1]),
+            Otros = sum(weightvec[q63_discriminacion_otros==1]),
+      'Discriminación Estado'  = round(Estado/Poblacion*100,1),
+      'Discriminación fuerzas de seguridad'          = round(Fuerzas/Poblacion*100,1),
+'Discriminación atención médica'          = round(Atencion_medica/Poblacion*100,1),
+'Dscriminación educación' = round(Educacion/Poblacion*100,1),
+      'Discriminación en la cale'  = round(Calle/Poblacion*100,1),
+      'Discriminación en el trabajo'          = round(Trabajo/Poblacion*100,1),
+'Discriminación en grupos sociales'          = round(Grupos_soc/Poblacion*100,1),
+'Discriminación en el transporte público'          = round(Transporte/Poblacion*100,1),
+'Discriminación en medios de comunicación'          = round(Medios_com/Poblacion*100,1),
+'Discriminación en otros espacios' = round(Otros/Poblacion*100,1))
+
+rownames(pedido17_q63c)<-"asiática"
+
+
+pedido17_q63d<- enma %>% 
+  filter(q62_new=="Al menos alguna vez" & q5_descendencia_ninguno==1) %>% 
+  #group_by(q5_descendencia_ninguno) %>%
+    summarise(Poblacion= sum(weightvec),
+            Estado  = sum(weightvec[q63_discriminacion_estado==1]),
+            Fuerzas  = sum(weightvec[q63_discriminacion_fuerzas==1]),
+            Atencion_medica  = sum(weightvec[q63_discriminacion_atencion_medica==1]),
+            Educacion  = sum(weightvec[q63_discriminacion_educacion==1]),
+            Calle = sum(weightvec[q63_discriminacion_calle==1]),
+            Trabajo = sum(weightvec[q63_discriminacion_trabajo==1]),
+            Grupos_soc = sum(weightvec[q63_discriminacion_grupos_sociales==1]),
+            Transporte = sum(weightvec[q63_discriminacion_transporte==1]),
+            Medios_com= sum(weightvec[q63_discriminacion_medios_comunicacion==1]),
+            Otros = sum(weightvec[q63_discriminacion_otros==1]),
+      'Discriminación Estado'  = round(Estado/Poblacion*100,1),
+      'Discriminación fuerzas de seguridad'          = round(Fuerzas/Poblacion*100,1),
+'Discriminación atención médica'          = round(Atencion_medica/Poblacion*100,1),
+'Dscriminación educación' = round(Educacion/Poblacion*100,1),
+      'Discriminación en la cale'  = round(Calle/Poblacion*100,1),
+      'Discriminación en el trabajo'          = round(Trabajo/Poblacion*100,1),
+'Discriminación en grupos sociales'          = round(Grupos_soc/Poblacion*100,1),
+'Discriminación en el transporte público'          = round(Transporte/Poblacion*100,1),
+'Discriminación en medios de comunicación'          = round(Medios_com/Poblacion*100,1),
+'Discriminación en otros espacios' = round(Otros/Poblacion*100,1))
+
+
+rownames(pedido17_q63d)<-"ninguno"
+
+
+
+pedido17_q63_tot <-bind_rows(pedido17_q63a, pedido17_q63b, pedido17_q63c, pedido17_q63d)
+
+write.xlsx2(as.data.frame(pedido17_q63_tot), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido17_q63",append = TRUE)
+
+
+```
+
+```{r}
+
+#verisón 2
+
+
+#resultados
+pedido17_q63_v2a <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_estado==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2a)<-"Estado"
+
+pedido17_q63_v2b <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_fuerzas==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2b)<-"Fuerzas"
+
+
+pedido17_q63_v2c <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_atencion_medica==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2c)<-"Atención médica"
+
+
+pedido17_q63_v2d <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_educacion==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2d)<-"Educación"
+
+pedido17_q63_v2e <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_calle==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2e)<-"Calle"
+
+pedido17_q63_v2f <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_trabajo==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2f)<-"Trabajo"
+
+pedido17_q63_v2g <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_grupos_sociales==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2g)<-"Grupos sociales"
+
+pedido17_q63_v2h <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_transporte==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2h)<-"Transporte"
+
+pedido17_q63_v2i <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_medios_comunicacion==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2i)<-"Medios de comunicación"
+
+pedido17_q63_v2j <- enma %>%
+  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_otros==1) %>% 
+  #group_by(q62_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+rownames(pedido17_q63_v2j)<-"Otros"
+
+
+
+
+pedido17_q63_tot_v2 <-bind_rows(pedido17_q63_v2a, pedido17_q63_v2b, pedido17_q63_v2c, pedido17_q63_v2d, pedido17_q63_v2e, pedido17_q63_v2f, pedido17_q63_v2g, pedido17_q63_v2h, pedido17_q63_v2i, pedido17_q63_v2j)
+
+
+write.xlsx2(as.data.frame(pedido17_q63_tot_v2), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido17_q63v2",append = TRUE)
+
+```
+
+
+```{r}
+
+#resultados
+pedido17_q64 <- enma %>%
+  filter(q64_new=="Al menos alguna vez" | q64_new=="No, nunca") %>% 
+  group_by(q64_new) %>% 
+  summarise(Poblacion= sum(weightvec),
+            Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
+            Afro = sum(weightvec[q5_descendencia_afro == 1]),
+            Asiatica = sum(weightvec[q5_descendencia_asiatica == 1]),
+            Ninguno         = sum(weightvec[q5_descendencia_ninguno == 1]),
+            Otro = sum(weightvec[q5_descendencia_otro == 1]),
+      'Descendencia indígena'  = round(Indigena/Poblacion*100,1),
+      'Descendencia afro'          = round(Afro/Poblacion*100,1),
+'Descendencia asiática'          = round(Asiatica/Poblacion*100,1),
+      'Ninguna'            = round(Ninguno/Poblacion*100,1),
+'Otra descendencia'          = round(Otro/Poblacion*100,1))
+
+write.xlsx2(as.data.frame(pedido17_q64), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido17_q64",append = TRUE)
+```
+
