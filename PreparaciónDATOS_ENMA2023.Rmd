@@ -492,6 +492,33 @@ enma<-enma %>%
     TRUE ~0))
 ```
 
+##RECODIFICO Q69.
+
+Pedido 48: Agrupar pregunta q68 (aparece como q69) en Desinformación, Desinteres, No cumple requisitos, Obstáculos materiales
+
+¿Cuáles son los principales motivos por los que no ha votado?
+Seleccione todas las opciones que considere adecuadas
+[Selección múltiple]
+No sabía que tenía este derecho x
+No me interesa votar x
+No tengo DNIx
+No tengo la suficiente antigüedad  x
+No estoy inscripto/a en el padrón x
+Vivo lejos de las mesas de votación
+No sé dónde, cómo  o qué se vota en las elecciones x
+En mi localidad no lo permiten/no está habilitado
+```{r}
+enma<-enma %>% 
+  mutate(q69_desinformación=case_when(q69_participacion_no_sabia==1 | q69_participacion_no_desconocimiento==1 ~ 1,
+                                      TRUE ~ 0)) %>% 
+  mutate(q69_resinteres=case_when(q69_participacion_no_interes==1 ~ 1,
+                                  TRUE ~ 0)) %>% 
+  mutate(q69_no_cumple_req=case_when(q69_participacion_no_dni==1 |  q69_participacion_no_antiguedad==1 | q69_participacion_no_padron==1 ~ 1,
+                                     TRUE~0)) %>% 
+  mutate(q69_obs_materiales=case_when(q69_participacion_no_lejania==1 | q69_participacion_no_permiso==1 ~ 1,
+                                      TRUE ~ 0))
+```
+
 
 
 ## Guardo base de datos con nuevas variables
@@ -501,7 +528,7 @@ Exporto base de datos con las nuevas variables agregadas
 ```{r write, message=FALSE, warning=FALSE}
 
 #exporto el csv
-write.csv(enma,"datos/Enma_v2.csv", row.names = FALSE )
+write.csv(enma,"datos/ENMA_v2.csv", row.names = FALSE )
 
 ```
 

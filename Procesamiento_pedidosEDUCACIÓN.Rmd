@@ -19,7 +19,7 @@ library(knitr)
 library(eph)
 library(openxlsx)
 library(xlsx)
-
+library(readr)
 
 ```
 
@@ -455,6 +455,24 @@ pedido44 <- enma %>%
 
 
 write.xlsx2(as.data.frame(pedido44), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido44",append = TRUE)
+
+```
+ 
+Pedido 45: reagrupar pregunta q48
+
+Agrupar las respuestas en las siguientes 4 categorías: Primario / Secundario / Superior (incluyendo Terciario, Universitario y Postgrado) / Capacitaciones
+
+ 
+```{r}
+
+"q48_estudiando_nivel_prim"                          
+"q48_estudiando_nivel_sec"                           
+"q48_estudiando_nivel_ter"                           
+"q48_estudiando_nivel_uni"                           
+"q48_estudiando_nivel_postgrado"                     
+"q48_estudiando_nivel_capacitaciones"
+
+
 
 ```
  
