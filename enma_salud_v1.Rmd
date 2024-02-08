@@ -148,7 +148,7 @@ enma<-enma %>%
     q38_salud_resolver_problema_otro==1~1,
     TRUE ~0))
 
-
+names(enma)
 
 #Resultados
 pedido8<- enma %>% 
@@ -300,7 +300,7 @@ enma<-enma %>%
 
 
 #Resultados
-Indicadores2_q38<- enma %>% 
+pedido11<- enma %>% 
   group_by(q29_hijos_num) %>% 
   summarise(Poblacion= sum(weightvec),
             no_problema = sum(weightvec[q38_salud_resolver_problema_no==1]),
