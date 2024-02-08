@@ -149,6 +149,19 @@ enma<- enma %>% mutate(activo=case_when(
 
 ## VER PORQUE NO ME ANDAAAAAAAAAAAAAA
 
+<<<<<<< HEAD
+  indicadores <-enma |> 
+  filter(genero_var=="Mujer"|genero_var=="Varón") |>
+  #group_by(genero_var) |>
+   summarise(total= sum(weightvec['51_situacion_ocupacional'!="Otra"]),
+              ocupados=sum(weightvec[ocupado==1]),
+              pea=sum(weightvec[activo==1]),
+              desempleados=sum(weightvec[desempleado==1]),
+              t_actividad=round((pea/total)*100,2),
+              t_empleo=round((ocupados/total) *100,2),
+              t_desempleo=round((desempleados/pea) *100,2)
+              )
+=======
 #tasas de para toda la población
 
 indicadores_tot <-enma %>% 
@@ -176,6 +189,7 @@ indicadores_genero <-enma %>%
              t_empleo=round((ocupados/total) *100,2),
              t_desempleo=round((desempleados/pea) *100,2))
 
+>>>>>>> bf0ea3527b182af86588deb9b7ac44ec61be972b
 
 #Tasa de Actividad: se calcula como porcentaje entre la población económicamente activa
 #y la población total (puede recalcularse según distintos límites de edad). 

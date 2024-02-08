@@ -87,16 +87,15 @@ consulta <- enma %>%
 
 consulta
 #exporto el csv
-write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "total",append = TRUE) 
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "Indic_total",append = TRUE) 
 
 
 ```
 
+### Indicadores según género
 
 
-
-
-```{r familia_personas_pais}
+```{r}
 # q26_hogar_personas
 # q29_hijos_num
 # q30_hijos_arg
@@ -104,6 +103,39 @@ write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx
 # q31_hijos_menores_exterior
 
 ### Como es un cruce por nacionalidad debo utilizar el ponderador weightvec_0
+
+
+consulta <- enma %>% 
+  filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+  group_by(genero_var)%>%
+  summarise (promedio_personas = round(mean(q26_hogar_personas,na.rm = TRUE),0),
+             promedio_hijes_nac_arg = round(mean(q30_hijos_arg,na.rm = TRUE),0),
+             promedio_hijes_nac_ext = round(mean(q30_hijos_exterior,na.rm = TRUE),0),
+             hogar_con_hijes=round(sum((q29_hijos_num=="Si")*weightvec,na.rm=TRUE),0),
+             hogar_con_hijes_mig=round(sum((q30_hijos_exterior>0)*weightvec,na.rm=TRUE),0),
+             hogar_menores_ext=round(sum((q31_hijos_menores_exterior=="Si")*weightvec,na.rm=TRUE),0),
+             total=round(sum(weightvec),0)
+             ) %>%
+   mutate(prop_hog_hijes = round(hogar_con_hijes / total *100,2),
+          prop_hog_hijes_nac_ext=round(hogar_con_hijes_mig / total *100,2),
+          prop_hog_hijes_menores_ext=round(hogar_menores_ext / total *100,2)
+          )   
+
+consulta
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "indic_genero",append = TRUE) 
+
+```
+
+### Inciadores familia x nacionalidad 
+
+todos los géneros  
+
+
+
+```{r familia_personas_pais}
+
+#Cruzo por género pero filtro LGBTIQ+
 
 
 consulta <- enma %>% 
@@ -123,22 +155,45 @@ consulta <- enma %>%
 
 consulta
 #exporto el csv
-write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "absolutos",append = TRUE) 
-
-consulta <- consulta  %>% 
-  select(nacionalidad_var,promedio_personas,promedio_hijes_nac_arg,
-                   promedio_hijes_nac_ext,
-                   prop_hog_hijes,prop_hog_hijes_nac_ext,
-                   prop_hog_hijes_menores_ext)
-
-#consulta<-t(consulta)
-print(consulta)
-
-#exporto el csv
-write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "indicadores",append = TRUE) 
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "indic_nac",append = TRUE) 
 
 
 ```
+
+
+### Indicadores según nacionalidad - solo mujeres
+
+
+
+
+```{r}
+
+#Cruzo por género pero filtro LGBTIQ+
+
+
+consulta <- enma %>% 
+  filter(genero_var=="Mujer") %>%
+  group_by(nacionalidad_var) %>% 
+  summarise (promedio_personas = round(mean(q26_hogar_personas,na.rm = TRUE)),
+             promedio_hijes_nac_arg = round(mean(q30_hijos_arg,na.rm = TRUE),0),
+             promedio_hijes_nac_ext = round(mean(q30_hijos_exterior,na.rm = TRUE),0),
+             hogar_con_hijes=round(sum((q29_hijos_num=="Si")*weightvec_0,na.rm=TRUE),0),
+             hogar_con_hijes_mig=round(sum((q30_hijos_exterior>0)*weightvec_0,na.rm=TRUE),0),
+             hogar_menores_ext=round(sum((q31_hijos_menores_exterior=="Si")*weightvec_0,na.rm=TRUE),0),
+             total=round(sum(weightvec_0),0)
+             ) %>%
+   mutate(prop_hog_hijes = round(hogar_con_hijes / total *100,2),
+          prop_hog_hijes_nac_ext=round(hogar_con_hijes_mig / total *100,2),
+          prop_hog_hijes_menores_ext=round(hogar_menores_ext / total *100,2)
+          )   
+
+consulta
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "indic_nac_muj",append = TRUE) 
+```
+
+
+
 
 
 ```{r}
@@ -156,6 +211,40 @@ convivencia
 write.xlsx2(as.data.frame(convivencia), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "convivencia",append = TRUE) 
 
 ```
+
+### convivencia según género y edad
+
+
+```{r}
+
+convivencia <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(q28_hogar_convivencia,genero_var,edad_ag_var) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+
+convivencia
+#exporto el csv
+write.xlsx2(as.data.frame(convivencia), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "convivencia_g",append = TRUE) 
+
+```
+
+### convivencia y tenencia hijes
+
+
+```{r}
+
+convivencia <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(q28_hogar_convivencia,genero_var, q29_hijos_num) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+
+convivencia
+#exporto el csv
+write.xlsx2(as.data.frame(convivencia), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "conv_hije",append = TRUE) 
+
+```
+
+
 
 ### tipología familia 1
 
@@ -211,8 +300,29 @@ write.xlsx2(as.data.frame(familia), "tables\\1.sociodemograficos\\familias.xlsx"
 
 
 ```
+### Cruces socioeconomicos
 
 
+
+```{r}
+
+
+familia <- enma %>% 
+ filter(genero_var=="Mujer"|genero_var=="Varón") %>%
+ group_by(familia_hijos,genero_var) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+
+
+familia<-familia %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+
+familia
+
+
+#exporto el csv
+write.xlsx2(as.data.frame(familia), "tables\\1.sociodemograficos\\familias.xlsx", row.names = FALSE, sheetName = "familia_genero",append = TRUE) 
+
+
+```
 
 
 
