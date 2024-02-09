@@ -49,10 +49,10 @@ Pedido 16: Cruce preguntas discriminación por tenencia de DNI. Incluye pregunta
 
 ```{r}
 
-#recodifico q62 en dos categorías (LA CATEGORÍA "PREFIERO NO RESPONDER QUEDA DENTRO DE SÍ")
+#recodifico q62 en dos categorías (LA CATEGORÍA "PREFIERO NO RESPONDER SE EXCLUYE")
 
 enma<-enma %>% 
-  mutate(q62_new=case_when(q62_discriminacion=="Sí, frecuentemente" | q62_discriminacion=="Sí, alguna vez" | q62_discriminacion=="Prefiero no responder"~ "Al menos alguna vez",
+  mutate(q62_new=case_when(q62_discriminacion=="Sí, frecuentemente" | q62_discriminacion=="Sí, alguna vez" ~ "Sí, al menos alguna vez",
                            q62_discriminacion=="No, nunca" ~ "No, nunca",
                            TRUE ~ NA))
 
@@ -182,7 +182,7 @@ pedido 16: cruce q64 por q17
 
 enma<-enma %>% 
   mutate(q64_new=case_when(q64_violencia_fuerza_seguridad=="No, nunca" ~ "No, nunca",
-                           q64_violencia_fuerza_seguridad=="Sí, alguna vez" | q64_violencia_fuerza_seguridad=="Sí, frecuentemente" | q64_violencia_fuerza_seguridad=="Prefiero no responder"~ "Al menos alguna vez",
+                           q64_violencia_fuerza_seguridad=="Sí, alguna vez" | q64_violencia_fuerza_seguridad=="Sí, frecuentemente"~ "Sí, al menos alguna vez",
                            TRUE ~ NA))
 
 #q64
@@ -255,8 +255,7 @@ enma<-enma %>%
   
 #resultados
 pedido17_q62<- enma %>%
-  filter(q62_new=="Al menos alguna vez" | q62_new=="No, nunca") %>% 
-  group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca") %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -409,8 +408,8 @@ write.xlsx2(as.data.frame(pedido17_q63_tot), "tables/7.Discriminación/cuadros_d
 
 #resultados
 pedido17_q63_v2a <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_estado==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca")%>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -425,9 +424,10 @@ pedido17_q63_v2a <- enma %>%
 
 rownames(pedido17_q63_v2a)<-"Estado"
 
+
 pedido17_q63_v2b <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_fuerzas==1) %>% 
-  #group_by(q62_new) %>% 
+  filter((q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca")) %>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -444,8 +444,8 @@ rownames(pedido17_q63_v2b)<-"Fuerzas"
 
 
 pedido17_q63_v2c <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_atencion_medica==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca")%>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -462,8 +462,8 @@ rownames(pedido17_q63_v2c)<-"Atención médica"
 
 
 pedido17_q63_v2d <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_educacion==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca")%>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -479,8 +479,8 @@ pedido17_q63_v2d <- enma %>%
 rownames(pedido17_q63_v2d)<-"Educación"
 
 pedido17_q63_v2e <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_calle==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca")%>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -496,8 +496,8 @@ pedido17_q63_v2e <- enma %>%
 rownames(pedido17_q63_v2e)<-"Calle"
 
 pedido17_q63_v2f <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_trabajo==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca") %>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -513,8 +513,8 @@ pedido17_q63_v2f <- enma %>%
 rownames(pedido17_q63_v2f)<-"Trabajo"
 
 pedido17_q63_v2g <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_grupos_sociales==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca")%>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -530,8 +530,8 @@ pedido17_q63_v2g <- enma %>%
 rownames(pedido17_q63_v2g)<-"Grupos sociales"
 
 pedido17_q63_v2h <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_transporte==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca") %>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -547,8 +547,8 @@ pedido17_q63_v2h <- enma %>%
 rownames(pedido17_q63_v2h)<-"Transporte"
 
 pedido17_q63_v2i <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_medios_comunicacion==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca")%>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -564,8 +564,8 @@ pedido17_q63_v2i <- enma %>%
 rownames(pedido17_q63_v2i)<-"Medios de comunicación"
 
 pedido17_q63_v2j <- enma %>%
-  filter((q62_new=="Al menos alguna vez" | q62_new=="No, nunca") & q63_discriminacion_otros==1) %>% 
-  #group_by(q62_new) %>% 
+  filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca") %>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -595,8 +595,8 @@ write.xlsx2(as.data.frame(pedido17_q63_tot_v2), "tables/7.Discriminación/cuadro
 
 #resultados
 pedido17_q64 <- enma %>%
-  filter(q64_new=="Al menos alguna vez" | q64_new=="No, nunca") %>% 
-  group_by(q64_new) %>% 
+  filter(q64_new=="Sí, al menos alguna vez" | q64_new=="No, nunca") %>% 
+  #group_by(q64_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),
@@ -610,5 +610,202 @@ pedido17_q64 <- enma %>%
 'Otra descendencia'          = round(Otro/Poblacion*100,1))
 
 write.xlsx2(as.data.frame(pedido17_q64), "tables/7.Discriminación/cuadros_discriminación.xlsx", row.names = FALSE, sheetName ="pedido17_q64",append = TRUE)
+```
+
+
+
+Cruces q62 recodificada
+
+```{r}
+
+#
+q62_genero<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="genero_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_genero), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="genero",append = TRUE)
+
+q62_edad<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="edad_ag_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_edad), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+
+
+q62_edad10<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="edad_10_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_edad10), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="edad10",append = TRUE)
+
+q62_edad2<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="edad_ag2_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_edad2), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="edad2",append = TRUE)
+
+q62_tiempores<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="tiempo_residencia_3_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_tiempores), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="tiempores",append = TRUE)
+
+q62_migrec<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="migracion_reciente_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_migrec), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="migrec",append = TRUE)
+
+
+q62_niveled<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="nivel_educativo_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_niveled), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="niveled",append = TRUE)
+
+q62_secomp<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="secundario_completo_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_secomp), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="secomp",append = TRUE)
+
+q62_region<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="region_CABA_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_region), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
+
+q62_MERCOSUR<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="nac_agrupada",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_MERCOSUR), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="MERCOSUR",append = TRUE)
+
+q62_nacionalidad<-calculate_tabulates(base=enma,
+                    x="q62_new",
+                    y="nacionalidad_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q62_nacionalidad), "tables/7.Discriminación/tabulados_q62.xlsx", row.names = FALSE, sheetName ="nacionalidad",append = TRUE)
+
+
+```
+
+Cruces q64 recodificada
+
+```{r}
+#
+
+q64_genero<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="genero_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_genero), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="genero",append = TRUE)
+
+q64_edad<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="edad_ag_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_edad), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+
+
+q64_edad10<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="edad_10_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_edad10), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="edad10",append = TRUE)
+
+q64_edad2<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="edad_ag2_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_edad2), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="edad2",append = TRUE)
+
+q64_tiempores<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="tiempo_residencia_3_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_tiempores), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="tiempores",append = TRUE)
+
+q64_migrec<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="migracion_reciente_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_migrec), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="migrec",append = TRUE)
+
+
+q64_niveled<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="nivel_educativo_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_niveled), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="niveled",append = TRUE)
+
+q64_secomp<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="secundario_completo_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_secomp), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="secomp",append = TRUE)
+
+q64_region<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="region_CABA_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_region), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
+
+q64_MERCOSUR<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="nac_agrupada",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_MERCOSUR), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="MERCOSUR",append = TRUE)
+
+q64_nacionalidad<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="nacionalidad_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_nacionalidad), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="nacionalidad",append = TRUE)
+
 ```
 

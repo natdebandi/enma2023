@@ -464,13 +464,250 @@ Agrupar las respuestas en las siguientes 4 categorías: Primario / Secundario / 
 
  
 ```{r}
+```{r q48, message=FALSE, warning=FALSE}
 
-"q48_estudiando_nivel_prim"                          
-"q48_estudiando_nivel_sec"                           
-"q48_estudiando_nivel_ter"                           
-"q48_estudiando_nivel_uni"                           
-"q48_estudiando_nivel_postgrado"                     
-"q48_estudiando_nivel_capacitaciones"
+
+#análisis exploratorio de respuesta múltiple
+
+pedido48_explor<-multiResponse(enma, items = c("q48_estudiando_superior", "q48_estudiando_nivel_prim", "q48_estudiando_nivel_sec", "q48_estudiando_nivel_capacitaciones"),
+                   endorsedOption = 1)
+
+pedido48_explor2<-multiResponse(enma, items = c("q48_estudiando_nivel_ter", "q48_estudiando_nivel_uni", "q48_estudiando_nivel_postgrado", "q48_estudiando_nivel_prim", "q48_estudiando_nivel_sec", "q48_estudiando_nivel_capacitaciones"),
+                   endorsedOption = 1)
+
+
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_explor), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="exploratorio",append = TRUE)
+
+#########################################################
+```
+
+
+```{r}
+enma<-enma %>% 
+  mutate(q48_estudiando_nivel_prim=case_when(q48_estudiando_nivel_prim==1  ~ 1,
+                                             TRUE  ~ 0)) %>% 
+  mutate(q48_estudiando_nivel_sec=case_when(q48_estudiando_nivel_sec==1  ~ 1,
+                                            TRUE  ~ 0)) %>%   mutate(q48_estudiando_nivel_capacitaciones=case_when(q48_estudiando_nivel_capacitaciones==1  ~ 1,
+                                            TRUE  ~ 0))
+
+unique(enma$q47_estudiando_argentina)
+
+#Resultados
+pedido48 <- enma %>%
+  filter(q47_estudiando_argentina=="Si") %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="univariado_agrup",append = TRUE)
+
+
+
+#Resultados género
+pedido48_genero <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(genero_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_genero), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="genero",append = TRUE)
+
+
+#Resultados edad
+pedido48_edad <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(edad_ag_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_edad), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+
+#Resultados edad cada 10
+pedido48_edad10 <- enma %>%
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(edad_10_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_edad10), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="edad_10",append = TRUE)
+
+#Resultados edad agrupamiento enma 2020
+pedido48_edadv2 <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(edad_ag2_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_edadv2), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="edadv2",append = TRUE)
+
+
+#Resultados tiempo de residencia
+pedido48_tiempores <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(tiempo_residencia_3_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_tiempores), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="tiempo_res",append = TRUE)
+
+
+#Resultados tiempo de residencia v2
+pedido48_tiempores2 <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(tiempo_residencia_5_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_tiempores2), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="tiempo_res2",append = TRUE)
+
+#Resultados migración reciente
+pedido48_migrec <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(migracion_reciente_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_migrec), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="migracion_rec",append = TRUE)
+
+
+
+#Resultados region
+
+pedido48_region <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(region_CABA_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_region), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
+
+
+#Resultados nacionalidad MERCOSUR
+pedido48_MERCOSUR <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(nac_agrupada) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_MERCOSUR), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="MERCOSUR",append = TRUE)
+
+
+#Resultados nacionalidad
+pedido48_nacionalidad <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(nacionalidad_var) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_nacionalidad), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="nacionalidad",append = TRUE)
+
+#Resultados tenencia DNI
+pedido48_dni <- enma %>% 
+  filter(q47_estudiando_argentina=="Si") %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            primario  = sum(weightvec[q48_estudiando_nivel_prim==1]),
+            secundario = sum(weightvec[q48_estudiando_nivel_sec == 1]),
+            superior = sum(weightvec[q48_estudiando_superior == 1]),
+            capacitaciones= sum(weightvec[q48_estudiando_nivel_capacitaciones==1]),
+            'Primario'  = round(primario/Poblacion*100,1),
+      'Secundario'          = round(secundario/Poblacion*100,1),
+'Superior'          = round(superior/Poblacion*100,1),
+'Capacitaciones' = round(capacitaciones/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido48_dni), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="dni",append = TRUE)
 
 
 
