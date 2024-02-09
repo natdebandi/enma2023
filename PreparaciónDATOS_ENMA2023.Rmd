@@ -389,6 +389,7 @@ desocupado
 
 #Construyo nueva variable de región
 
+
 enma<-enma %>% 
   mutate(region_CABA_var=case_when(
     region_var=="Buenos Aires" & region_amba_var=="Resto Pampeana" ~ "Resto Buenos Aires",

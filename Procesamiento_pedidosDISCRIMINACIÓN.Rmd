@@ -791,6 +791,16 @@ q64_region<-calculate_tabulates(base=enma,
 
 write.xlsx2(as.data.frame(q64_region), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
 
+names(enma)
+q64_region2<-calculate_tabulates(base=enma,
+                    x="q64_new",
+                    y="region_amba_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(q64_region), "tables/7.Discriminación/tabulados_q64.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
+
+
 q64_MERCOSUR<-calculate_tabulates(base=enma,
                     x="q64_new",
                     y="nac_agrupada",

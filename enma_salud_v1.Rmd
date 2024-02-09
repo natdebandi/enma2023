@@ -474,4 +474,3 @@ pedido35<- enma %>%
 write.xlsx(as.data.frame(pedido35), "tables/4.Salud/cuadros_salud.xlsx", row.names = FALSE, sheetName = "pedido35",append = TRUE)
 
 ```
-
