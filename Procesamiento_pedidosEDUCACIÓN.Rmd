@@ -13,6 +13,7 @@ date: "`r Sys.Date()`"
 #INSTALO LIBRERIAS QUE VOY A USAR
 
 library(userfriendlyscience)
+library(tidyverse)
 library(readxl)
 library(dplyr)
 library(knitr)
@@ -709,6 +710,38 @@ pedido48_dni <- enma %>%
 #guardo tabulado
 write.xlsx2(as.data.frame(pedido48_dni), "tables/3.Educación/cuadros_pedido48.xlsx", row.names = FALSE, sheetName ="dni",append = TRUE)
 
+
+
+```
+ 
+##Pedido 46: Cruce de personas migrantes según hijxs que asisten a la escuela en ARG por región de residencia y edad
+
+q32: En relación a los hijos/as que viven en Argentina ¿asisten actualmente a la escuela (jardín, primaria o secundaria)?
+  Si, al menos alguno/a
+  No, ninguno
+
+Cruzar tenencia de hijes en edad escolar por región de residencia con edad por hipótesis de población envejecida en determinadas regiones (NEA y Patagonia)
+```{r}
+
+unique(enma$q32_asistencia_educacion)
+consulta<-enma %>% 
+  filter(q30_hijos_arg>0) %>% 
+  group_by(q32_asistencia_educacion) %>% 
+  summarise(n=sum(weightvec))
+
+pedido46 <- enma %>% 
+  group_by(q29_hijos_num, region_CABA_var) %>% 
+  summarise(cantidad= sum(weightvec))
+
+pedido46_a<-pedido46_v2 %>%pivot_wider(names_from = region_CABA_var, values_from = cantidad)
+
+v2
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido46_a), "tables/3.Educación/cuadros_pedido46.xlsx", row.names = FALSE, sheetName ="tabla",append = TRUE)
+
+
+names(enma)
 
 
 ```

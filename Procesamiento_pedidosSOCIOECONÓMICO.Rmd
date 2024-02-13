@@ -635,3 +635,287 @@ write.xlsx2(as.data.frame(pedido60_dni), "tables/5.Socioeconómica/cuadros_pedid
 
 ```
 
+##Pedido 15
+
+Cruce preguntas capítulo socio-económica con posesión de DNI
+q17 x q51, 52,53, 55, 56 y 57
+
+
+```{r}
+#resultados q17xq51
+pedido15_q51<-calculate_tabulates(base=enma,
+                                  x="q51_situacion_ocupacional",
+                                  y="q17_dni_tenencia",
+                                  add.percentage = 'col',
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+pedido15_q51tot<-calculate_tabulates(base=enma,
+                                  x="q51_situacion_ocupacional",
+                                  y="q17_dni_tenencia",
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q51), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q51",append = TRUE)
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q51tot), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q51_tot",append = TRUE)
+
+
+#resultados q17xq52
+
+pedido15_q52<-calculate_tabulates(base=enma,
+                                  x="q52_trabaja",
+                                  y="q17_dni_tenencia",
+                                  add.percentage = 'col',
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+pedido15_q52tot<-calculate_tabulates(base=enma,
+                                  x="q52_trabaja",
+                                  y="q17_dni_tenencia",
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q52), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q52",append = TRUE)
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q52tot), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q52_tot",append = TRUE)
+
+
+#resultados q17xq53
+names(enma)
+pedido15_q53<-calculate_tabulates(base=enma,
+                                  x="q53_trabajo_formal",
+                                  y="q17_dni_tenencia",
+                                  add.percentage = 'col',
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+pedido15_q53tot<-calculate_tabulates(base=enma,
+                                  x="q53_trabajo_formal",
+                                  y="q17_dni_tenencia",
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q53), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q53",append = TRUE)
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q53tot), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q53_tot",append = TRUE)
+
+
+#resultados q17xq55
+
+pedido15_q55<-calculate_tabulates(base=enma,
+                                  x="q55_experiencia",
+                                  y="q17_dni_tenencia",
+                                  add.percentage = 'col',
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+pedido15_q55tot<-calculate_tabulates(base=enma,
+                                  x="q55_experiencia",
+                                  y="q17_dni_tenencia",
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q55), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q55",append = TRUE)
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q55tot), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q55_tot",append = TRUE)
+
+
+#resultados q17xq56
+
+pedido15_q56<-calculate_tabulates(base=enma,
+                                  x="q56_ocupacion_dificultad",
+                                  y="q17_dni_tenencia",
+                                  add.percentage = 'col',
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+pedido15_q56tot<-calculate_tabulates(base=enma,
+                                  x="q56_ocupacion_dificultad",
+                                  y="q17_dni_tenencia",
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q56), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q56",append = TRUE)
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido15_q56tot), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q56_tot",append = TRUE)
+
+
+
+```
+
+##q17 cruaza por q57
+```{r}
+
+#convierto q57 en numérica
+
+enma<-enma %>% 
+  mutate(q57_dificultad_trabajo=case_when(q57_dificultad_trabajo==1 ~1,
+                                          TRUE~ 0)) %>% 
+  mutate(q57_dificultad_titulos=case_when(q57_dificultad_titulos==1 ~1,
+                                          TRUE ~0)) %>% 
+  mutate(q57_dificultad_discriminacion=case_when(q57_dificultad_discriminacion==1 ~1,
+                                                 TRUE ~0)) %>% 
+  mutate(q57_dificultad_hogar=case_when(q57_dificultad_hogar==1 ~1,
+                                        TRUE~0)) %>% 
+  mutate(q57_dificultad_sexual=case_when(q57_dificultad_sexual==1 ~1,
+                                         TRUE ~0)) %>% 
+  mutate(q57_dificultad_documentacion=case_when(q57_dificultad_documentacion==1 ~1,
+                                                TRUE~0)) %>% 
+  mutate(q57_dificultad_idioma=case_when(q57_dificultad_idioma==1~1,
+                                         TRUE~0)) %>% 
+  mutate(q57_dificultad_edad=case_when(q57_dificultad_edad==1~1,
+                                       TRUE~0)) %>% 
+  mutate(q57_dificultad_inexperiencia=case_when(q57_dificultad_inexperiencia==1~1,
+                                                TRUE~0)) %>% 
+  mutate(q57_dificultad_falta_oferta=case_when(q57_dificultad_falta_oferta==1~1,
+                                               TRUE~0)) %>% 
+  mutate(q57_dificultad_salud=case_when(q57_dificultad_salud==1~1,
+                                        TRUE~0)) %>% 
+  mutate(q57_dificultad_desconocimiento=case_when(q57_dificultad_desconocimiento==1~1,
+                                                  TRUE~0)) %>% 
+  mutate(q57_dificultad_prefiero_no=case_when(q57_dificultad_prefiero_no==1~1,
+                                              TRUE~0))
+
+unique(enma$q56_ocupacion_dificultad)
+pedido15_q57<-enma %>% 
+  filter(q56_ocupacion_dificultad=="Si") %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            titulos  = sum(weightvec[q57_dificultad_titulos==1]),
+            discriminacion = sum(weightvec[q57_dificultad_discriminacion == 1]),
+            hogar = sum(weightvec[q57_dificultad_hogar == 1]),
+            sexual = sum(weightvec[q57_dificultad_sexual == 1]),
+            documentacion = sum(weightvec[q57_dificultad_documentacion == 1]),
+            idioma = sum(weightvec[q57_dificultad_idioma == 1]),
+            edad = sum(weightvec[q57_dificultad_edad == 1]),
+            inexperiencia = sum(weightvec[q57_dificultad_inexperiencia == 1]),
+            falta_oferta = sum(weightvec[q57_dificultad_falta_oferta == 1]),
+            salud = sum(weightvec[q57_dificultad_salud == 1]),
+            desconocimiento = sum(weightvec[q57_dificultad_desconocimiento == 1]),
+            prefiero_no = sum(weightvec[q57_dificultad_prefiero_no == 1]),
+      'Títilos'  = round(titulos/Poblacion*100,1),
+      'Discriminación'          = round(discriminacion/Poblacion*100,1),
+'Hogar'          = round(hogar/Poblacion*100,1),
+'Sexual'          = round(sexual/Poblacion*100,1),
+'Documentación'          = round(documentacion/Poblacion*100,1),
+'Idioma'          = round(idioma/Poblacion*100,1),
+'Edad'          = round(edad/Poblacion*100,1),
+'Inexperiencia'          = round(inexperiencia/Poblacion*100,1),
+'Falta de oferta'          = round(falta_oferta/Poblacion*100,1),
+'Salud'          = round(salud/Poblacion*100,1),
+'Desconocimiento'          = round(desconocimiento/Poblacion*100,1),
+'Prefiero no responder'          = round(prefiero_no/Poblacion*100,1))
+
+write.xlsx2(as.data.frame(pedido15_q57), "tables/5.Socioeconómica/cuadros_pedido15.xlsx", row.names = FALSE, sheetName ="q57",append = TRUE)
+
+```
+
+##Pedido 32: Cruce entre dificultades para el acceso al trabajo y trabajo formal. q53 por q56
+
+```{r}
+
+pedido32<-calculate_tabulates(base=enma,
+                              x="q56_ocupacion_dificultad",
+                              y="q53_trabajo_formal",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+
+pedido32tot<-calculate_tabulates(base=enma,
+                                  x="q56_ocupacion_dificultad",
+                                  y="q53_trabajo_formal",
+                                  add.totals = 'row',
+                                  weights = 'weightvec')
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido32), "tables/5.Socioeconómica/cuadros_varios.xlsx", row.names = FALSE, sheetName ="pedido32",append = TRUE)
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido32tot), "tables/5.Socioeconómica/cuadros_varios.xlsx", row.names = FALSE, sheetName ="pedido32tot",append = TRUE)
+```
+
+##Pedido 33. Conocer la relación entre envío o no de remesas con Motivos de migración
+q588 x q14
+```{r}
+names(enma)
+unique(enma$q58_envio_dinero)
+
+enma<-enma %>% 
+  mutate(q14_motivos_estudio=case_when(q14_motivos_estudio==1~1,
+                                       TRUE~0)) %>% 
+  mutate(q14_motivos_mejor_trabajo=case_when(q14_motivos_mejor_trabajo==1~1,
+                                             TRUE~0)) %>% 
+  mutate(q14_motivos_nuevas_experiencias=case_when(q14_motivos_nuevas_experiencias==1~1,
+                                                   TRUE~0)) %>% 
+  mutate(q14_motivos_violencia_genero=case_when(q14_motivos_violencia_genero==1~1,
+                                                TRUE~0)) %>% 
+  mutate(q14_motivos_orientacion_sexual=case_when(q14_motivos_orientacion_sexual==1~1,
+                                                  TRUE~0)) %>% 
+  mutate(q14_motivos_persecucion=case_when(q14_motivos_persecucion==1~1,
+                                           TRUE~0)) %>% 
+  mutate(q14_motivos_salud=case_when(q14_motivos_salud==1~1,
+                                     TRUE~0)) %>% 
+  mutate(q14_motivos_habitat=case_when(q14_motivos_habitat==1~1,
+                                       TRUE~0)) %>% 
+  mutate(q14_motivos_necesidades_basicas=case_when(q14_motivos_necesidades_basicas==1~1,
+                                                   TRUE~0)) %>% 
+  mutate(q14_motivos_reunificacion=case_when(q14_motivos_reunificacion==1~1,
+                                             TRUE~0)) %>% 
+  mutate(q14_motivos_acompañar_otrx=case_when(q14_motivos_acompañar_otrx==1~1,
+                                              TRUE~0)) %>% 
+  mutate(q14_motivos_otros=case_when(q14_motivos_otros==1~1,
+                                     TRUE~0))
+
+pedido33<-enma %>% 
+  group_by(q58_envio_dinero) %>% 
+    summarise(Poblacion= sum(weightvec),
+            estudio  = sum(weightvec[q14_motivos_estudio==1]),
+            trabajo = sum(weightvec[q14_motivos_mejor_trabajo == 1]),
+            nuevas_exp = sum(weightvec[q14_motivos_nuevas_experiencias == 1]),
+            VBG = sum(weightvec[q14_motivos_violencia_genero == 1]),
+            orientacion_sexual = sum(weightvec[q14_motivos_orientacion_sexual == 1]),
+            persecucion = sum(weightvec[q14_motivos_persecucion == 1]),
+            salud = sum(weightvec[q14_motivos_salud == 1]),
+            habitat = sum(weightvec[q14_motivos_habitat == 1]),
+            nec_bas = sum(weightvec[q14_motivos_necesidades_basicas == 1]),
+            reunif = sum(weightvec[q14_motivos_reunificacion == 1]),
+            acomp_otrx = sum(weightvec[q14_motivos_acompañar_otrx == 1]),
+            otros = sum(weightvec[q14_motivos_otros == 1]),
+      'Estudio'  = round(estudio/Poblacion*100,1),
+      'Mejor trabajo' = round(trabajo/Poblacion*100,1),
+'Nuevas experiencias'  = round(nuevas_exp/Poblacion*100,1),
+'Violencia de género'  = round(VBG/Poblacion*100,1),
+'Orientación sexual' = round(orientacion_sexual/Poblacion*100,1),
+'Persecución'          = round(persecucion/Poblacion*100,1),
+'Salud'          = round(salud/Poblacion*100,1),
+'Habitat'          = round(habitat/Poblacion*100,1),
+'Necesidades básicas' = round(nec_bas/Poblacion*100,1),
+'Reunificación familiar'  = round(reunif/Poblacion*100,1),
+'Acompañar a otrx'= round(acomp_otrx/Poblacion*100,1),
+'Otros'       = round(otros/Poblacion*100,1))
+
+
+write.xlsx2(as.data.frame(pedido33), "tables/5.Socioeconómica/cuadros_varios.xlsx", row.names = FALSE, sheetName ="pedido33",append = TRUE)
+
+```
+
+
+```{r}
+
+pedido53<-calculate_tabulates(base=enma,
+                              x="q52_trabaja",
+                              y="nivel_educativo_var",
+                              add.percentage = 'row',
+                              add.totals = 'col',
+                              weights = 'weightvec')
+
+```
+
+

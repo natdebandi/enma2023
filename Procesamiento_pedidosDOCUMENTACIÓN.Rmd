@@ -317,3 +317,100 @@ write.xlsx2(as.data.frame(q25rec_edad), "tables/2.Documentación/cuadros_pedido5
 
 ```
 
+##Pedido 49: Cruce entre dificultades para el acceso al DNI y el idioma
+q20 y q7
+
+```{r}
+names(enma)
+pedido49<-calculate_tabulates(base=enma,
+                    x="q20_dni_dificultad_binaria",
+                    y="q7_nivel_castellano",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+pedido49_prop<-calculate_tabulates(base=enma,
+                    x="q20_dni_dificultad_binaria",
+                    y="q7_nivel_castellano",
+                    add.percentage = 'col',
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+pedido49_v3<-calculate_tabulates(base=enma,
+                    x="q20_dni_dificultad_binaria",
+                    y="q6_idioma",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+pedido49_v3prop<-calculate_tabulates(base=enma,
+                    x="q20_dni_dificultad_binaria",
+                    y="q6_idioma",
+                    add.percentage = 'col',
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+
+
+
+##tipo de dificultad
+
+
+enma<-enma %>% 
+  mutate(q21_dni_dificultad_turnos=case_when(q21_dni_dificultad_turnos==1 ~1,
+                                             TRUE ~ 0)) %>% 
+ mutate(q21_dni_dificultad_demora=case_when(q21_dni_dificultad_demora==1 ~1,
+                                             TRUE ~ 0)) %>%  
+  mutate(q21_dni_dificultad_internet=case_when(q21_dni_dificultad_internet==1 ~1,
+                                               TRUE ~0)) %>% 
+  mutate(q21_dni_dificultad_costo=case_when(q21_dni_dificultad_costo==1 ~1,
+                                               TRUE ~0)) %>% 
+    mutate(q21_dni_dificultad_turnos.1=case_when(q21_dni_dificultad_turnos.1==1 ~1,
+                                               TRUE ~0)) %>% 
+    mutate(q21_dni_dificultad_documentacion_origen=case_when(q21_dni_dificultad_documentacion_origen==1 ~1,
+                                               TRUE ~0)) %>% 
+    mutate(q21_dni_dificultad_falta_info=case_when(q21_dni_dificultad_falta_info==1 ~1,
+                                               TRUE ~0)) %>% 
+    mutate(q21_dni_dificultad_identidad_genero=case_when(q21_dni_dificultad_identidad_genero==1 ~1,
+                                               TRUE ~0)) %>% 
+    mutate(q21_dni_dificultad_otros=case_when(q21_dni_dificultad_otros==1 ~1,
+                                               TRUE ~0))
+
+unique(enma$q20_dni_dificultad_binaria)
+#Resultados 
+pedido49_2<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(q7_nivel_castellano) %>% 
+    summarise(Poblacion= sum(weightvec),
+            turnos  = sum(weightvec[q21_dni_dificultad_turnos==1]),
+            demora = sum(weightvec[q21_dni_dificultad_demora == 1]),
+            internet = sum(weightvec[q21_dni_dificultad_internet == 1]),
+            costo = sum(weightvec[q21_dni_dificultad_costo == 1]),
+            RADEX = sum(weightvec[q21_dni_dificultad_turnos.1 == 1]),
+            doc_origen = sum(weightvec[q21_dni_dificultad_documentacion_origen == 1]),
+            falta_info = sum(weightvec[q21_dni_dificultad_falta_info == 1]),
+            identidad_genero= sum(weightvec[q21_dni_dificultad_identidad_genero== 1]),
+            otros = sum(weightvec[q21_dni_dificultad_otros == 1]),
+      'Turnos'  = round(turnos/Poblacion*100,1),
+      'Demora'          = round(demora/Poblacion*100,1),
+      'Internet'          = round(internet/Poblacion*100,1),
+      'Costo'          = round(costo/Poblacion*100,1),
+'Radex'          = round(RADEX/Poblacion*100,1),
+'Documentación origen'          = round(doc_origen/Poblacion*100,1),
+'Falta de información'          = round(falta_info/Poblacion*100,1),
+'Identidad de género'          = round(identidad_genero/Poblacion*100,1),
+'Otros'          = round(otros/Poblacion*100,1))
+
+
+consulta2<-enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(q7_nivel_castellano) %>% 
+  summarise(total=sum(weightvec),
+            turnos=sum(weightvec[q21_dni_dificultad_turnos==1]))
+
+
+
+
+names(enma)
+#guardo tabulado
+write.xlsx2(as.data.frame(q25rec_edad), "tables/2.Documentación/cuadros_pedido51.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+```
+

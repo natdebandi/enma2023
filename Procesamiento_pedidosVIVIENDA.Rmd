@@ -1,0 +1,405 @@
+---
+title: "Pedidos grales"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## PEDIDO PROCESAMIENTO SOCIOECONOMICAS
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(tidyverse)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+
+
+```
+
+
+Leo base de datos con nuevas variables:
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+##PEDIDOS ESPECIALES DIMENSIÓN VIVIENDA
+
+###Pedido 22. Tenencia de DNI por tenencia de vivienda
+```{r}
+
+pedido22<-calculate_tabulates(base=enma,
+                              x="q43_vivienda_es",
+                              y="q17_dni_tenencia",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido22tot<-calculate_tabulates(base=enma,
+                              x="q43_vivienda_es",
+                              y="q17_dni_tenencia",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido22), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido22",append = TRUE)
+write.xlsx2(as.data.frame(pedido22tot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido22tot",append = TRUE)
+```
+
+###Pedido 23: tipo de vivienda por tenencia de hijxs
+
+```{r}
+pedido23<-calculate_tabulates(base=enma,
+                              x="q42_vivienda_tipo",
+                              y="q29_hijos_num",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido23tot<-calculate_tabulates(base=enma,
+                              x="q42_vivienda_tipo",
+                              y="q29_hijos_num",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido23), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido23",append = TRUE)
+write.xlsx2(as.data.frame(pedido23tot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido23tot",append = TRUE)
+
+
+```
+
+###Pedido 24 tipo de vivienda según cantidad de personas en el hogar
+
+```{r}
+
+enma<-enma %>% 
+  mutate(cant_hogar=case_when(q26_hogar_personas>=0 & q26_hogar_personas<2 ~ "Menos de 2",
+                              q26_hogar_personas>=2 & q26_hogar_personas<5  ~ "Entre 2 y 4",
+                              q26_hogar_personas>4 ~ "5 o más"))
+
+#reviso recodificación
+check<-calculate_tabulates(base=enma,
+                           x="q26_hogar_personas",
+                           y="cant_hogar",
+                           weights = 'weightvec')
+
+
+pedido24<-calculate_tabulates(base=enma,
+                              x="q42_vivienda_tipo",
+                              y="cant_hogar",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido24tot<-calculate_tabulates(base=enma,
+                              x="q42_vivienda_tipo",
+                              y="cant_hogar",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido24), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido24",append = TRUE)
+write.xlsx2(as.data.frame(pedido24tot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido24tot",append = TRUE)
+
+
+```
+
+###Pedido 25: lugar de la vivienda por cantidad de personas en el hogar
+```{r}
+
+pedido25<-calculate_tabulates(base=enma,
+                              x="q41_vivienda_lugar",
+                              y="cant_hogar",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido25tot<-calculate_tabulates(base=enma,
+                              x="q41_vivienda_lugar",
+                              y="cant_hogar",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido25), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido25",append = TRUE)
+write.xlsx2(as.data.frame(pedido25tot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido25tot",append = TRUE)
+```
+
+
+###Pedido 26: Recodifico q44 en Variable binaria No he tenido problemas / he tenido algun problema en vivienda
+
+
+En los últimos 2 años ¿ha tenido alguno de los siguientes problemas en relación a su vivienda?
+Seleccione todas las opciones que considere adecuadas
+[Selección múltiple]
+No he tenido dificultades
+Me aumentaron el valor del alquiler y no logro pagarlo
+Me piden un pago adicional para alquilar
+No logro alquilar porque me discriminan por mi condición de migrante
+No logro contar con los requisitos de garantía o recibo de sueldo para alquilar
+No logro acceder a la compra de una vivienda
+No logro acceder a ayudas sociales para materiales, construcción, tierras, etc.
+Me desalojaron
+Me estafaron
+Otra…………………..
+
+
+```{r}
+
+enma<-enma %>% 
+  mutate(prob_vivienda=case_when(q44_vivienda_problemas_no==1 & (q44_vivienda_problemas_precio==0 | q44_vivienda_problemas_discriminacion==0 | q44_vivienda_problemas_garantia==0| q44_vivienda_problemas_compra==0 | q44_vivienda_problemas_ayudasocial==0 | q44_vivienda_problemas_desalojo==0| q44_vivienda_problemas_estafa==0 | q44_vivienda_problemas_otra==0) ~"No he tenido problemas",
+q44_vivienda_problemas_precio==1 | q44_vivienda_problemas_discriminacion==1 | q44_vivienda_problemas_garantia==1| q44_vivienda_problemas_compra==1 | q44_vivienda_problemas_ayudasocial==1 | q44_vivienda_problemas_desalojo==1| q44_vivienda_problemas_estafa==1 | q44_vivienda_problemas_otra==1 ~"He tenido algún problema",
+TRUE~NA))
+
+check2<-calculate_tabulates(base=enma,x='prob_vivienda')
+
+
+prob_vivienda2<-multiResponse(enma, items = c("q44_vivienda_problemas_no",
+"q44_vivienda_problemas_precio",
+"q44_vivienda_problemas_discriminacion",
+"q44_vivienda_problemas_garantia",
+"q44_vivienda_problemas_compra",
+"q44_vivienda_problemas_ayudasocial",
+"q44_vivienda_problemas_desalojo",
+"q44_vivienda_problemas_estafa",
+"q44_vivienda_problemas_otra"),
+                          endorsedOption = 1)
+```
+
+###Pedido 27
+Variable binaria creada x tenencia de hijes; x tenencia DNI x nacionalidades x regiones
+```{r}
+names(enma)
+
+#cruce segun tenencia de hijxs
+pedido27_hijxs<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="q29_hijos_num",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido27_hijxstot<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="q29_hijos_num",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido27_hijxs), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_hijxs",append = TRUE)
+write.xlsx2(as.data.frame(pedido27_hijxstot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_hijxstot",append = TRUE)
+
+#cruce segun tenencia dni
+
+pedido27_dni<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="q17_dni_tenencia",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido27_dnitot<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="q17_dni_tenencia",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido27_dni), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_dni",append = TRUE)
+write.xlsx2(as.data.frame(pedido27_dnitot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_dnitot",append = TRUE)
+
+#cruce segun región
+
+pedido27_region<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="region_CABA_var",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido27_regiontot<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="region_CABA_var",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido27_region), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_region",append = TRUE)
+write.xlsx2(as.data.frame(pedido27_regiontot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_regiontot",append = TRUE)
+
+#cruce segun nacionalidad
+
+pedido27_MERCOSUR<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="nac_agrupada",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido27_MERCOSURtot<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="nac_agrupada",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido27_MERCOSUR), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_nacMERCOSUR",append = TRUE)
+write.xlsx2(as.data.frame(pedido27_MERCOSURtot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_nacMERCOSURtot",append = TRUE)
+
+#cruce segun nacionalidad2
+
+pedido27_nac<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="nacionalidad_var",
+                              add.percentage = 'col',
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+pedido27_nactot<-calculate_tabulates(base=enma,
+                              x="prob_vivienda",
+                              y="nacionalidad_var",
+                              add.totals = 'row',
+                              weights = 'weightvec')
+
+#guardo tabulados
+write.xlsx2(as.data.frame(pedido27_nac), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_nac",append = TRUE)
+write.xlsx2(as.data.frame(pedido27_nactot), "tables/6.Vivienda/cuadros_vivienda.xlsx", row.names = FALSE, sheetName ="pedido27_nactot",append = TRUE)
+
+```
+
+###Pedido 30 déficit de servicios
+Identificar la ausencia de: electricidad o agua potable o servicio cloacal - q45
+
+```{r}
+names(enma)
+
+enma<-enma %>% 
+  mutate(deficit_serv=case_when(
+    q45_vivienda_servicios_luz!=1 | q45_vivienda_servicios_agua!=1 | q45_vivienda_servicios_gas!=1 | q45_vivienda_servicios_cloaca!=1 ~ 1,
+    TRUE ~0))
+
+enma<-enma %>% 
+  mutate(deficit_serv2=case_when(
+    q45_vivienda_servicios_luz!=1 | q45_vivienda_servicios_agua!=1 | q45_vivienda_servicios_cloaca!=1 ~ 1,
+    TRUE ~0))
+
+
+```
+
+
+```{r}
+
+#
+pedido30_genero<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="genero_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_genero), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="genero",append = TRUE)
+
+pedido30_edad<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="edad_ag_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_edad), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+
+
+pedido30_edad10<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="edad_10_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_edad10), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="edad10",append = TRUE)
+
+
+pedido30_tiempores<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="tiempo_residencia_3_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_tiempores), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="tiempores",append = TRUE)
+
+pedido30_migrec<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="migracion_reciente_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_migrec), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="migrec",append = TRUE)
+
+
+pedido30_niveled<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="nivel_educativo_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_niveled), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="niveled",append = TRUE)
+
+pedido30_secomp<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="secundario_completo_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_secomp), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="secomp",append = TRUE)
+
+pedido30_region<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="region_CABA_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_region), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
+
+pedido30_MERCOSUR<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="nac_agrupada",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_MERCOSUR), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="MERCOSUR",append = TRUE)
+
+pedido30_nacionalidad<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="nacionalidad_var",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_nacionalidad), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="nacionalidad",append = TRUE)
+
+pedido30_dni<-calculate_tabulates(base=enma,
+                    x="deficit_serv",
+                    y="q17_dni_tenencia",
+                    add.totals = 'row',
+                    weights = 'weightvec')
+
+write.xlsx2(as.data.frame(pedido30_dni), "tables/6.Vivienda/pedido30.xlsx", row.names = FALSE, sheetName ="dni",append = TRUE)
+```
+
