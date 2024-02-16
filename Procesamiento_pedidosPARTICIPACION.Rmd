@@ -32,7 +32,7 @@ Leo base de datos con nuevas variables:
 # Lectura de archivo CSV
 
 
-enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -355,4 +355,88 @@ pedido69_dni<- enma %>%
 write.xlsx2(as.data.frame(pedido69_dni), "tables/8.Participación/cuadros_pedido69.xlsx", row.names = FALSE, sheetName ="dni",append = TRUE)
 ```
 
+###pedido4
+Conocer si hay una relación entre la participación en organizaciones con la situación documentaria
+"q67_organización
+"
+
+
+```{r}
+names(enma)
+enma<-enma %>% 
+  mutate(q67_organizacion_migrantes=case_when(q67_organizacion_migrantes==1 ~1,
+                                              TRUE~0)) %>% 
+  mutate(q67_organizacion_social=case_when(q67_organizacion_social==1 ~1,
+                                           TRUE ~0)) %>% 
+  mutate(q67_organizacion_movimiento_social=case_when(q67_organizacion_movimiento_social==1~1,
+                                                      TRUE~0)) %>% 
+  mutate(q67_organizacion_partido=case_when(q67_organizacion_partido==1 ~1,
+                                            TRUE~0)) %>% 
+  mutate(q67_organizacion_religiosa=case_when(q67_organizacion_religiosa==1~1,
+                                              TRUE~0)) %>% 
+  mutate(q67_organizacion_cooperativa=case_when(q67_organizacion_cooperativa==1 ~1,
+                                                TRUE~0)) %>% 
+  mutate(q67_organizacion_otra=case_when(q67_organizacion_otra==1~1,
+      
+                                                                           TRUE~0))
+
+unique(enma$q66_participacion_organizacion)
+
+pedido4_dni<- enma %>% 
+  filter(q66_participacion_organizacion=="Sí") %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Poblacion= sum(weightvec),
+            org_mig  = sum(weightvec[q67_organizacion_migrantes==1]),
+            org_soc = sum(weightvec[q67_organizacion_social == 1]),
+            mov_soc = sum(weightvec[q67_organizacion_movimiento_social == 1]),
+            partido       = sum(weightvec[q67_organizacion_partido == 1]),
+            religiosa        = sum(weightvec[q67_organizacion_religiosa == 1]),
+            cooperativa        = sum(weightvec[q67_organizacion_cooperativa == 1]),
+            otro        = sum(weightvec[q67_organizacion_otra == 1]),
+      'Organización migrante'  = round(org_mig/Poblacion*100,1),
+      'Organización social'          = round(org_soc/Poblacion*100,1),
+'Movimiento social'          = round(mov_soc/Poblacion*100,1),
+'Partido'          = round(partido/Poblacion*100,1),
+'Organización religiosa'          = round(religiosa/Poblacion*100,1),
+'Organización cooperativa'          = round(cooperativa/Poblacion*100,1),
+      'Otra organización'        = round(otro/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido4_dni), "tables/8.Participación/cuadros_pendientes.xlsx", row.names = FALSE, sheetName ="pedido4",append = TRUE)
+
+
+```
+
+##pedido 5: Conocer si hay una relación entre la participación en organizaciones con la participación en elecciones
+q66 participación OSC + q68 voto local
+
+
+```{r}
+
+
+#q66 participación OSC + q68 voto local
+
+
+```{r}
+
+names(enma)
+
+pedido5_tot <- calculate_tabulates(base= enma,
+                    x="q68_participacion_elecciones_locales",
+                    y="q66_participacion_organizacion",
+                    add.totals = 'row',
+                    weights = "weightvec")
+
+pedido5 <- calculate_tabulates(base= enma,
+                    x="q68_participacion_elecciones_locales",
+                    y="q66_participacion_organizacion",
+                    add.percentage = "col",
+                    add.totals = 'row',
+                    weights = "weightvec")
+
+#guardo tabulado
+write.xlsx2(as.data.frame(pedido5), "tables/8.Participación/cuadros_pendientes.xlsx", row.names = FALSE, sheetName ="pedido5",append = TRUE)
+
+write.xlsx2(as.data.frame(pedido5_tot), "tables/8.Participación/cuadros_pendientes.xlsx", row.names = FALSE, sheetName ="pedido5_tot",append = TRUE)
+```
 
