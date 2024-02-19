@@ -21,121 +21,75 @@ library(ggplot2)
 
 
 
-#rm(list = ls())
+rm(list = ls())
 ```
 
 # ENMA 2023 - analisis por capítulos
+
 ## Datos sociodemográficos
+
+Ponderador censal (ENMA_v2)
+Fecha de procesamiento: febrero 2024
 
 
 
 ```{r carga_datos, include=FALSE}
 
 #Cargo los datos ENMA
-enma <-  read_csv2("datos\\ENMA_v1.csv",col_names = TRUE,col_types = NULL)
+#enma <-  read_csv2("datos\\ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
-#names(enma) 
-print("ENMA 2023")
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
-
-```
-### Cantidad de respuestas por día
-
-```{r}
-# Datos con fechas y variables. La columna 'date' (fecha) es de clase "Date"
-
-enma<-enma %>%
-    mutate(fecha=as.Date(start))
-
-
-consulta <- enma %>% 
-  group_by(fecha) %>% 
-  summarise (cantidad = n()) 
-
-
-#ggplot(consulta, aes(x = fecha, y = cantidad)) +
-#  geom_line()
-
-# Barplot
-ggplot(consulta, aes(x=fecha, y=cantidad)) + 
-  geom_bar(stat = "identity")
-
-```
-### Cantidad de casos por nacionalidad - sin ponderar
-
-```{r}
-# 
-
-consulta <- enma %>% 
-  group_by(nacionalidad_var) %>% 
-  summarise (cantidad = n()) 
-
-print(consulta)
-
-write.xlsx2(as.data.frame(consulta), "tables\\sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "nacionalidad") 
-
+names(enma) 
+#print("ENMA 2023")
 
 
 ```
 
-### muestra - nacionalidades detalle sin ponderar
-
-```{r}
-# 
-
-consulta <- enma %>% 
-  group_by(nacionalidad_desagregada) %>% 
-  summarise (cantidad = n()) 
 
 
-print(consulta)
+### Desciende, tiene antepasados o pertenece a alguno de los siguientes grupos (q5_descendencia)
 
-write.xlsx2(as.data.frame(consulta), "tables\\sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "nac_desagregada") 
+(Pregunta de selección múltiple)  
+
+Me quedo solo con las dos categorías de interés y representativas:  
+Indígena o descendiente de pueblos indígenas u originarios   
+Afrodescendiente, africano o afroargentino/a    
+
+q5_descendencia_indigena
+
+```{r q5_descendencia_indigena}
+# q5_descendencia
+
+#q5_descendencia_indigena                          
+#q5_descendencia_afro
 
 
+enma_temp<- enma %>% 
+  group_by(q5_descendencia_indigena,region_amba_var) %>% 
+  summarise (cantidad = sum(weightvec)) 
 
-```
-
-### Distribución de la población por género y grupos de edad
-
-```{r q4_genero_edad}
-
-  #creo un excel con y la primera solapa es el cruce de todas las nac.
-cc<- calculate_tabulates(base = enma, x = 'edad_ag_var', y = 'genero_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-
-write.xlsx2(as.data.frame(cc), "tables\\sociodemograficos\\q4_genero_edad.xlsx", row.names = FALSE, sheetName = "todas")    
+cc<- calculate_tabulates(base = enma, x = 'q5_descendencia_indigena', y = 'region_amba_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
 
 print(cc)
 
+write.xlsx2(as.data.frame(cc), "tables\\1.sociodemograficos\\sociodemograficas.xlsx", row.names = FALSE, sheetName = "q5_descendencia") 
+
 ```
 
-### Nacionalidades según género
+q5_descendencia_afro  
 
-```{r nacionalidad_genero}
-
-
-consulta <- enma %>% 
-  group_by(nacionalidad_var,genero_var) %>% 
-  summarise (cantidad = round(sum(weightvec_0)))
+```{r q5_descendencia_afro}
 
 
-consulta_w<-consulta %>% pivot_wider(names_from = genero_var, values_from = cantidad)
-print(consulta_w)
-
-write.xlsx2(as.data.frame(consulta_w), "tables\\sociodemograficos\\genero_nacionalidad.xlsx", row.names = FALSE, sheetName = "absolutos")  
-
-
-  #creo un excel con y la primera solapa es el cruce de todas las nac.
-cc<- calculate_tabulates(base = enma, x = 'genero_var', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
-
-
-write.xlsx2(as.data.frame(cc), "tables\\sociodemograficos\\genero_nacionalidad.xlsx", row.names = FALSE, sheetName = "distribucion",append = TRUE)
+cc<- calculate_tabulates(base = enma, x = 'q5_descendencia_afro', y = 'region_amba_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
 
 print(cc)
 
+write.xlsx2(as.data.frame(cc), "tables\\1.sociodemograficos\\sociodemograficas.xlsx", row.names = FALSE, sheetName = "q5_afro",append = TRUE) 
 
 ```
+
 
 ### Hogar; familia e hijes
 
