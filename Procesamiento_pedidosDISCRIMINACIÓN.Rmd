@@ -256,6 +256,7 @@ enma<-enma %>%
 #resultados
 pedido17_q62<- enma %>%
   filter(q62_new=="Sí, al menos alguna vez" | q62_new=="No, nunca") %>% 
+  group_by(q62_new) %>% 
   summarise(Poblacion= sum(weightvec),
             Indigena  = sum(weightvec[q5_descendencia_indigena==1]),
             Afro = sum(weightvec[q5_descendencia_afro == 1]),

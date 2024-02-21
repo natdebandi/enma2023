@@ -32,7 +32,7 @@ Leo base de datos con nuevas variables:
 # Lectura de archivo CSV
 
 
-enma <-  read_csv("datos/enma_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -412,5 +412,210 @@ consulta2<-enma %>%
 names(enma)
 #guardo tabulado
 write.xlsx2(as.data.frame(q25rec_edad), "tables/2.Documentación/cuadros_pedido51.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+```
+
+##q21 por principales cruces
+
+```{r}
+
+#género
+
+genero<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(genero_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(genero), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="genero",append = TRUE)
+
+#edad
+
+edad<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(edad_ag_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(edad), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="edad",append = TRUE)
+
+#edad10
+
+edad10<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(edad_10_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(edad10), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="edad10",append = TRUE)
+
+#edad_enma2020
+
+
+edad_emma<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(edad_ag2_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(edad_emma), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="edad_enma",append = TRUE)
+
+#tiempo residencia
+
+tiempo_res<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(tiempo_residencia_3_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(tiempo_res), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="tiempo_res",append = TRUE)
+
+#migración reciente
+
+mig_rec<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(migracion_reciente_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(mig_rec), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="mig_rec",append = TRUE)
+
+#nivel educativo
+
+niveled<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(nivel_educativo_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(niveled), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="niveled",append = TRUE)
+
+#secundario completo
+
+sec_comp<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(secundario_completo_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(sec_comp), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="sec_comp",append = TRUE)
+
+#región
+
+region<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(region_CABA_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(region), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
+
+#nacionalidad MERCOSUR
+
+nac_MERCOSUR<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(nac_agrupada) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(nac_MERCOSUR), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="MERCOSUR",append = TRUE)
+
+#nacionalidad
+
+nacionalidad<- enma %>% 
+  filter(q20_dni_dificultad_binaria=="Si") %>% 
+  group_by(nacionalidad_var) %>% 
+    summarise(Poblacion= sum(weightvec),
+            Burocratico_adm  = sum(weightvec[q21_burocratico_adm==1]),
+            Falta_info = sum(weightvec[q21_falta_info == 1]),
+            No_cumple_req = sum(weightvec[q21_no_cumple_req == 1]),
+            Otros = sum(weightvec[q21_otros == 1]),
+      'Burocrático-adm'  = round(Burocratico_adm/Poblacion*100,1),
+      'Falta información'          = round(Falta_info/Poblacion*100,1),
+'No cumple con requisitos'          = round(No_cumple_req/Poblacion*100,1),
+'Otras dificultades' = round(Otros/Poblacion*100,1))
+
+#guardo tabulado
+write.xlsx2(as.data.frame(nacionalidad), "tables/2.Documentación/cuadros_q21.xlsx", row.names = FALSE, sheetName ="nacionalidad",append = TRUE)
+
 ```
 
