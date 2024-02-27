@@ -109,6 +109,26 @@ pedido36<- enma %>%
 'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
 'Otros problemas'            = round(doc_otro/Poblacion*100,1))
 
+unique(enma$q32_asistencia_educacion)
+
+pedido36_v2<- enma %>%
+  filter(q32_asistencia_educacion=="Si, al menos alguno/a") %>% 
+  summarise(Poblacion = sum(weightvec),
+            no = sum(weightvec[q33_incoveniente_educacion_no==1]),
+            cupo = sum(weightvec[q33_incoveniente_educacion_cupo == 1]),
+            inscripcion = sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),
+            dni = sum(weightvec[q33_inconveniente_educacion_dni == 1]),
+            doc_origen = sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),
+             doc_arg = sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),
+            doc_otro = sum(weightvec[q33_inconveniente_educacion_otro== 1]),
+      'Ninguno'  = round(no/Poblacion*100,1),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
 
 write.xlsx2(as.data.frame(pedido36), "tables/3.Educación/cuadros_educacion.xlsx", row.names = FALSE, sheetName ="pedido36",append = TRUE)
 
@@ -743,6 +763,25 @@ write.xlsx2(as.data.frame(pedido46_a), "tables/3.Educación/cuadros_pedido46.xls
 
 names(enma)
 
+
+```
+ 
+ 
+```{r}
+
+library(tidyverse)
+
+q47_edad<-enma %>% 
+  group_by(q47_estudiando_argentina, edad_ag2_var) %>% 
+  summarise(cantidad=sum(weightvec)) %>% 
+  pivot_wider(names_from= edad_ag2_var, values_from=cantidad)
+
+pedido46 <- enma %>% 
+  group_by(q29_hijos_num, region_CABA_var) %>% 
+  summarise(cantidad= sum(weightvec))
+pedido46_a<-pedido46_v2 %>%pivot_wider(names_from = region_CABA_var, values_from = cantidad)
+
+v2
 
 ```
  
