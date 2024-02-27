@@ -1,0 +1,310 @@
+---
+title: "CAPITULO DOCUMENTACION"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## CAPITULO 2 - DOCUMENTACIÓN
+
+Este archivo contiene los datos utilizados en el capítulo 2 e la ENMA
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(tidyr)
+library(readr)
+
+
+
+```
+
+Levanto la base de datos
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura del archivo público de ENMA 2023
+
+enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+Exploracion de variables
+
+Ver documentación (LINK)
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+str(enma)
+
+```
+
+### proporción de personas sin DNI (q17)
+
+
+```{r q17_dni_tenencia}
+
+qry<-enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(n=sum(weightvec)) %>%
+  mutate(freq = n / sum(n) *100)
+qry
+
+```
+El 7% de las personas migrantes cuenta con DNI
+
+### Tenencia de DNI según tiempo de residencia (q17)
+
+```{r q17_tiempo_residencia }
+
+qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'tiempo_residencia_3_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+```
+### Tenencia de DNI según tiempo de residencia en 5 grupos (revision) (q17)
+
+
+```{r q17_tiempo_residencia_2 }
+
+#se quere calcular una variable de tiempo de residencia de más rango para compara con 2020
+# hasta 1 año : llegó en 2022 o 2023 (la encuesta fue en mayo)
+# Más de 1 año y menos de 2 años : entre 2020 y 2021
+# 3-5 años : entre 2017, 2018 y 2019 
+# 5 y 9  : 2016 y 2012
+# más de 10 años.Antes de 2013
+
+ ##tomamos 1 año desde 2022 inclusive ya que se aplicó en mayo
+
+enma<- enma %>% 
+      mutate(tiempo_res_5=case_when(
+             q13_anio_llegada>=2022~ "hasta 1 año (2022+)",
+             q13_anio_llegada>=2020 & q13_anio_llegada <=2021 ~ "Más de 1 año y hasta 2 años (2020-2021)",
+             q13_anio_llegada>=2017 & q13_anio_llegada <=2019 ~ "3-5 años (2017-2019)",
+             q13_anio_llegada>=2012 & q13_anio_llegada <=2016 ~ "6-9 años (2012-2016)",
+             q13_anio_llegada<=2011 ~ "más de 10 años (<=2011)",
+             )
+      )
+  
+qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'tiempo_res_5', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/q17_tiempo_res.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
+
+```
+### Tenencia de DNI según region (nacionalidad agrupada)  (q17)
+
+```{r q17_nac_agrupada }
+
+consulta <- enma %>% 
+  group_by(q17_dni_tenencia,nac_agrupada) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = nac_agrupada, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q17_region.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
+
+```
+
+
+
+### Tenencia de DNI según pais (revision) (q17)
+
+```{r q17_pais }
+
+consulta <- enma %>% 
+  group_by(q17_dni_tenencia,nacionalidad_desagregada) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = nacionalidad_desagregada, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q17_pais.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
+
+```
+
+
+### Situación documentaria (q18)
+
+```{r q18_dni_situacion  }
+
+enma<- enma %>% 
+      mutate(q18_dni_var=case_when(
+             q18_dni_situacion=="A la naturalización"~ "DNI por naturalización",
+             q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanent",
+             q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria)",
+             TRUE ~ NA
+             )
+      )
+
+qry<-enma %>% 
+  group_by(q18_dni_var ) %>% 
+  summarise(n=round(sum(weightvec)),0) %>%
+  mutate(freq = n / sum(n) *100)
+qry
+
+
+write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName ="q18",append = TRUE)
+
+```
+
+### Situación documentaria (q18)
+
+```{r q19  }
+
+enma<- enma %>% 
+      mutate(q18_dni_var=case_when(
+             q18_dni_situacion=="A la naturalización"~ "DNI por naturalización",
+             q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanent",
+             q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria)",
+             TRUE ~ NA
+             )
+      )
+
+qry<-enma %>% 
+  group_by(q19_situacion_documentaria ) %>% 
+  summarise(n=round(sum(weightvec)),0) %>%
+  mutate(freq = n / sum(n) *100)
+qry
+
+
+write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName ="q18",append = TRUE)
+
+```
+ ### 
+
+```{r, message=FALSE, warning=FALSE}
+
+#recodifico edad en 3 grupos
+
+enma<-enma %>% 
+  mutate(edad_ag2_var= case_when(
+    q2_edad< 35 ~ "18-34",
+    q2_edad> 34 & q2_edad<55 ~ "35-54",
+    TRUE ~ "55+"))
+
+
+#Resultados
+edad2 <- enma %>%
+  group_by(edad_ag2_var) %>% 
+  rename(Edad=edad_ag2_var) %>%
+  summarise(Frecuencia = sum(weightvec)) %>%
+  mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) 
+
+#edad2
+
+
+qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'edad_ag2_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/q20_edad202.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
+
+
+
+```
+
+
+
+### tipología familia 1
+
+Sin conyuge/pareja ni hijos
+Sin conyuge/pareja con hijos
+Con conyuge/pareja y Sin hijos
+Con conyuge/pareja con  hijos
+
+
+
+```{r}
+
+enma<-enma %>% 
+  mutate(
+    
+    familia_hijos=case_when(
+        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="No") ~ "Sin conyuge/pareja ni hijos",
+        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="Si") ~ "Sin conyuge/pareja con hijos",
+        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="No") ~ "Con conyuge/pareja y Sin hijos",
+        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="Si") ~ "Con conyuge/pareja con  hijos",
+    TRUE ~ NA))
+
+temp_qry <- enma %>% 
+ group_by(familia_hijos) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+temp_qry
+
+
+
+```
+
+ ### Tenencia DNI según tenencia o no de hijes
+
+```{r, message=FALSE, warning=FALSE}
+#q29_hijos_num
+
+qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'q29_hijos_num', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/q17_hijes.xls", row.names = FALSE, sheetName ="q17",append = TRUE)
+
+
+
+```
+### dificultades de acceso a la documentación segun tenencia de hijes
+
+```{r, message=FALSE, warning=FALSE}
+#q29_hijos_num
+
+qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'q29_hijos_num', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/q20_hijes.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
+
+
+
+```
+
+
+### Tenencia DNI según tipo de familia
+
+```{r, message=FALSE, warning=FALSE}
+#q29_hijos_num
+
+qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'familia_hijos', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/q17_familia.xls", row.names = FALSE, sheetName ="q17",append = TRUE)
+
+
+
+```
+
+
+### dificultades de acceso a la documentación segun tenencia de hijes
+
+```{r, message=FALSE, warning=FALSE}
+#q29_hijos_num
+
+qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'familia_hijos', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/q20_familia.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
+
+
+
+```
