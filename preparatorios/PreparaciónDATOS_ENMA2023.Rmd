@@ -1,0 +1,569 @@
+---
+title: "ENMA_2023"
+output: html_document
+date: "`r Sys.Date()`"
+---
+# Pedidos especiales para Anuario ENMA 2023
+
+## Construcción de variables
+
+```{r setup, message=FALSE, warning=FALSE}
+
+
+#cargo librerías que voy a usar
+
+library(userfriendlyscience)
+library(haven)
+library(tidyverse)
+library(readxl)
+library(labelled)
+library(dplyr)
+library(eph)
+library(xlsx)
+library(knitr)
+library("rmarkdown")
+library(kableExtra)
+
+#Limpio espacio de trabajo
+
+rm(list = ls())
+
+
+```
+
+
+A continuación se incluye la construcción de nuevas variables solicitadas para el desarrollo del **Anuario ENMA 2023**:
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura de archivo CSV
+
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+
+
+Las bases tienen dos columnas de calibración al final, **'weightvec'**: que calibra por variables sociodemograficas y corrige los pesos por nacionalidad y  **'weightvec_0'** que solo calibra las variables sociodemograficas al interior de cada nacionalidad, y mantiene el numero de n en la muestra para cada nacionalidad.
+
+
+```{r exploracion, include=FALSE, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+
+#Ver estrucutra de la base
+
+str(enma)
+names(enma)
+
+```
+
+
+
+```{r funcion, eval=FALSE, echo=FALSE}
+
+# Creo una función que permite convertir en numéricos valores de carácter 
+
+labelled_chr2dbl <- function(x) {
+  varlab <- var_label(x)
+  vallab <- val_labels(x)
+  vallab <- setNames(as.numeric(vallab),
+                     names(vallab))
+  x <- as.numeric(as.character(x))
+  var_label(x) <- varlab
+  val_labels(x) <- vallab
+  x
+}
+
+```
+
+## Grupos de edad
+
+Se recodifica la variable edad de acuerdo a la agrupación de la ENMA 2020; de 18 a 34 años, de 35 a 54 años y de 55 años y más.
+
+```{r, message=FALSE, warning=FALSE}
+
+#recodifico edad en 3 grupos
+
+enma<-enma %>% 
+  mutate(edad_ag2_var= case_when(
+    q2_edad< 35 ~ "18-34",
+    q2_edad> 34 & q2_edad<55 ~ "35-54",
+    TRUE ~ "55+"))
+
+
+#Resultados
+edad2 <- enma %>%
+  group_by(edad_ag2_var) %>% 
+  rename(Edad=edad_ag2_var) %>%
+  summarise(Frecuencia = sum(weightvec)) %>%
+  mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+edad2
+```
+
+
+
+## Estrategias para cubrir gastos 
+
+Se recodifica la variable q59 que refiere a estrategias para cubrir gastos diarios durante el último año según pedido.
+
+```{r, message=FALSE, warning=FALSE}
+
+#renombre variables
+
+enma<-enma %>% 
+  rename("Ahorro"=q59_gastos_ahorros, "Prestamo_entorno"=q59_gastos_préstamos_entorno,
+         "Ayuda_estatal"=q59_gastos_ayuda_estatal, "Ayuda_organizaciones"=q59_gastos_ayuda_organizaciones,
+         "Cuotas"=q59_gastos_cuotas, "Fiado"=q59_gastos_fiado, "Prestamo_banco"=q59_gastos_préstamos_bancos,
+         "Venta_pertenencias"=q59_gastos_venta_pertenencias, "Ninguna"=q59_gastos_ninguna, "Prefiero_no_reponder"=q59_gastos_prefiero_no)
+
+
+#análisis exploratorio de respuesta múltiple
+
+q59<-multiResponse(enma, items = c("Ahorro", "Prestamo_entorno", "Ayuda_estatal", "Ayuda_organizaciones",
+                                   "Cuotas", "Fiado", "Prestamo_banco", "Venta_pertenencias", "Ninguna",
+                                   "Prefiero_no_reponder"),
+                   endorsedOption = 1) %>% 
+  kable()
+
+#lo imprimo
+q59
+
+
+#Recodifico q59
+
+enma<-enma %>% 
+  mutate(Descapitalizacion=case_when(
+    Ahorro==1 | Venta_pertenencias==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(Endeudamiento_informal= case_when(
+    Fiado==1 | Prestamo_entorno==1 ~ 1,
+    TRUE ~0 )) %>% 
+  mutate(Endeudamiento_formal=case_when(
+    Prestamo_banco==1 | Cuotas==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(Ayudas= case_when(
+    Ayuda_estatal==1 | Ayuda_organizaciones==1 ~ 1,
+    TRUE ~0))%>% 
+  mutate(Prefiero_no_responder=case_when(
+    Prefiero_no_reponder==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(Ninguna_anteriores=case_when(
+    Ninguna==1 ~ 1,
+    TRUE ~ 0))
+
+
+
+
+```
+
+
+
+
+
+## Perspectiva de mudanza en un futuro cercano
+
+Se crea una nueva variable que considere la posibilidad de mudarse de su lugar de residencia habitual en los próximos 2 años, según a qué lugar se pensaría mudar.
+
+```{r, message=FALSE, warning=FALSE}
+
+#convierto en numérica las variables
+
+enma<-enma %>% 
+  mutate(mudanza= case_when(
+    q15_mudanza=="No" & (is.na(q16_mudanza_lugar)) ~ "Quiere permanecer en Argentina",
+    q15_mudanza=="No sé" & (is.na(q16_mudanza_lugar)) ~ "No sabe",
+    q15_mudanza=="Si" & (q16_mudanza_lugar == "A otra provincia en Argentina"  |
+                          q16_mudanza_lugar == "A otra ciudad de la Provincia donde vivo") ~ "Quiere permanecer en Argentina",
+    q15_mudanza=="Si" & q16_mudanza_lugar== "A mi país de origen" ~ "Quiere retornar a su país de origen",
+    q15_mudanza=="Si" & q16_mudanza_lugar=="A otro país que no es mi país de origen" ~ "Quiere migrar a otro país",
+    q15_mudanza=="Si" & q16_mudanza_lugar=="Prefiero no responder" ~ "No sabe",
+    q15_mudanza=="Si" & is.na(q16_mudanza_lugar) ~  "No sabe"))
+
+
+
+#Resultados
+mudanza <- enma %>%
+  group_by(mudanza) %>% 
+  rename(Mudanza=mudanza) %>% 
+  summarise(Frecuencia=sum(weightvec)) %>% 
+  mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+mudanza
+
+```
+
+## Año de llegada - nueva recodificación
+
+Se hace una nueva recodificación con una mayor desagregación para quienes llegaron al país hace menos de 5 años.
+
+```{r, message=FALSE, warning=FALSE}
+
+enma<-enma %>% 
+  mutate(tiempo_residencia_5_var=case_when(
+    q13_anio_llegada==2023 ~ "Menos de 1 año",
+    q13_anio_llegada==2022 | q13_anio_llegada==2021 ~ "Entre 1 y 2 años",
+    q13_anio_llegada>=2018 & q13_anio_llegada<2021 ~ "Entre 3 y 4 años",
+    q13_anio_llegada<2018 & q13_anio_llegada>=2014 ~ "Entre 5 y 9 años",
+    q13_anio_llegada<= 2013 ~ "10 años o más"))
+
+
+#Resultados
+tiempo_res <- enma %>%
+  group_by(tiempo_residencia_5_var) %>% 
+  rename(Tiempo_residencia =tiempo_residencia_5_var) %>% 
+  summarise(Frecuencia =sum(weightvec)) %>% 
+  mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+tiempo_res
+
+```
+
+## Recodifico q33: Inconvenientes en el acceso a la educación de hijes
+
+Se recodifica en dos categorías: SÍ (quienes tuvieron algún problema) y NO (quienes declaran no haber tenido problemas).
+
+```{r, warning=FALSE, message=FALSE}
+#Creo nuevas variables
+
+#enma<-enma %>% 
+#  mutate(q33_no=case_when(
+#    (q33_incoveniente_educacion_no==1 & (q33_inconveniente_educacion_dni!=1 & q33_incoveniente_educacion_cupo!=1 & q33_inconveniente_educacion_inscripcion!=1   & q33_inconveniente_educacion_documentacion_origen!=1  &
+#      q33_inconveniente_educacion_documentacion_argentina!=1 &
+#      q33_inconveniente_educacion_otro!=1)) ~ 1,
+#    TRUE ~0)) %>% 
+#  mutate(q33_si=case_when(
+#    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~1,
+#    TRUE ~ 0))
+
+
+enma<-enma %>% 
+  mutate(q33_recod=case_when(
+    (q33_incoveniente_educacion_no==1 & (q33_inconveniente_educacion_dni!=1 & q33_incoveniente_educacion_cupo!=1 & q33_inconveniente_educacion_inscripcion!=1   & q33_inconveniente_educacion_documentacion_origen!=1  &
+      q33_inconveniente_educacion_documentacion_argentina!=1 &
+      q33_inconveniente_educacion_otro!=1)) ~ "No tuvo inconveniente",
+    q33_inconveniente_educacion_dni==1 |   q33_incoveniente_educacion_cupo==1 |    q33_inconveniente_educacion_inscripcion==1|    q33_inconveniente_educacion_documentacion_origen==1 |    q33_inconveniente_educacion_documentacion_argentina==1 |    q33_inconveniente_educacion_otro==1 ~"Sí, tuvo inconveniente",
+    TRUE ~ NA))
+
+
+
+#Resultados
+q33 <- enma %>%
+  group_by(q33_recod) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+q33
+
+
+
+```
+
+
+
+## Creo variables activo, empleado y desocupado a partir de q51_Situación ocupacional.
+
+
+## Pregunta y categorías originales
+
+51.	Actualmente, usted se encuentra… (*)  
+Elija la opción que mejor describe su situación ocupacional  
+Con trabajo y una remuneración fija (*)  
+Con trabajo por cuenta propia (*)  
+Venta ambulante (*)  
+Realizando changas, trabajos esporádicos o subempleado (*)  
+Realizando trabajos sin remuneración (*)  
+Desempleado/a buscando trabajo  
+Sin trabajar con licencia (*)  
+Jubilado/a, retirado/a  
+Estudiando  
+Otra  
+
+La ENMA indaga sobre mayores a 18 años, ese es el recorte que se toma para los 3 indicadores
+
+
+## ACTIVIDAD
+
+```{r act, warning=FALSE, message=FALSE}
+## No se incluye como ocupado ni activo "Trabajo sin remuneracion"
+
+
+enma<- enma %>% mutate(activo=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 1,
+    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+
+#Resultados
+activo <- enma %>%
+  group_by(activo) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentjae=Frecuencia/sum(Frecuencia)*100)%>% 
+  kable()
+
+
+activo
+
+```
+
+## EMPLEO
+
+```{r empleo, warning=FALSE, message=FALSE}
+##habria que filtrarlo por edad para que sea mejor... revisar esto
+##falta reconstruir lacategoría "OTRA" a partir de pregunta abierta.
+
+enma<- enma %>%
+  mutate(ocupado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 0,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 1,
+    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA))
+
+
+#Resultados
+ocupado <- enma %>%
+  group_by(ocupado) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentjae=Frecuencia/sum(Frecuencia)*100)%>% 
+  kable()
+
+ocupado
+```
+
+
+
+## DESOCUPACIÓN
+
+```{r desocup, warning=FALSE, message=FALSE}
+
+enma<- enma %>%
+  mutate(desempleado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 0,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 0,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+#    q51_situacion_ocupacional=="Estudiando" ~ 0,
+#    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 0,
+ #   q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 1,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 0,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 0,
+ #   q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+#Resultados
+desocupado <- enma %>%
+  group_by(desempleado) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje=Frecuencia/sum(Frecuencia)*100)%>% 
+  kable()
+
+desocupado
+
+```
+
+
+##REGIÓN CABA + GBA + RESTO REGIONES
+
+```{r region, warning=FALSE, message=FALSE}
+
+#Construyo nueva variable de región
+
+
+enma<-enma %>% 
+  mutate(region_CABA_var=case_when(
+    region_var=="Buenos Aires" & region_amba_var=="Resto Pampeana" ~ "Resto Buenos Aires",
+    region_var=="Buenos Aires" & region_amba_var=="AMBA" ~ "GBA", 
+    region_var=="Resto Pampeana" & region_amba_var=="Resto Pampeana" ~ "Resto Pampeana",
+    region_var=="CABA" & region_amba_var=="AMBA" ~ "CABA",
+    region_var=="NEA" & region_amba_var=="NEA" ~ "NEA",
+    region_var=="NOA" & region_amba_var=="NOA" ~ "NOA",
+    region_var=="CUYO" & region_amba_var=="CUYO" ~ "CUYO",
+    region_var=="Patagonia" & region_amba_var=="Patagonia" ~ "Patagonia",
+    region_var=="Buenos Aires" & region_amba_var==99 ~ "Resto Buenos Aires",
+    region_var=="Buenos Aires" & is.na(region_amba_var) ~ "Resto Buenos Aires",
+  TRUE ~ NA))
+
+
+#Resultados
+region <- enma %>%
+  group_by(region_CABA_var) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje=Frecuencia/sum(Frecuencia)*100)%>% 
+  kable()
+
+region
+
+```
+
+
+
+## Subsidios
+
+Se recodifica la variable q60 en subsidios o prestaciones según sean contributivas o no contributivas.
+
+
+```{r}
+
+#Recodifico q60
+
+enma<-enma %>% 
+  mutate(q60_no_contributivas=case_when(
+    q60_subsidios_auh==1 | q60_subsidios_embarazo==1 | q60_subsidios_jubilacion==1 | q60_subsidios_pension_no_contrib==1 | q60_subsidios_progresar==1 | q60_subsidios_potenciar_trabajo==1 | q60_subsidios_inclusion_joven==1 | q60_subsidios_pieza==1 | q60_subsidios_tarjeta_alimentar==1~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q60_contributivas= case_when(
+    q60_subsidios_desempleo==1 | q60_subsidios_pension==1 ~ 1,
+    TRUE ~0 )) %>% 
+  mutate(q60_no_recibe= case_when(
+    q60_subsidios_no==1 & q60_no_contributivas!=1 & q60_contributivas!=1 ~1,
+    TRUE ~0))
+
+
+
+#Resultados
+contributivas<- enma %>%
+  group_by(q60_contributivas) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje=Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+#Resultados2
+no_contributivas <- enma %>%
+  group_by(q60_no_contributivas) %>% 
+  summarise(Frecuencia = sum(weightvec)) %>% 
+  mutate(Porcentaje=Frecuencia/sum(Frecuencia)*100) %>% 
+  kable()
+
+contributivas
+no_contributivas
+
+
+
+```
+
+
+##RECODIFICO Q21: Problemas para tramitar documentación argentina
+
+Tuve problemas con:
+ Los turnos de Migraciones
+ La demora en los trámites de Migraciones y/o RENAPER
+ La falta de internet, teléfono, computadora.
+ El costo de los trámites
+ La documentación de mi país de origen 
+ El sistema online para el trámite (RADEX)
+ La falta de información
+ La inscripción de mi identidad de género 
+ Otros: 
+
+```{r}
+
+names(enma)
+enma<-enma %>% 
+  mutate(q21_burocratico_adm=case_when(
+    q21_dni_dificultad_turnos==1 | q21_dni_dificultad_demora==1 | q21_dni_dificultad_costo==1 | q21_dni_dificultad_turnos.1==1 | q21_dni_dificultad_identidad_genero==1~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q21_falta_info= case_when(
+    q21_dni_dificultad_falta_info==1 ~ 1,
+    TRUE ~0 )) %>% 
+  mutate(q21_no_cumple_req=case_when(
+    q21_dni_dificultad_internet==1 | q21_dni_dificultad_documentacion_origen==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q21_otros= case_when(
+    q21_dni_dificultad_otros==1 ~ 1,
+    TRUE ~0))
+```
+
+##RECODIFICO Q69. Pedido 48
+
+Pedido 48: Agrupar pregunta q68 (aparece como q69) en Desinformación, Desinteres, No cumple requisitos, Obstáculos materiales
+
+¿Cuáles son los principales motivos por los que no ha votado?
+Seleccione todas las opciones que considere adecuadas
+[Selección múltiple]
+No sabía que tenía este derecho x
+No me interesa votar x
+No tengo DNIx
+No tengo la suficiente antigüedad  x
+No estoy inscripto/a en el padrón x
+Vivo lejos de las mesas de votación
+No sé dónde, cómo  o qué se vota en las elecciones x
+En mi localidad no lo permiten/no está habilitado
+```{r}
+enma<-enma %>% 
+  mutate(q69_desinformación=case_when(q69_participacion_no_sabia==1 | q69_participacion_no_desconocimiento==1 ~ 1,
+                                      TRUE ~ 0)) %>% 
+  mutate(q69_resinteres=case_when(q69_participacion_no_interes==1 ~ 1,
+                                  TRUE ~ 0)) %>% 
+  mutate(q69_no_cumple_req=case_when(q69_participacion_no_dni==1 |  q69_participacion_no_antiguedad==1 | q69_participacion_no_padron==1 ~ 1,
+                                     TRUE~0)) %>% 
+  mutate(q69_obs_materiales=case_when(q69_participacion_no_lejania==1 | q69_participacion_no_permiso==1 ~ 1,
+                                      TRUE ~ 0))
+```
+
+
+#RECODIFICO Q34. Pedido 47
+
+q34_razon_no_asisten	Agrupar las respuestas en 3 categorias: Son mayores.../ Aun no están en edad.../ Tercera categoria que agrupe las 6 opciones (otros motivos, dejaron de asistir, cupo, documentacion, inscripcion, certificados)
+
+
+```{r q34}
+
+enma<-enma %>% 
+  mutate(q34_rec=case_when(q34_asistencia_educacion_razon=="Son mayores y ya finalizaron la escuela"~ "Son mayores y ya finalizaron la escuela",
+                           q34_asistencia_educacion_razon=="Aún no están en edad escolar" ~ "Aún no están en edad escolar",
+                           NA ~ NA,
+                           TRUE ~ "Otras"))
+
+
+```
+
+
+##Pedido 45: recodifico tipo de estudio. q48
+Agrupar las respuestas en las siguientes 4 categorías: Primario / Secundario / Superior (incluyendo Terciario, Universitario y Postgrado) / Capacitaciones
+
+```{r}
+
+
+enma<-enma %>% 
+  mutate(q48_estudiando_superior=case_when(q48_estudiando_nivel_ter==1 | q48_estudiando_nivel_uni==1 | q48_estudiando_nivel_postgrado==1 ~ 1,
+                                           TRUE ~ 0))
+
+
+```
+
+
+
+
+
+
+## Guardo base de datos con nuevas variables
+
+Exporto base de datos con las nuevas variables agregadas
+
+```{r write, message=FALSE, warning=FALSE}
+
+#exporto el csv
+write.csv(enma,"datos/ENMA_v2.csv", row.names = FALSE )
+
+```
+
