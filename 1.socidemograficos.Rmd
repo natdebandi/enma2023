@@ -1,0 +1,284 @@
+---
+title: "ENMA 2023 - Análisis"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(tidyr)
+library(readr)
+
+
+rm(list = ls())
+```
+
+# ENMA 2023 - analisis por capítulos
+## Datos sociodemográficos
+
+versión con ponderador censal ENMA_v2
+
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura del archivo público de ENMA 2023
+
+enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+Exploracion de variables
+
+Ver documentación (LINK)
+
+```{r exploración, include=FALSE, echo=FALSE}
+#names(enma)
+#str(enma)
+
+source(file="variables_recat.R") 
+```
+
+### Distribución por nacionalidad
+
+```{r nacionalidades }
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = nacionalidad_var, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="nacionalidades_pond",append = TRUE)
+
+```
+
+```{r nacionalidades }
+
+consulta <- enma %>% 
+  group_by(q4_genero) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q4_genero, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="q4_genero",append = TRUE)
+
+```
+
+
+```{r genero_nac }
+
+qry<- calculate_tabulates(base = enma, x = 'q4_genero', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
+
+qry
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="genero",append = TRUE)
+```
+
+### Hogar; familia e hijes
+
+### Principales indicadores de conformación del hogar
+
+1 Promedio de personas en el hogar  
+2 Promedio de cantidad de hijes nacidos en Argentina  
+3 Promedio de cantidad de hijes nacidos en el extranjero  
+4 Proporción de hogares con hijes  
+5 proporción de hogares con hijes nacidos en el extranjero  
+6 proporción de hogares con hijos menores de 18 años que viven en el extranjero  
+
+Total de la base  
+
+
+```{r familia_personas}
+# q26_hogar_personas
+# q29_hijos_num
+# q30_hijos_arg
+# q30_hijos_exterior
+# q31_hijos_menores_exterior
+
+### Como es un cruce por nacionalidad debo utilizar el ponderador weightvec_0
+
+
+consulta <- enma %>% 
+  summarise (promedio_personas = round(mean(q26_hogar_personas,na.rm = TRUE)),
+             promedio_hijes_nac_arg = round(mean(q30_hijos_arg,na.rm = TRUE)),
+             promedio_hijes_nac_ext = round(mean(q30_hijos_exterior,na.rm = TRUE)),
+             hogar_con_hijes=sum((q29_hijos_num=="Si")*weightvec,na.rm=TRUE),
+             hogar_con_hijes_mig=sum((q30_hijos_exterior>0)*weightvec,na.rm=TRUE),
+             hogar_menores_ext=sum((q31_hijos_menores_exterior=="Si")*weightvec,na.rm=TRUE),
+             total=sum(weightvec)
+             ) %>%
+   mutate(prop_hog_hijes = hogar_con_hijes / total *100,
+          prop_hog_hijes_nac_ext=hogar_con_hijes_mig / total *100,
+          prop_hog_hijes_menores_ext=hogar_menores_ext / total *100
+          )   
+
+consulta
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "indicadores",append = TRUE) 
+
+
+```
+### Indicadores
+
+```{r familia_personas}
+# q26_hogar_personas
+# q29_hijos_num
+# q30_hijos_arg
+# q30_hijos_exterior
+# q31_hijos_menores_exterior
+
+### Como es un cruce por nacionalidad debo utilizar el ponderador weightvec_0
+
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var) %>% 
+  summarise (promedio_personas = round(mean(q26_hogar_personas,na.rm = TRUE)),
+             promedio_hijes_nac_arg = round(mean(q30_hijos_arg,na.rm = TRUE)),
+             promedio_hijes_nac_ext = round(mean(q30_hijos_exterior,na.rm = TRUE)),
+             hogar_con_hijes=sum((q29_hijos_num=="Si")*weightvec_0,na.rm=TRUE),
+             hogar_con_hijes_mig=sum((q30_hijos_exterior>0)*weightvec_0,na.rm=TRUE),
+             hogar_menores_ext=sum((q31_hijos_menores_exterior=="Si")*weightvec_0,na.rm=TRUE),
+             total=sum(weightvec_0)
+             ) %>%
+   mutate(prop_hog_hijes = hogar_con_hijes / total *100,
+          prop_hog_hijes_nac_ext=hogar_con_hijes_mig / total *100,
+          prop_hog_hijes_menores_ext=hogar_menores_ext / total *100
+          )   
+
+consulta
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "nacionalidad",append = TRUE) 
+
+consulta <- consulta  %>% 
+  select(nacionalidad_var,promedio_personas,promedio_hijes_nac_arg,
+                   promedio_hijes_nac_ext,
+                   prop_hog_hijes,prop_hog_hijes_nac_ext,
+                   prop_hog_hijes_menores_ext)
+
+#consulta<-t(consulta)
+print(consulta)
+
+#exporto el csv
+
+write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "resumen",append = TRUE) 
+
+
+
+```
+
+
+### FAMILIA REGION
+
+```{r familia_region}
+
+consulta <- enma %>% 
+  group_by(region_amba_var) %>% 
+  summarise (promedio_personas = round(mean(q26_hogar_personas,na.rm = TRUE)),
+             promedio_hijes_nac_arg = round(mean(q30_hijos_arg,na.rm = TRUE)),
+             promedio_hijes_nac_ext = round(mean(q30_hijos_exterior,na.rm = TRUE)),
+             hogar_con_hijes=sum((q29_hijos_num=="Si")*weightvec,na.rm=TRUE),
+             hogar_con_hijes_mig=sum((q30_hijos_exterior>0)*weightvec,na.rm=TRUE),
+             hogar_menores_ext=sum((q31_hijos_menores_exterior=="Si")*weightvec,na.rm=TRUE),
+             total=sum(weightvec)
+             ) %>%
+   mutate(prop_hog_hijes = hogar_con_hijes / total *100,
+          prop_hog_hijes_nac_ext=hogar_con_hijes_mig / total *100,
+          prop_hog_hijes_menores_ext=hogar_menores_ext / total *100
+          )   
+
+consulta
+#exporto el csv
+write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "region_abs",append = TRUE) 
+
+consulta <- consulta  %>% 
+  select(region_amba_var,promedio_personas,promedio_hijes_nac_arg,
+                   promedio_hijes_nac_ext,
+                   prop_hog_hijes,prop_hog_hijes_nac_ext,
+                   prop_hog_hijes_menores_ext)
+
+#consulta<-t(consulta)
+print(consulta)
+
+#exporto el csv
+
+write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "region_prop",append = TRUE) 
+
+
+
+
+
+```
+
+
+### tipología familia 
+
+Sin conyuge/pareja ni hijos
+Sin conyuge/pareja con hijos
+Con conyuge/pareja y Sin hijos
+Con conyuge/pareja con  hijos
+
+
+
+```{r}
+
+enma<-enma %>% 
+  mutate(
+    
+    familia_hijos=case_when(
+        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="No") ~ "Sin conyuge/pareja ni hijos",
+        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="Si") ~ "Sin conyuge/pareja con hijos",
+        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="No") ~ "Con conyuge/pareja y Sin hijos",
+        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="Si") ~ "Con conyuge/pareja con  hijos",
+    TRUE ~ NA))
+
+temp_qry <- enma %>% 
+ group_by(familia_hijos) %>%
+ summarise(cantidad= round(sum(weightvec),0)) 
+temp_qry
+
+
+#exporto el csv
+write.xlsx2(as.data.frame(temp_qry), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "familia_total",append = TRUE) 
+
+```
+
+### Tipo de familia segun region
+
+```{r tipo_fam_region }
+
+
+qry<- calculate_tabulates(base = enma, x = 'familia_hijos', y = 'region_amba_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/familias.xlsx", row.names = FALSE, sheetName ="tipof_region",append = TRUE)
+```
+
+### Tipo de familia segun nacionalidad
+
+```{r tipo_fam_nac }
+
+
+qry<- calculate_tabulates(base = enma, x = 'familia_hijos', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/familias.xlsx", row.names = FALSE, sheetName ="tipof_nac",append = TRUE)
+```
+
+
+
+
+

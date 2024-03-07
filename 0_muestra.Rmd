@@ -1,0 +1,207 @@
+---
+title: "ENMA 2023 - Análisis"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(tidyr)
+library(readr)
+
+
+rm(list = ls())
+```
+
+# ENMA 2023 - analisis por capítulos
+
+## Descripción de la muestra
+
+Ponderador censal (ENMA_v2)
+Fecha de procesamiento: febrero 2024
+
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura del archivo público de ENMA 2023
+
+enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+
+names(enma)
+```
+### Cantidad de respuestas por día
+
+```{r}
+# Datos con fechas y variables. La columna 'date' (fecha) es de clase "Date"
+
+enma<-enma %>%
+    mutate(fecha=as.Date(start))
+
+
+consulta <- enma %>% 
+  group_by(fecha) %>% 
+  summarise (cantidad = n()) 
+
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "fechas") 
+
+
+# Barplot
+ggplot(consulta, aes(x=fecha, y=cantidad)) + 
+  geom_bar(stat = "identity")
+
+```
+### Cantidad de casos por nacionalidad - sin ponderar
+
+```{r}
+# 
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var) %>% 
+  summarise (cantidad = n()) 
+
+print(consulta)
+
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "nacionalidad",append = TRUE) 
+
+
+
+```
+
+### muestra - nacionalidades detalle sin ponderar
+
+```{r}
+# 
+
+consulta <- enma %>% 
+  group_by(nacionalidad_desagregada) %>% 
+  summarise (cantidad = n()) 
+
+
+print(consulta)
+
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "nac_desagregada",append = TRUE)  
+
+
+
+```
+
+### region 
+
+```{r muestra_region}
+
+consulta <- enma %>% 
+  group_by(region_var) %>% 
+  summarise (cantidad = n()) 
+
+print(consulta)
+
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "region",append = TRUE)  
+
+```
+
+
+### género (q4_genero)
+
+sin ponderar ni agrupar  
+
+
+```{r genero_simple}
+
+  #creo un excel con y la primera solapa es el cruce de todas las nac.
+consulta <- enma %>% 
+  group_by(q4_genero) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "q4_genero",append = TRUE)  
+
+consulta
+```
+### Edad - distribucion 2020
+
+Reconstruyo una nueva variable equivalente a 2020
+
+18-34 años  
+35-54 años  
+55 y más años  
+
+
+
+```{r edad_enma2020}
+typeof(enma$q2_edad)
+
+
+enma<-enma %>%
+      mutate(edad2020= case_when(
+          (q2_edad<35)  ~ "18-34",
+          (q2_edad>=35 & q2_edad<=54) ~ "35-54",
+          (q2_edad>=55) ~ ">55",
+          TRUE ~ NA
+      ))
+
+  #creo un excel con y la primera solapa es el cruce de todas las nac.
+consulta <- enma %>% 
+  group_by(edad2020) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "edad_2020",append = TRUE)  
+
+consulta
+```
+### edad agrupada
+
+
+```{r edad_agrupada}
+
+  #creo un excel con y la primera solapa es el cruce de todas las nac.
+consulta <- enma %>% 
+  group_by(edad_ag_var) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+
+write.xlsx2(as.data.frame(consulta), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "edad_ag",append = TRUE)  
+
+consulta
+
+```
+
+### Nacionalidades según género
+
+```{r nacionalidad_genero}
+
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,genero_var) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+
+consulta_w<-consulta %>% pivot_wider(names_from = genero_var, values_from = cantidad)
+print(consulta_w)
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "genero_nac_abs",append = TRUE)    
+
+
+  #creo un excel con y la primera solapa es el cruce de todas las nac.
+cc<- calculate_tabulates(base = enma, x = 'genero_var', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
+
+
+write.xlsx2(as.data.frame(cc), "tables\\1.sociodemograficos\\muestra.xlsx", row.names = FALSE, sheetName = "genero_nac_freq",append = TRUE)
+
+print(cc)
+
+
+```
+
+
+

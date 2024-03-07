@@ -1,0 +1,113 @@
+---
+title: "CAPITULO SALUD"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+## CAPITULO 6 - SALUD
+
+
+
+```{r setup, message=FALSE, warning=FALSE}
+
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(tidyr)
+library(readr)
+
+rm(list = ls())
+
+```
+
+Levanto la base de datos
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura del archivo público de ENMA 2023
+
+enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+Exploracion de variables
+
+Ver documentación (LINK)
+
+```{r exploración, include=FALSE, echo=FALSE}
+names(enma)
+#str(enma)
+
+source(file="variables_recat.R") 
+```
+
+### q36 Salud
+```{r}
+
+##cruce univariado
+consulta <- enma %>% 
+  filter(q36_salud!="No sé") %>%
+  group_by(q36_salud) %>% 
+  summarise (n = round(sum(weightvec),0)) %>%
+  mutate(freq = n / sum(n) *100)
+consulta
+```
+
+
+```{r q36}
+
+enma<-enma %>% 
+  mutate(q36_recat= case_when(
+    q36_salud!= "No sé" ~ q36_salud,
+    TRUE ~ NA))
+
+consulta <- enma %>% 
+  group_by(q36_recat) %>% 
+  summarise (cantidad = round(sum(weightvec))) %>%
+  mutate(Porcentaje= cantidad/sum(cantidad)*100) 
+
+consulta
+
+
+```
+
+
+
+```{r q36_edad }
+
+
+qry<- calculate_tabulates(base = enma, x = 'q36_recat', y = 'edad_2020', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/q36_salud.xls", row.names = FALSE, sheetName ="edad_2020",append = TRUE)
+```
+
+
+
+```{r q36_dni}
+
+consulta <- enma %>% 
+  group_by(tiempo_residencia_3_var,q36_recat,q17_dni_tenencia) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q36_salud.xls", row.names = FALSE, sheetName ="dni",append = TRUE)
+
+
+
+```
+
+
+
+
+

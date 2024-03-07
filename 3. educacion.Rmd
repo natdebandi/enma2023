@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 ---
 
 
-## CAPITULO 2 - DOCUMENTACIÓN
+## CAPITULO 3 - EDUCACION
 
 Este archivo contiene los datos utilizados en el capítulo 2 e la ENMA
 
@@ -24,7 +24,7 @@ library(xlsx)
 library(tidyr)
 library(readr)
 
-rm(list = ls())
+
 
 ```
 
@@ -45,10 +45,7 @@ Ver documentación (LINK)
 
 ```{r exploración, include=FALSE, echo=FALSE}
 names(enma)
-#str(enma)
-
-
-source(file="variables_recat.R") 
+str(enma)
 
 ```
 
@@ -103,7 +100,7 @@ qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'tiempo_res_5
 
 qry
 
-write.xlsx2(as.data.frame(qry), "cuadros/q17.xlsx", row.names = FALSE, sheetName ="tiempo_res",append = TRUE)
+write.xlsx2(as.data.frame(qry), "cuadros/q17_tiempo_res.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
 
 ```
 ### Tenencia de DNI según region (nacionalidad agrupada)  (q17)
@@ -117,7 +114,7 @@ consulta <- enma %>%
 consulta_w<-consulta %>% pivot_wider(names_from = nac_agrupada, values_from = cantidad)
 consulta_w
 
-write.xlsx2(as.data.frame(consulta_w), "cuadros/q17.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q17_region.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
 
 ```
 
@@ -129,12 +126,12 @@ write.xlsx2(as.data.frame(consulta_w), "cuadros/q17.xlsx", row.names = FALSE, sh
 
 consulta <- enma %>% 
   group_by(q17_dni_tenencia,nacionalidad_desagregada) %>% 
-  summarise (cantidad = round(sum(weightvec)))
+  summarise (cantidad = round(sum(weightvec_0)))
 
 consulta_w<-consulta %>% pivot_wider(names_from = nacionalidad_desagregada, values_from = cantidad)
 consulta_w
 
-write.xlsx2(as.data.frame(consulta_w), "cuadros/q17.xlsx", row.names = FALSE, sheetName ="pais",append = TRUE)
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q17_pais.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
 
 ```
 
@@ -167,14 +164,14 @@ write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName
 
 ```{r q19  }
 
-# enma<- enma %>% 
-#       mutate(q18_dni_var=case_when(
-#              q18_dni_situacion=="A la naturalización"~ "DNI por naturalización",
-#              q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanent",
-#              q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria)",
-#              TRUE ~ NA
-#              )
-#       )
+enma<- enma %>% 
+      mutate(q18_dni_var=case_when(
+             q18_dni_situacion=="A la naturalización"~ "DNI por naturalización",
+             q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanent",
+             q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria)",
+             TRUE ~ NA
+             )
+      )
 
 qry<-enma %>% 
   group_by(q19_situacion_documentaria ) %>% 
@@ -183,19 +180,37 @@ qry<-enma %>%
 qry
 
 
-write.xlsx2(as.data.frame(qry), "cuadros/q19.xlsx", row.names = FALSE, sheetName ="q19",append = TRUE)
+write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName ="q18",append = TRUE)
 
 ```
  ### 
 
 ```{r, message=FALSE, warning=FALSE}
 
+#recodifico edad en 3 grupos
 
-qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'edad_2020', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+enma<-enma %>% 
+  mutate(edad_ag2_var= case_when(
+    q2_edad< 35 ~ "18-34",
+    q2_edad> 34 & q2_edad<55 ~ "35-54",
+    TRUE ~ "55+"))
+
+
+#Resultados
+edad2 <- enma %>%
+  group_by(edad_ag2_var) %>% 
+  rename(Edad=edad_ag2_var) %>%
+  summarise(Frecuencia = sum(weightvec)) %>%
+  mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) 
+
+#edad2
+
+
+qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'edad_ag2_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
 
 qry
 
-write.xlsx2(as.data.frame(qry), "cuadros/q20_edad2020.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
+write.xlsx2(as.data.frame(qry), "cuadros/q20_edad202.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
 
 
 
