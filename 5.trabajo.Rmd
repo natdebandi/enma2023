@@ -1,0 +1,673 @@
+---
+title: "ENMA 2023 - nacionalidades de interés"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(eph)
+library(dplyr)
+library(readr)
+library(xlsx)
+library(tidyr)
+
+#devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
+library(userfriendlyscience)
+
+
+rm(list = ls())
+```
+
+# Nacionalidades de interés
+## Situación socioeconómica
+
+
+
+```{r carga_datos}
+
+#Cargo los datos ENMA
+enma <-  read_csv2("data\\ENMA_pond-censal-publica_v2.csv",col_names = TRUE,col_types = NULL)
+
+```
+
+Exploracion de variables
+
+Ver documentación (LINK)
+
+```{r exploración, include=FALSE, echo=FALSE}
+
+names(enma)
+#str(enma)
+
+source(file="variables_recat.R") 
+```
+
+
+
+```{r check }
+##lo uso para probar
+consulta <- enma %>% 
+  group_by(anio_llegada_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+
+```
+
+##Q51 situacion ocupacional
+
+```{r ocupacion }
+
+consulta <- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="univariado",append = TRUE)
+
+```
+
+### Construccion de variables laborales
+
+
+```{r indicadores_1}
+
+##construyo para mayor claridad 
+
+enma<- enma %>%
+  mutate(ocupado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 0,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/a" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 1,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 1,
+ #   q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+enma<- enma %>%
+  mutate(desocupado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 0,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 0,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/a" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 0,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 0,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 0,
+  #  q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+
+enma<- enma %>%
+  mutate(ocupacion_eph=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ "Cuenta propia",
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ "Obrero o empleado",
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ "Desempleado",
+    q51_situacion_ocupacional=="Estudiando" ~ "Estudiando",
+    q51_situacion_ocupacional=="Jubilado/a, retirado/a"~ "Jubilado/a",
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ "Cuenta propia",
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ "Trabajador familiar sin remuneración",
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ "Obrero o empleado",
+    q51_situacion_ocupacional=="Venta ambulante" ~ "Cuenta propia",
+#    q51_situacion_ocupacional=="Otra" ~ "Inactivo",
+    TRUE ~ NA
+  ))
+
+
+
+```
+
+
+ Calculo de las tasas según género
+ 
+ 
+```{r tasas}
+
+# TASA DE ACTIVIDAD: [Población Económicamente Activa (PEA) / Población total de referencia] * 100
+
+# TASA DE EMPLEO: (Población ocupada / Población total de referencia) * 100
+
+# TASA DE DESOCUPACIÓN: (Población desocupada / PEA) * 100
+
+consulta <- enma %>%  
+  filter(!is.na(ocupado) & !is.na(desocupado)) %>%
+  group_by(genero_var) %>% 
+  summarise(total_pob=round(sum(weightvec[q51_situacion_ocupacional!="Otra"])),
+            ocupados=round(sum(weightvec[ocupado==1])), 
+            desocupados = round(sum(weightvec[desocupado == 1])),
+            PEA = ocupados + desocupados, 
+            t_actividad=round((PEA/total_pob)*100,2), 
+            t_empleo=round((ocupados / total_pob) *100,2), 
+            t_desocupados=round((desocupados/PEA) * 100,2)
+  )
+
+consulta
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="indicadores",append = TRUE)  
+
+```
+ 
+ 
+ Indicadores por tiempo de residencia
+ 
+ 
+```{r tasas_anios}
+
+# TASA DE ACTIVIDAD: [Población Económicamente Activa (PEA) / Población total de referencia] * 100
+
+# TASA DE EMPLEO: (Población ocupada / Población total de referencia) * 100
+
+# TASA DE DESOCUPACIÓN: (Población desocupada / PEA) * 100
+
+consulta <- enma %>%  
+  filter(!is.na(ocupado) & !is.na(desocupado)) %>%
+  group_by(tiempo_residencia_3_var) %>% 
+  summarise(total_pob=round(sum(weightvec[q51_situacion_ocupacional!="Otra"])),
+            ocupados=round(sum(weightvec[ocupado==1])), 
+            desocupados = round(sum(weightvec[desocupado == 1])),
+            PEA = ocupados + desocupados, 
+            t_actividad=round((PEA/total_pob)*100,2), 
+            t_empleo=round((ocupados / total_pob) *100,2), 
+            t_desocupados=round((desocupados/PEA) * 100,2)
+  )
+
+consulta
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="indics_tres",append = TRUE)  
+
+```
+
+Indicadores por año de llegada (nueva variable)
+ 
+ 
+```{r tasas_anio_llegada}
+
+# TASA DE ACTIVIDAD: [Población Económicamente Activa (PEA) / Población total de referencia] * 100
+
+# TASA DE EMPLEO: (Población ocupada / Población total de referencia) * 100
+
+# TASA DE DESOCUPACIÓN: (Población desocupada / PEA) * 100
+
+consulta <- enma %>%  
+  filter(!is.na(ocupado) & !is.na(desocupado)) %>%
+  group_by(anio_llegada_var) %>% 
+  summarise(total_pob=round(sum(weightvec[q51_situacion_ocupacional!="Otra"])),
+            ocupados=round(sum(weightvec[ocupado==1])), 
+            desocupados = round(sum(weightvec[desocupado == 1])),
+            PEA = ocupados + desocupados, 
+            t_actividad=round((PEA/total_pob)*100,2), 
+            t_empleo=round((ocupados / total_pob) *100,2), 
+            t_desocupados=round((desocupados/PEA) * 100,2)
+  )
+
+consulta
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="indic_anio_llegada",append = TRUE)  
+
+```
+
+Indicadores según nacionalidad agrupada
+
+
+```{r tasas_nac_agrup}
+
+# TASA DE ACTIVIDAD: [Población Económicamente Activa (PEA) / Población total de referencia] * 100
+
+# TASA DE EMPLEO: (Población ocupada / Población total de referencia) * 100
+
+# TASA DE DESOCUPACIÓN: (Población desocupada / PEA) * 100
+
+consulta <- enma %>%  
+  filter(!is.na(ocupado) & !is.na(desocupado)) %>%
+  group_by(nac_agrupada) %>% 
+  summarise(total_pob=round(sum(weightvec[q51_situacion_ocupacional!="Otra"])),
+            ocupados=round(sum(weightvec[ocupado==1])), 
+            desocupados = round(sum(weightvec[desocupado == 1])),
+            PEA = ocupados + desocupados, 
+            t_actividad=round((PEA/total_pob)*100,2), 
+            t_empleo=round((ocupados / total_pob) *100,2), 
+            t_desocupados=round((desocupados/PEA) * 100,2)
+  )
+
+consulta
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="tasas_nac_agrup",append = TRUE)  
+
+```
+ 
+###TIPO DE ACTIVIDAD 
+Recategoriaza siguiendo la clasificacion parecida a EPH
+
+
+```{r ocupacion_eph }
+
+consulta <- enma %>% 
+  group_by(ocupacion_eph) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="ocupacion_eph",append = TRUE)
+
+```
+Actividad resumida según años de residencia
+
+
+```{r actividad_anios}
+
+cc<- calculate_tabulates(base = enma, x = 'ocupacion_eph', y = 'tiempo_residencia_3_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="ocup_anios",append = TRUE)
+
+print(cc)
+
+
+```
+
+Actividad resumida según año en que llego al pais
+
+
+```{r actividad_anio_llegada}
+
+cc<- calculate_tabulates(base = enma, x = 'ocupacion_eph', y = 'anio_llegada_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="ocup_llegada",append = TRUE)
+
+print(cc)
+
+
+```
+
+```{r act_anios_abs }
+
+consulta <- enma %>% 
+  group_by(ocupacion_eph,tiempo_residencia_3_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = tiempo_residencia_3_var, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="act_anios_abs",append = TRUE)
+
+print(cc)
+
+```
+
+Segun año de llegada en absolutos
+
+```{r act_anios_abs }
+
+consulta <- enma %>% 
+  group_by(ocupacion_eph,anio_llegada_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = anio_llegada_var, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="act_llegada_abs",append = TRUE)
+
+print(cc)
+
+```
+
+Actividad resumida según Género
+
+```{r actividad_genero}
+
+cc<- calculate_tabulates(base = enma, x = 'ocupacion_eph', y = 'sexo_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="act_genero",append = TRUE)
+
+print(cc)
+
+
+```
+```{r act_genero_abs }
+
+consulta <- enma %>% 
+  group_by(ocupacion_eph,sexo_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = sexo_var, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="act_genero_abs",append = TRUE)
+
+print(cc)
+
+```
+
+```{r actividad_nac_agrup}
+
+cc<- calculate_tabulates(base = enma, x = 'ocupacion_eph', y = 'nac_agrupada', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="act_nac",append = TRUE)
+
+print(cc)
+
+
+```
+
+```{r act_nac_abs }
+
+consulta <- enma %>% 
+  group_by(ocupacion_eph,nac_agrupada) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = nac_agrupada, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q51_sit_ocup.xlsx", row.names = FALSE, sheetName ="act_nac_abs",append = TRUE)
+
+print(consulta_w)
+
+```
+
+##TIPO DE TRABAJO
+
+###q52_trabaja
+
+```{r q52_trabaja }
+
+consulta <- enma %>% 
+  group_by(q52_trabaja) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q52_trabaja.xlsx", row.names = FALSE, sheetName ="univariado",append = TRUE)
+
+```
+
+```{r q51_q52 }
+
+consulta <- enma %>% 
+  group_by(ocupacion_eph,q52_trabaja) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q52_trabaja, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q52_trabaja.xlsx", row.names = FALSE, sheetName ="q51_q52",append = TRUE)
+
+print(consulta_w)
+
+```
+
+
+```{r q51_q52b }
+
+consulta <- enma %>% 
+  group_by(q51_situacion_ocupacional,q52_trabaja) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q52_trabaja, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q52_trabaja.xlsx", row.names = FALSE, sheetName ="q51_q52b",append = TRUE)
+
+print(consulta_w)
+
+```
+
+
+
+##FORMALIDAD
+
+###q53_trabajo_formal
+
+```{r q53_trabajo_formal }
+
+consulta <- enma %>% 
+  group_by(q53_trabajo_formal) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q53_trabajo_formal.xlsx", row.names = FALSE, sheetName ="univariado",append = TRUE)
+
+```
+
+```{r q51_q53 }
+
+consulta <- enma %>% 
+  group_by(ocupacion_eph,q53_trabajo_formal) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q53_trabajo_formal, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q53_trabajo_formal.xlsx", row.names = FALSE, sheetName ="q51_q53",append = TRUE)
+
+print(consulta_w)
+
+```
+
+
+
+```{r q51_q53b }
+
+consulta <- enma %>% 
+  group_by(q51_situacion_ocupacional,q53_trabajo_formal) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q53_trabajo_formal, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q53_trabajo_formal.xlsx", row.names = FALSE, sheetName ="q51_q53b",append = TRUE)
+
+print(consulta_w)
+
+```
+
+##experiencia
+
+###q55_experiencia
+
+
+
+
+
+```{r q55_experiencia }
+
+consulta <- enma %>% 
+  group_by(q55_experiencia) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q55_experiencia.xlsx", row.names = FALSE, sheetName ="univariado",append = TRUE)
+
+```
+
+```{r q55_experiencia_llegada }
+
+consulta <- enma %>% 
+  group_by(q55_experiencia,anio_llegada_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = anio_llegada_var, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q55_experiencia.xlsx", row.names = FALSE, sheetName ="q55_llegada",append = TRUE)
+
+print(consulta_w)
+
+```
+
+
+##DIFICULTADES
+
+###q56_ocupacion_dificultad
+
+
+q55_experiencia
+
+
+```{r q56_ocupacion_dificultad }
+
+consulta <- enma %>% 
+  group_by(q56_ocupacion_dificultad) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q56_ocupacion_dificultad.xlsx", row.names = FALSE, sheetName ="univariado",append = TRUE)
+
+```
+
+
+```{r q55_q56 }
+
+consulta <- enma %>% 
+  group_by(q56_ocupacion_dificultad,q55_experiencia) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q55_experiencia, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q56_ocupacion_dificultad.xlsx", row.names = FALSE, sheetName ="q55_q56",append = TRUE)
+
+print(consulta_w)
+
+```
+
+```{r q5_EDAD }
+#names(enma)
+consulta <- enma %>% 
+  group_by(q56_ocupacion_dificultad,edad_2020) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = edad_2020, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q56_ocupacion_dificultad2.xlsx", row.names = FALSE, sheetName ="q5_EDAD",append = TRUE)
+
+print(consulta_w)
+
+```
+
+```{r q56_dniD }
+#names(enma)
+consulta <- enma %>% 
+  group_by(q56_ocupacion_dificultad,q17_dni_tenencia) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q17_dni_tenencia, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q56_ocupacion_dificultad2.xlsx", row.names = FALSE, sheetName ="q56_dni",append = TRUE)
+
+print(consulta_w)
+
+```
+
+
+
+##REMESAS
+
+###q58_envio_dinero
+
+
+```{r q58_envio_dinero }
+
+consulta <- enma %>% 
+  group_by(q58_envio_dinero) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+write.xlsx2(as.data.frame(consulta), "cuadros/q58_envio_dinero.xlsx", row.names = FALSE, sheetName ="univariado",append = TRUE)
+
+
+```
+
+
+```{r q58_EDAD }
+#names(enma)
+consulta <- enma %>% 
+  group_by(q58_envio_dinero,edad_2020) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = edad_2020, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q58_envio_dinero.xlsx", row.names = FALSE, sheetName ="q58_edad",append = TRUE)
+
+print(consulta_w)
+
+```
+
+```{r q58_EDAD }
+#names(enma)
+consulta <- enma %>% 
+  filter(q58_envio_dinero!="Prefiero no responder") %>%
+  group_by(q58_envio_dinero,nac_agrupada) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = nac_agrupada, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q58_envio_dinero.xlsx", row.names = FALSE, sheetName ="q58_nac",append = TRUE)
+
+print(consulta_w)
+
+```
+
+```{r q58_hijes }
+#names(enma)
+#q31_hijos_menores_exterior=="Si"
+#q29_hijos_num=="Si"
+
+
+consulta <- enma %>% 
+  group_by(q58_envio_dinero,q29_hijos_num) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q29_hijos_num, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q58_envio_dinero.xlsx", row.names = FALSE, sheetName ="q58_hijes1",append = TRUE)
+
+print(consulta_w)
+
+```
+
+```{r q58_hijes2 }
+#names(enma)
+#q31_hijos_menores_exterior=="Si"
+#q29_hijos_num=="Si"
+
+
+consulta <- enma %>% 
+  group_by(q58_envio_dinero,q31_hijos_menores_exterior) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q31_hijos_menores_exterior, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/q58_envio_dinero.xlsx", row.names = FALSE, sheetName ="q58_hijes2",append = TRUE)
+
+print(consulta_w)
+
+```

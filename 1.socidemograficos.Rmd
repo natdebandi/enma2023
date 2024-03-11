@@ -42,7 +42,8 @@ Exploracion de variables
 Ver documentación (LINK)
 
 ```{r exploración, include=FALSE, echo=FALSE}
-#names(enma)
+
+names(enma)
 #str(enma)
 
 source(file="variables_recat.R") 
@@ -59,11 +60,11 @@ consulta <- enma %>%
 consulta_w<-consulta %>% pivot_wider(names_from = nacionalidad_var, values_from = cantidad)
 consulta_w
 
-write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="nacionalidades_pond",append = TRUE)
+write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="nacs_pond",append = TRUE)
 
 ```
 
-```{r nacionalidades }
+```{r genero }
 
 consulta <- enma %>% 
   group_by(q4_genero) %>% 
@@ -76,15 +77,68 @@ write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.name
 
 ```
 
+### Distribución por grupos de edad (ENMA 2020) y región
 
-```{r genero_nac }
+
+```{r edad_region }
+
+
+consulta <- enma %>% 
+  group_by(region_amba_var) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta
+
+
+qry<- calculate_tabulates(base = enma, x = 'edad_2020', y = 'region_amba_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="edad_region",append = TRUE)
+```
+
+### edad y nacionalidad
+
+
+```{r edad_nac }
+
+qry<- calculate_tabulates(base = enma, x = 'edad_2020', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
+
+qry
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="edad_nac",append = TRUE)
+```
+### edad y nacionalidad agrupada
+
+```{r edad_nac_grp }
+
+
+consulta <- enma %>% 
+  group_by(nac_agrupada) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta
+
+qry<- calculate_tabulates(base = enma, x = 'edad_2020', y = 'nac_agrupada', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
+
+qry
+
+write.xlsx2(as.data.frame(qry), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="edad_nac_grp",append = TRUE)
+```
+
+
+
+```{r genero_nac_abs }
 
 qry<- calculate_tabulates(base = enma, x = 'q4_genero', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec_0')
 
 qry
 
-write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="genero",append = TRUE)
+write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.names = FALSE, sheetName ="gen_nac_prop",append = TRUE)
 ```
+
+
+
 
 ### Hogar; familia e hijes
 
@@ -100,7 +154,7 @@ write.xlsx2(as.data.frame(consulta_w), "cuadros/sociodemograficos.xls", row.name
 Total de la base  
 
 
-```{r familia_personas}
+```{r familia_indicadores}
 # q26_hogar_personas
 # q29_hijos_num
 # q30_hijos_arg
@@ -132,7 +186,7 @@ write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE,
 ```
 ### Indicadores
 
-```{r familia_personas}
+```{r familia_indc_resumido}
 # q26_hogar_personas
 # q29_hijos_num
 # q30_hijos_arg
@@ -159,7 +213,7 @@ consulta <- enma %>%
 
 consulta
 #exporto el csv
-write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "nacionalidad",append = TRUE) 
+write.xlsx2(as.data.frame(consulta), "cuadros/familias2.xlsx", row.names = FALSE, sheetName = "nacionalidad",append = TRUE) 
 
 consulta <- consulta  %>% 
   select(nacionalidad_var,promedio_personas,promedio_hijes_nac_arg,
@@ -172,7 +226,7 @@ print(consulta)
 
 #exporto el csv
 
-write.xlsx2(as.data.frame(consulta), "cuadros/familias.xlsx", row.names = FALSE, sheetName = "resumen",append = TRUE) 
+write.xlsx2(as.data.frame(consulta), "cuadros/familias2.xlsx", row.names = FALSE, sheetName = "resumen",append = TRUE) 
 
 
 
