@@ -1,0 +1,153 @@
+---
+title: "ENMA 2023"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(eph)
+library(dplyr)
+library(readr)
+library(xlsx)
+library(tidyr)
+
+#devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
+library(userfriendlyscience)
+
+
+rm(list = ls())
+```
+
+# Anuario migratorio 2023
+## Vivienda
+
+
+
+```{r carga_datos}
+
+#Cargo los datos ENMA
+enma <-  read_csv2("data\\ENMA_pond-censal-publica_v2.csv",col_names = TRUE,col_types = NULL)
+
+```
+
+Exploracion de variables
+
+Ver documentación (LINK)
+
+```{r exploración, include=FALSE, echo=FALSE}
+
+names(enma)
+#str(enma)
+
+source(file="variables_recat.R") 
+```
+
+
+
+```{r check }
+##lo uso para probar
+consulta <- enma %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+
+```
+
+## q41_vivienda_lugar
+
+
+```{r q41_vivienda_lugar }
+
+consulta <- enma %>% 
+  group_by(q41_vivienda_lugar) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+enma_temp<- enma %>%
+  filter(q41_vivienda_lugar!="Prefiero no responder")
+
+consulta <- enma_temp %>% 
+  group_by(q41_vivienda_lugar,q17_dni_tenencia) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q17_dni_tenencia, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros_temp/pedidos_anita.xlsx", row.names = FALSE, sheetName ="q41_abs",append = TRUE)
+
+qry<- calculate_tabulates(base = enma_temp, x = 'q41_vivienda_lugar', y = 'q17_dni_tenencia', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros_temp/pedidos_anita.xlsx", row.names = FALSE, sheetName ="q41_frec,",append = TRUE)
+
+```
+
+### q42_vivienda_tipo
+
+```{r q42_vivienda_tipo }
+
+consulta <- enma %>% 
+  group_by(q42_vivienda_tipo) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+enma_temp<- enma %>%
+  filter(q42_vivienda_tipo!="Prefiero no responder")
+
+consulta <- enma_temp %>% 
+  group_by(q42_vivienda_tipo,q17_dni_tenencia) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q17_dni_tenencia, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros_temp/pedidos_anita.xlsx", row.names = FALSE, sheetName ="q42_abs",append = TRUE)
+
+qry<- calculate_tabulates(base = enma_temp, x = 'q42_vivienda_tipo', y = 'q17_dni_tenencia', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros_temp/pedidos_anita.xlsx", row.names = FALSE, sheetName ="q42_frec,",append = TRUE)
+
+```
+
+
+### q46_estudios
+
+```{r q49_estudiando_inconvenientes }
+
+consulta <- enma %>% 
+  group_by(q49_estudiando_inconvenientes) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+print(consulta)
+
+
+consulta <- enma_temp %>% 
+  group_by(q49_estudiando_inconvenientes,q17_dni_tenencia) %>% 
+  summarise (cantidad = round(sum(weightvec_0)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q49_estudiando_inconvenientes, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros_temp/pedidos_anita.xlsx", row.names = FALSE, sheetName ="q49_abs",append = TRUE)
+
+qry<- calculate_tabulates(base = enma_temp, x = 'q49_estudiando_inconvenientes', y = 'q17_dni_tenencia', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros_temp/pedidos_anita.xlsx", row.names = FALSE, sheetName ="q49_frec,",append = TRUE)
+
+```
+
