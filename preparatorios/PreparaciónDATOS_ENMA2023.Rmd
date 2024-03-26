@@ -38,7 +38,7 @@ A continuación se incluye la construcción de nuevas variables solicitadas para
 
 # Lectura de archivo CSV
 
-enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_pond-censal-publica_v2.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -130,7 +130,7 @@ q59<-multiResponse(enma, items = c("Ahorro", "Prestamo_entorno", "Ayuda_estatal"
 #lo imprimo
 q59
 
-
+names(enma)
 #Recodifico q59
 
 enma<-enma %>% 
@@ -153,8 +153,13 @@ enma<-enma %>%
     Ninguna==1 ~ 1,
     TRUE ~ 0))
 
+cc<-enma %>% 
+  filter(!is.na(q59_gastos)) %>%
+  summarise(cantidad=sum(weightvec))
 
-
+cc1<-enma %>% 
+  filter(is.na(q59_gastos)) %>%
+  summarise(cantidad=sum(weightvec))
 
 ```
 
