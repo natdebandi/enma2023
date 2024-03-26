@@ -227,3 +227,169 @@ write.xlsx2(as.data.frame(consulta), "tables\\sociodemograficos\\familias.xlsx",
 
 
 ```
+
+
+```{r}
+Motivos económicos    
+Para conseguir un mejor trabajo
+Porque no podía cubrir mis necesidades básicas
+Estudio y nuevas experiencias    
+Para estudiar
+Para tener nuevas experiencias
+Motivos familiares    
+Para reencontrarme con mi familia
+Para acompañar el proyecto de trabajo o estudio de otro/a
+Violencias y persecuciones    
+Por violencia de género
+Violencia generalizada y/o persecución por motivos políticos, religiosos u otros
+Por mi orientación sexual  
+Otros    
+Por problemas de salud propios o de algún familiar (para tratamiento)
+Por problemas con mi hábitat (de vivienda, con la tierra, desastres ambientales).
+Otros ……………………
+unique(enma$q14_motivos)
+names(enma)
+
+enma<-enma %>% 
+  mutate(motivo_trabajo=case_when(q14_motivos_mejor_trabajo==1 ~ 1,
+                           TRUE~0)) %>% 
+           mutate(motivo_necbas=case_when(q14_motivos_necesidades_basicas==1 ~1,
+                                          TRUE~0)) %>% 
+  mutate(motivo_est_exp=case_when(q14_motivos_estudio==1 |  q14_motivos_nuevas_experiencias==1 ~1,
+                                  TRUE~0)) %>% 
+  mutate(motivo_violencia=case_when(q14_motivos_violencia_genero==1| q14_motivos_orientacion_sexual==1 | q14_motivos_persecucion==1 ~1,
+                                    TRUE~0)) %>% 
+  mutate(motivo_otros=case_when(q14_motivos_salud==1| q14_motivos_habitat==1 | q14_motivos_otros==1 ~1,
+                                TRUE~0)) %>% 
+  mutate(motivos_familares=case_when(q14_motivos_acompañar_otrx==1 | q14_motivos_reunificacion==1~1,
+                                     TRUE~0))
+
+
+motivos1<- enma %>%
+  filter(!is.na(q14_motivos))%>%
+  summarise(motivos_tt=round(sum(weightvec),0),
+            mejor_trabajo=round(sum(weightvec[motivo_trabajo==1]),0),
+            nec_basicas=round(sum(weightvec[motivo_necbas==1]),0),
+            estudio_exp=round(sum(weightvec[motivo_est_exp==1]),0),
+            violencia=round(sum(weightvec[motivo_violencia==1]),0),
+            familiar=round(sum(weightvec[motivos_familares==1]),0),
+            otros=round(sum(weightvec[motivo_otros==1]),0),
+            'Mejor trabajo'= round(mejor_trabajo/motivos_tt*100,1),
+            'Necesidades básicas'= round(nec_basicas/motivos_tt*100,1),
+            'Estudios y nuevas experiencias'= round(estudio_exp/motivos_tt*100,1),
+            'Violencias y persecuciones'= round(violencia/motivos_tt*100,1),
+            'Motivos familiares'= round(familiar/motivos_tt*100,1),
+            'Otros'= round(otros/motivos_tt*100,1))
+
+#exporto el csv
+write.xlsx2(as.data.frame(motivos1), "tables/1.Sociodemograficos/motivos.xlsx", row.names = FALSE, sheetName = "univariado",append = TRUE)
+
+motivos_genero<- enma %>%
+  filter(!is.na(q14_motivos))%>%
+  group_by(genero_var) %>% 
+  summarise(motivos_tt=round(sum(weightvec),0),
+            mejor_trabajo=round(sum(weightvec[motivo_trabajo==1]),0),
+            nec_basicas=round(sum(weightvec[motivo_necbas==1]),0),
+            estudio_exp=round(sum(weightvec[motivo_est_exp==1]),0),
+            violencia=round(sum(weightvec[motivo_violencia==1]),0),
+            familiar=round(sum(weightvec[motivos_familares==1]),0),
+            otros=round(sum(weightvec[motivo_otros==1]),0),
+            'Mejor trabajo'= round(mejor_trabajo/motivos_tt*100,1),
+            'Necesidades básicas'= round(nec_basicas/motivos_tt*100,1),
+            'Estudios y nuevas experiencias'= round(estudio_exp/motivos_tt*100,1),
+            'Violencias y persecuciones'= round(violencia/motivos_tt*100,1),
+            'Motivos familiares'= round(familiar/motivos_tt*100,1),
+            'Otros'= round(otros/motivos_tt*100,1))
+
+#exporto el csv
+write.xlsx2(as.data.frame(motivos_genero), "tables/1.Sociodemograficos/motivos.xlsx", row.names = FALSE, sheetName = "genero",append = TRUE)
+
+
+
+motivos_edad<- enma %>%
+  filter(!is.na(q14_motivos))%>%
+  group_by(edad_ag_var) %>% 
+  summarise(motivos_tt=round(sum(weightvec),0),
+            mejor_trabajo=round(sum(weightvec[motivo_trabajo==1]),0),
+            nec_basicas=round(sum(weightvec[motivo_necbas==1]),0),
+            estudio_exp=round(sum(weightvec[motivo_est_exp==1]),0),
+            violencia=round(sum(weightvec[motivo_violencia==1]),0),
+            familiar=round(sum(weightvec[motivos_familares==1]),0),
+            otros=round(sum(weightvec[motivo_otros==1]),0),
+            'Mejor trabajo'= round(mejor_trabajo/motivos_tt*100,1),
+            'Necesidades básicas'= round(nec_basicas/motivos_tt*100,1),
+            'Estudios y nuevas experiencias'= round(estudio_exp/motivos_tt*100,1),
+            'Violencias y persecuciones'= round(violencia/motivos_tt*100,1),
+            'Motivos familiares'= round(familiar/motivos_tt*100,1),
+            'Otros'= round(otros/motivos_tt*100,1))
+
+#exporto el csv
+write.xlsx2(as.data.frame(motivos_edad), "tables/1.Sociodemograficos/motivos.xlsx", row.names = FALSE, sheetName = "edad",append = TRUE)
+
+
+
+motivos_tiempo<- enma %>%
+  filter(!is.na(q14_motivos))%>%
+  group_by(tiempo_residencia_3_var) %>% 
+  summarise(motivos_tt=round(sum(weightvec),0),
+            mejor_trabajo=round(sum(weightvec[motivo_trabajo==1]),0),
+            nec_basicas=round(sum(weightvec[motivo_necbas==1]),0),
+            estudio_exp=round(sum(weightvec[motivo_est_exp==1]),0),
+            violencia=round(sum(weightvec[motivo_violencia==1]),0),
+            familiar=round(sum(weightvec[motivos_familares==1]),0),
+            otros=round(sum(weightvec[motivo_otros==1]),0),
+            'Mejor trabajo'= round(mejor_trabajo/motivos_tt*100,1),
+            'Necesidades básicas'= round(nec_basicas/motivos_tt*100,1),
+            'Estudios y nuevas experiencias'= round(estudio_exp/motivos_tt*100,1),
+            'Violencias y persecuciones'= round(violencia/motivos_tt*100,1),
+            'Motivos familiares'= round(familiar/motivos_tt*100,1),
+            'Otros'= round(otros/motivos_tt*100,1))
+
+#exporto el csv
+write.xlsx2(as.data.frame(motivos_tiempo), "tables/1.Sociodemograficos/motivos.xlsx", row.names = FALSE, sheetName = "tiempo",append = TRUE)
+
+
+
+motivos_region<- enma %>%
+  filter(!is.na(q14_motivos))%>%
+  group_by(region_CABA_var) %>% 
+  summarise(motivos_tt=round(sum(weightvec),0),
+            mejor_trabajo=round(sum(weightvec[motivo_trabajo==1]),0),
+            nec_basicas=round(sum(weightvec[motivo_necbas==1]),0),
+            estudio_exp=round(sum(weightvec[motivo_est_exp==1]),0),
+            violencia=round(sum(weightvec[motivo_violencia==1]),0),
+            familiar=round(sum(weightvec[motivos_familares==1]),0),
+            otros=round(sum(weightvec[motivo_otros==1]),0),
+            'Mejor trabajo'= round(mejor_trabajo/motivos_tt*100,1),
+            'Necesidades básicas'= round(nec_basicas/motivos_tt*100,1),
+            'Estudios y nuevas experiencias'= round(estudio_exp/motivos_tt*100,1),
+            'Violencias y persecuciones'= round(violencia/motivos_tt*100,1),
+            'Motivos familiares'= round(familiar/motivos_tt*100,1),
+            'Otros'= round(otros/motivos_tt*100,1))
+
+#exporto el csv
+write.xlsx2(as.data.frame(motivos_region), "tables/1.Sociodemograficos/motivos.xlsx", row.names = FALSE, sheetName = "region",append = TRUE)
+
+
+
+motivos_origen<- enma %>%
+  filter(!is.na(q14_motivos))%>%
+  group_by(nac_agrupada) %>% 
+  summarise(motivos_tt=round(sum(weightvec),0),
+            mejor_trabajo=round(sum(weightvec[motivo_trabajo==1]),0),
+            nec_basicas=round(sum(weightvec[motivo_necbas==1]),0),
+            estudio_exp=round(sum(weightvec[motivo_est_exp==1]),0),
+            violencia=round(sum(weightvec[motivo_violencia==1]),0),
+            familiar=round(sum(weightvec[motivos_familares==1]),0),
+            otros=round(sum(weightvec[motivo_otros==1]),0),
+            'Mejor trabajo'= round(mejor_trabajo/motivos_tt*100,1),
+            'Necesidades básicas'= round(nec_basicas/motivos_tt*100,1),
+            'Estudios y nuevas experiencias'= round(estudio_exp/motivos_tt*100,1),
+            'Violencias y persecuciones'= round(violencia/motivos_tt*100,1),
+            'Motivos familiares'= round(familiar/motivos_tt*100,1),
+            'Otros'= round(otros/motivos_tt*100,1))
+
+#exporto el csv
+write.xlsx2(as.data.frame(motivos_origen), "tables/1.Sociodemograficos/motivos.xlsx", row.names = FALSE, sheetName = "origen",append = TRUE)
+```
+
