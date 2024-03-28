@@ -34,7 +34,7 @@ versión con ponderador censal ENMA_v2
 ```{r carga_datos, include=FALSE}
 
 #Cargo los datos ENMA
-enma <-  read_csv2("datos\\ENMA_v2.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("datos/ENMA_v2.csv",col_names = TRUE,col_types = NULL)
 
 names(enma) 
 #print("ENMA 2023")
@@ -374,7 +374,7 @@ write.xlsx2(as.data.frame(motivos_region), "tables/1.Sociodemograficos/motivos.x
 
 motivos_origen<- enma %>%
   filter(!is.na(q14_motivos))%>%
-  group_by(nac_agrupada) %>% 
+  group_by(nacionalidad_var) %>% 
   summarise(motivos_tt=round(sum(weightvec),0),
             mejor_trabajo=round(sum(weightvec[motivo_trabajo==1]),0),
             nec_basicas=round(sum(weightvec[motivo_necbas==1]),0),
@@ -390,6 +390,70 @@ motivos_origen<- enma %>%
             'Otros'= round(otros/motivos_tt*100,1))
 
 #exporto el csv
-write.xlsx2(as.data.frame(motivos_origen), "tables/1.Sociodemograficos/motivos.xlsx", row.names = FALSE, sheetName = "origen",append = TRUE)
+write.xlsx2(as.data.frame(motivos_origen), "tables/1.Sociodemograficos/motivos2.xlsx", row.names = FALSE, sheetName = "origen",append = TRUE)
+```
+
+```{r}
+names(enma)
+unique(enma$q46_estudios)
+
+enma<-enma %>% 
+  mutate(niveled=case_when(
+    q46_estudios=="Primario completo" | q46_estudios=="Secundario incompleto o en curso" | q46_estudios=="Primario incompleto o en curso" ~ "Hasta secundario incompleto",
+    q46_estudios=="Secundario completo" | q46_estudios=="Terciario incompleto o en curso" | q46_estudios=="Universitario incompleto o en curso" ~ "Secundario completo",
+    q46_estudios=="Universitario completo" | q46_estudios=="Terciario completo"~ "Superior completo y más",
+    TRUE ~  NA
+  ))
+
+niveled2<-enma %>% 
+  group_by(niveled, genero_var) %>% 
+  summarise(cantidad=round(sum(weightvec),0)) %>% 
+  pivot_wider(., names_from = genero_var, values_from = cantidad)
+  
+names(enma)
+unique(enma$q11_otra_provincia)
+
+cc1<-enma %>% 
+  filter(!is.na(q11_otra_provincia)) %>% 
+  group_by(q11_otra_provincia) %>% 
+  summarise(cantidad=round(sum(weightvec),0)) %>% 
+  mutate(prop=round(cantidad/sum(cantidad)*100,1))
+
+cc<-enma %>% 
+  filter(!is.na(q11_otra_provincia)) %>% 
+  group_by(q11_otra_provincia, tiempo_residencia_3_var) %>% 
+  summarise(cantidad=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from = tiempo_residencia_3_var, values_from = cantidad)
+
+
+cc_origen<-enma %>% 
+  filter(!is.na(q11_otra_provincia)) %>% 
+  group_by(q11_otra_provincia, nac_agrupada) %>% 
+  summarise(cantidad=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from = nac_agrupada, values_from = cantidad)
+
+cc_origen2<-enma %>% 
+  filter(!is.na(q11_otra_provincia)) %>% 
+  group_by(q11_otra_provincia, nacionalidad_var) %>% 
+  summarise(cantidad=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from = nacionalidad_var, values_from = cantidad)
+
+cc_region<-enma %>% 
+  filter(!is.na(q11_otra_provincia)) %>% 
+  group_by(q11_otra_provincia, region_CABA_var) %>% 
+  summarise(cantidad=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from = q11_otra_provincia, values_from = cantidad)
+
+
+cc_nivedled<-enma %>% 
+  filter(!is.na(q11_otra_provincia)) %>% 
+  group_by(q11_otra_provincia, niveled) %>% 
+  summarise(cantidad=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from = niveled, values_from = cantidad)
+
+#frecuencias = enma %>% count(q11_otra_provincia, name="frecuencia")
+
+
+
 ```
 
