@@ -85,6 +85,7 @@ Grafico_3.2<-enma %>%
             Porcentaje_si=round(Total_si/Total*100,1),
             Porcentaje_no=round(Total_no/Total*100,1))
 
+
 #Población desagregada por lugar de origen agregado
 q32_origen<-enma %>%
   filter(q29_hijos_num=="Si" & !is.na(q32_asistencia_educacion) & nac_agrupada!="APÁTRIDA") %>% 
@@ -111,7 +112,7 @@ Grafico_3.3<-enma %>%
   )) %>%
   filter(q29_hijos_num=="Si" & q32_asistencia_educacion=="No, ninguno" & !is.na(q34_asistencia_educacion_razon)) %>% 
   group_by(q34_recodificada) %>%
-  summarise(cant=round(sum(weightvec),0)) %>%
+  summarise(cant=round(sum(weightvec)),0) %>%
   mutate(porc=round(cant/sum(cant)*100,1))
 
 
@@ -304,6 +305,10 @@ Grafico_3.7b<-enma %>%
       'Prefiere no responder'            = round(Discr_nr/Total*100,1))
 
 
+  names(enma)
+  total_q5<-enma %>% 
+    filter(!is.na(q5_descendencia)) %>% 
+    summarise(Total=round(sum(weightvec),0))
 ```
 
 
@@ -339,9 +344,9 @@ q47_motivos<-enma %>%
 Grafico_3.9<-enma %>% 
     filter(!is.na(q47_estudiando_argentina) & !is.na(region_amba_var) & region_amba_var!="99") %>% 
   group_by(region_amba_var) %>%
-  summarise(Total=round(sum(weightvec),0),
-            Total_si=round(sum(weightvec[q47_estudiando_argentina=="Si"]),0),
+  summarise(Total_si=round(sum(weightvec[q47_estudiando_argentina=="Si"]),0),
             Total_no=round(sum(weightvec[q47_estudiando_argentina=="No"]),0),
+            Total=round((Total_si+Total_no),0),
             Porcentaje_si=round(Total_si/Total*100,1),
             Porcentaje_no=round(Total_no/Total*100,1))
 
@@ -349,9 +354,9 @@ Grafico_3.9<-enma %>%
 Grafico_3.10<-enma %>% 
     filter(!is.na(q47_estudiando_argentina) & !is.na(nacionalidad_var)) %>%
   group_by(nacionalidad_var)%>%
-  summarise(Total=round(sum(weightvec_0),0),
-            Total_si=round(sum(weightvec_0[q47_estudiando_argentina=="Si"]),0),
-            Total_no=round(sum(weightvec_0[q47_estudiando_argentina=="No"]),0),
+  summarise(Total_si=round(sum(weightvec[q47_estudiando_argentina=="Si"]),0),
+            Total_no=round(sum(weightvec[q47_estudiando_argentina=="No"]),0),
+            Total=round((Total_si+Total_no),0),
             Porcentaje_si=round(Total_si/Total*100,1),
             Porcentaje_no=round(Total_no/Total*100,1))
 
@@ -412,3 +417,5 @@ Grafico_3.13<-enma %>%
             Total_otros=round(sum(weightvec[q50_problemas_otros==1]),0))
   
 ```
+
+
