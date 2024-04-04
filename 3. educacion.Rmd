@@ -23,6 +23,7 @@ library(openxlsx)
 library(xlsx)
 library(tidyr)
 library(readr)
+library(labelled)
 
 
 
@@ -34,7 +35,8 @@ Levanto la base de datos
 
 # Lectura del archivo público de ENMA 2023
 
-enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv2("data/ENMA_pond-censal-publica_v2.csv",col_names = TRUE,col_types = NULL)
+
 
 
 ```
@@ -49,262 +51,364 @@ str(enma)
 
 ```
 
-### proporción de personas sin DNI (q17)
-
-
-```{r q17_dni_tenencia}
-
-qry<-enma %>% 
-  group_by(q17_dni_tenencia) %>% 
-  summarise(n=sum(weightvec)) %>%
-  mutate(freq = n / sum(n) *100)
-qry
-
-```
-El 7% de las personas migrantes cuenta con DNI
-
-### Tenencia de DNI según tiempo de residencia (q17)
-
-```{r q17_tiempo_residencia }
-
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'tiempo_residencia_3_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-```
-### Tenencia de DNI según tiempo de residencia en 5 grupos (revision) (q17)
-
-
-```{r q17_tiempo_residencia_2 }
-
-#se quere calcular una variable de tiempo de residencia de más rango para compara con 2020
-# hasta 1 año : llegó en 2022 o 2023 (la encuesta fue en mayo)
-# Más de 1 año y menos de 2 años : entre 2020 y 2021
-# 3-5 años : entre 2017, 2018 y 2019 
-# 5 y 9  : 2016 y 2012
-# más de 10 años.Antes de 2013
-
- ##tomamos 1 año desde 2022 inclusive ya que se aplicó en mayo
-
-enma<- enma %>% 
-      mutate(tiempo_res_5=case_when(
-             q13_anio_llegada>=2022~ "hasta 1 año (2022+)",
-             q13_anio_llegada>=2020 & q13_anio_llegada <=2021 ~ "Más de 1 año y hasta 2 años (2020-2021)",
-             q13_anio_llegada>=2017 & q13_anio_llegada <=2019 ~ "3-5 años (2017-2019)",
-             q13_anio_llegada>=2012 & q13_anio_llegada <=2016 ~ "6-9 años (2012-2016)",
-             q13_anio_llegada<=2011 ~ "más de 10 años (<=2011)",
-             )
-      )
-  
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'tiempo_res_5', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q17_tiempo_res.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
-
-```
-### Tenencia de DNI según region (nacionalidad agrupada)  (q17)
-
-```{r q17_nac_agrupada }
-
-consulta <- enma %>% 
-  group_by(q17_dni_tenencia,nac_agrupada) %>% 
-  summarise (cantidad = round(sum(weightvec_0)))
-
-consulta_w<-consulta %>% pivot_wider(names_from = nac_agrupada, values_from = cantidad)
-consulta_w
-
-write.xlsx2(as.data.frame(consulta_w), "cuadros/q17_region.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
-
-```
-
-
-
-### Tenencia de DNI según pais (revision) (q17)
-
-```{r q17_pais }
-
-consulta <- enma %>% 
-  group_by(q17_dni_tenencia,nacionalidad_desagregada) %>% 
-  summarise (cantidad = round(sum(weightvec_0)))
-
-consulta_w<-consulta %>% pivot_wider(names_from = nacionalidad_desagregada, values_from = cantidad)
-consulta_w
-
-write.xlsx2(as.data.frame(consulta_w), "cuadros/q17_pais.xlsx", row.names = FALSE, sheetName ="q17",append = TRUE)
-
-```
-
-
-### Situación documentaria (q18)
-
-```{r q18_dni_situacion  }
-
-enma<- enma %>% 
-      mutate(q18_dni_var=case_when(
-             q18_dni_situacion=="A la naturalización"~ "DNI por naturalización",
-             q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanent",
-             q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria)",
-             TRUE ~ NA
-             )
-      )
-
-qry<-enma %>% 
-  group_by(q18_dni_var ) %>% 
-  summarise(n=round(sum(weightvec)),0) %>%
-  mutate(freq = n / sum(n) *100)
-qry
-
-
-write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName ="q18",append = TRUE)
-
-```
-
-### Situación documentaria (q18)
-
-```{r q19  }
-
-enma<- enma %>% 
-      mutate(q18_dni_var=case_when(
-             q18_dni_situacion=="A la naturalización"~ "DNI por naturalización",
-             q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanent",
-             q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria)",
-             TRUE ~ NA
-             )
-      )
-
-qry<-enma %>% 
-  group_by(q19_situacion_documentaria ) %>% 
-  summarise(n=round(sum(weightvec)),0) %>%
-  mutate(freq = n / sum(n) *100)
-qry
-
-
-write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName ="q18",append = TRUE)
-
-```
- ### 
-
-```{r, message=FALSE, warning=FALSE}
-
-#recodifico edad en 3 grupos
-
-enma<-enma %>% 
-  mutate(edad_ag2_var= case_when(
-    q2_edad< 35 ~ "18-34",
-    q2_edad> 34 & q2_edad<55 ~ "35-54",
-    TRUE ~ "55+"))
-
-
-#Resultados
-edad2 <- enma %>%
-  group_by(edad_ag2_var) %>% 
-  rename(Edad=edad_ag2_var) %>%
-  summarise(Frecuencia = sum(weightvec)) %>%
-  mutate(Porcentaje= Frecuencia/sum(Frecuencia)*100) 
-
-#edad2
-
-
-qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'edad_ag2_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q20_edad202.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
-
-
-
-```
-
-
-
-### tipología familia 1
-
-Sin conyuge/pareja ni hijos
-Sin conyuge/pareja con hijos
-Con conyuge/pareja y Sin hijos
-Con conyuge/pareja con  hijos
-
-
+### Proporción de personas con hijos/as que viven en Argentina y asisten a la escuela
 
 ```{r}
 
+#Población total con hijos
+#Construyo gráfico 3.1
+Grafico_3.1<-enma %>%
+  filter(q29_hijos_num=="Si" & !is.na(q32_asistencia_educacion)) %>% 
+  group_by(q32_asistencia_educacion) %>%
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc=round(cant/sum(cant)*100,1))
+
+
+#Población con hijos desagregada por género
+q32_genero<-enma %>%
+  filter(q29_hijos_num=="Si" & !is.na(q32_asistencia_educacion)) %>% 
+  group_by(sexo_var) %>%
+  summarise(Total=round(sum(weightvec),0),
+            Total_si=round(sum(weightvec[q32_asistencia_educacion=="Si, al menos alguno/a"]),0),
+            Total_no=round(sum(weightvec[q32_asistencia_educacion=="No, ninguno"]),0),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
+
+#Población con hijos desagregada por región
+#construyo gráfico 3.2
+Grafico_3.2<-enma %>%
+  filter(q29_hijos_num=="Si" & !is.na(q32_asistencia_educacion) & !is.na(region_amba_var) & region_amba_var!="99") %>% 
+  group_by(region_amba_var) %>%
+  summarise(Total=round(sum(weightvec),0),
+            Total_si=round(sum(weightvec[q32_asistencia_educacion=="Si, al menos alguno/a"]),0),
+            Total_no=round(sum(weightvec[q32_asistencia_educacion=="No, ninguno"]),0),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
+
+#Población desagregada por lugar de origen agregado
+q32_origen<-enma %>%
+  filter(q29_hijos_num=="Si" & !is.na(q32_asistencia_educacion) & nac_agrupada!="APÁTRIDA") %>% 
+  group_by(nac_agrupada) %>%
+  summarise(Total=round(sum(weightvec),0),
+            Total_si=round(sum(weightvec[q32_asistencia_educacion=="Si, al menos alguno/a"]),0),
+            Total_no=round(sum(weightvec[q32_asistencia_educacion=="No, ninguno"]),0),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
+
+```
+
+###Población con hijos/as por motivos de porque no asisten a la escuela
+```{r}
+
+#Construyo gráfico 3.3
+Grafico_3.3<-enma %>%
+  #recodifico q34 como se presenta en el informe
+  mutate(q34_recodificada=case_when(
+    q34_asistencia_educacion_razon=="Son mayores y ya finalizaron la escuela" ~ "Son mayores y ya finalizaron la escuela",
+    q34_asistencia_educacion_razon=="Aún no están en edad escolar" ~ "Aún no están en edad escolar",
+    is.na(q34_asistencia_educacion_razon) ~ NA,
+    TRUE ~ "Otros motivos"
+  )) %>%
+  filter(q29_hijos_num=="Si" & q32_asistencia_educacion=="No, ninguno" & !is.na(q34_asistencia_educacion_razon)) %>% 
+  group_by(q34_recodificada) %>%
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc=round(cant/sum(cant)*100,1))
+
+
+```
+
+### Acceso de hijos/as a la escuela
+```{r}
+
+
+#creo variable dicotómica para distinguir población que tuvo al menos 1 inconveniente y poblaicón que no tuvo inconvenientes
+
 enma<-enma %>% 
-  mutate(
-    
-    familia_hijos=case_when(
-        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="No") ~ "Sin conyuge/pareja ni hijos",
-        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="Si") ~ "Sin conyuge/pareja con hijos",
-        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="No") ~ "Con conyuge/pareja y Sin hijos",
-        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="Si") ~ "Con conyuge/pareja con  hijos",
-    TRUE ~ NA))
+     mutate(q33_v1=case_when(q33_incoveniente_educacion_no==1 &
+    q33_inconveniente_educacion_inscripcion==0 &
+      q33_incoveniente_educacion_cupo == 0 &    q33_inconveniente_educacion_dni==0 &
+    q33_inconveniente_educacion_documentacion_origen==0 &
+    q33_inconveniente_educacion_documentacion_argentina==0 &
+    q33_inconveniente_educacion_otro==0 ~ 1,
+    q33_inconveniente_educacion_inscripcion==1 |
+      q33_incoveniente_educacion_cupo == 1 |    q33_inconveniente_educacion_dni==1|
+    q33_inconveniente_educacion_documentacion_origen==1 |
+    q33_inconveniente_educacion_documentacion_argentina==1 |
+    q33_inconveniente_educacion_otro==1 ~ 2,
+    TRUE ~0)) 
 
-temp_qry <- enma %>% 
- group_by(familia_hijos) %>%
- summarise(cantidad= round(sum(weightvec),0)) 
-temp_qry
+#Calculo total de personas que indcan haber tenido inconveniente y la cantidad que indican no haber tenido inconvenientes
 
+q33<-enma %>% 
+    filter(!is.na(q33_incoveniente_educacion))%>%
+    group_by(q33_v1) %>% 
+    summarise(cant=round(sum(weightvec),0)) %>%
+    mutate(porc=round(cant/sum(cant)*100,1))
+
+##motivos sobre total que responden q33
+q33b<-enma %>% 
+  #convierto variables en numéricas
+  mutate(q33_incoveniente_educacion_no=case_when(
+    q33_incoveniente_educacion_no==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_incoveniente_educacion_cupo=case_when(
+    q33_incoveniente_educacion_cupo==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_inconveniente_educacion_inscripcion=case_when(
+    q33_inconveniente_educacion_inscripcion==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q33_inconveniente_educacion_dni=case_when(
+    q33_inconveniente_educacion_dni==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q33_inconveniente_educacion_documentacion_origen=case_when(
+    q33_inconveniente_educacion_documentacion_origen==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q33_inconveniente_educacion_documentacion_argentina=case_when(
+    q33_inconveniente_educacion_documentacion_argentina==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q33_inconveniente_educacion_otro=case_when(
+    q33_inconveniente_educacion_otro==1 ~ 1,
+    TRUE ~0)) %>% 
+  filter(!is.na(q33_incoveniente_educacion)) %>% 
+  summarise(Poblacion= round(sum(weightvec),0),
+            cupo = round(sum(weightvec[q33_incoveniente_educacion_cupo == 1]),0),
+            inscripcion = round(sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),0),
+            dni = round(sum(weightvec[q33_inconveniente_educacion_dni == 1]),0),
+            doc_origen = round(sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),0),
+             doc_arg = round(sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),0),
+            doc_otro = round(sum(weightvec[q33_inconveniente_educacion_otro== 1]),0),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+
+ #Calculo porcentaje de personas que seleccionaron únicamente haber tenido inconvenientes
+
+#Construyo gráfico 3.4
+Grafico_3.4<-enma %>%
+  filter(q33_v1==2)%>% # selecciono población que tuvo inconvenientes
+  summarise(Poblacion= round(sum(weightvec),0),
+            cupo = round(sum(weightvec[q33_incoveniente_educacion_cupo == 1]),0),
+            inscripcion = round(sum(weightvec[q33_inconveniente_educacion_inscripcion == 1]),0),
+            dni = round(sum(weightvec[q33_inconveniente_educacion_dni == 1]),0),
+            doc_origen = round(sum(weightvec[q33_inconveniente_educacion_documentacion_origen== 1]),0),
+             doc_arg = round(sum(weightvec[q33_inconveniente_educacion_documentacion_argentina== 1]),0),
+            doc_otro = round(sum(weightvec[q33_inconveniente_educacion_otro== 1]),0),
+      'Cupo en la escuela'          = round(cupo/Poblacion*100,1),
+'Inscripción'          = round(inscripcion/Poblacion*100,1),
+      'Falta de DNI Argentino'            = round(dni/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc_origen/Poblacion*100,1),
+'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
+'Otros problemas'            = round(doc_otro/Poblacion*100,1))
+
+#calculo porcentaje de población con inconvenientes según tenencia de DNI
+
+q33_DNI<-enma %>%
+  filter(!is.na(q33_incoveniente_educacion)) %>% 
+  group_by(q17_dni_tenencia) %>% 
+  summarise(Total=round(sum(weightvec),0),
+            Total_inconvenientes=round(sum(weightvec[q33_v1==2]),0),
+            Total_NO_inconvenientes=round(sum(weightvec[q33_v1==1]),0),
+            Porcentaje_inconveniente=round(Total_inconvenientes/Total*100,1),
+            Porcentaje_NO_inconvenientes=round(Total_NO_inconvenientes/Total*100,1))
 
 
 ```
 
- ### Tenencia DNI según tenencia o no de hijes
+###Discriminación
 
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
+```{r}
+#Construyo el gráfico 3.5
 
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'q29_hijos_num', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+Grafico_3.5<-enma %>%
+  filter(q29_hijos_num=="Si" & !is.na(q35_educacion_discriminacion)) %>% 
+  group_by(q35_educacion_discriminacion) %>%
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc=round(cant/sum(cant)*100,1))
 
-qry
+#discriminación según región
+q35_region<-enma %>%
+  filter(!is.na(q35_educacion_discriminacion) & !is.na(region_amba_var) & region_amba_var!="99") %>% 
+  group_by(region_amba_var) %>%
+  summarise(Total=round(sum(weightvec),0),
+            Total_si=round(sum(weightvec[q35_educacion_discriminacion=="Si"]),0),
+            Total_no=round(sum(weightvec[q35_educacion_discriminacion=="No"]),0),
+            Total_nr=round(sum(weightvec[q35_educacion_discriminacion=="Prefiero no responder"]),0),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
 
-write.xlsx2(as.data.frame(qry), "cuadros/q17_hijes.xls", row.names = FALSE, sheetName ="q17",append = TRUE)
 
+#discriminación según origen
+#Construyo gráfico 3.6
+Gráfico_3.6<-enma %>%
+  filter(!is.na(q35_educacion_discriminacion) & !is.na(nac_agrupada) & nac_agrupada!="APÁTRIDA") %>%   
+  group_by(nac_agrupada) %>%
+  summarise(Total=round(sum(weightvec),0),
+            Total_si=round(sum(weightvec[q35_educacion_discriminacion=="Si"]),0),
+            Total_no=round(sum(weightvec[q35_educacion_discriminacion=="No"]),0),
+            Total_nr=round(sum(weightvec[q35_educacion_discriminacion=="Prefiero no responder"]),0),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+
+#discriminación por ascendencia étnica
+#Construyo gráfico 3.7 (FALTA AGREGAR LOS TRES CÁLCULOS)
+
+#POBLACIÓN ASCENDENTE INDÍGENA
+Grafico_3.7a<-enma %>% 
+    mutate(q5_descendencia_indigena=case_when(
+    q5_descendencia_indigena==1 ~ 1,
+    TRUE ~ 0)) %>%
+  filter(!is.na(q35_educacion_discriminacion) & q5_descendencia_indigena==1) %>%
+  summarise(Total= round(sum(weightvec),0),
+            Discr_si = round(sum(weightvec[q35_educacion_discriminacion== "Si"]),0),
+            Discr_no = round(sum(weightvec[q35_educacion_discriminacion == "No"]),0),
+            Discr_nr = round(sum(weightvec[q35_educacion_discriminacion == "Prefiero no responder"]),0),
+            'Sufrió discriminación'          = round(Discr_si/Total*100,1),
+'No sufrió discriminación'          = round(Discr_no/Total*100,1),
+      'Prefiere no responder'            = round(Discr_nr/Total*100,1)) 
+
+#POBLACIÓN ASCENDENTE AFRO
+Grafico_3.7b<-enma %>% 
+    mutate(q5_descendencia_afro=case_when(
+    q5_descendencia_afro==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q5_descendencia_ninguno=case_when(
+    q5_descendencia_ninguno==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  filter(!is.na(q35_educacion_discriminacion) & q5_descendencia_afro==1) %>%
+  summarise(Total= round(sum(weightvec),0),
+            Discr_si = round(sum(weightvec[q35_educacion_discriminacion== "Si"]),0),
+            Discr_no = round(sum(weightvec[q35_educacion_discriminacion == "No"]),0),
+            Discr_nr = round(sum(weightvec[q35_educacion_discriminacion == "Prefiero no responder"]),0),
+            'Sufrió discriminación'          = round(Discr_si/Total*100,1),
+'No sufrió discriminación'          = round(Discr_no/Total*100,1),
+      'Prefiere no responder'            = round(Discr_nr/Total*100,1))
+  
+#POBLACIÓN SIN ASCENDENCIA
+  Grafico_3.7c<-enma %>% 
+    mutate(q5_descendencia_ninguno=case_when(
+    q5_descendencia_ninguno==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  filter(!is.na(q35_educacion_discriminacion) & q5_descendencia_ninguno==1) %>%
+  summarise(Total= round(sum(weightvec),0),
+            Discr_si = round(sum(weightvec[q35_educacion_discriminacion== "Si"]),0),
+            Discr_no = round(sum(weightvec[q35_educacion_discriminacion == "No"]),0),
+            Discr_nr = round(sum(weightvec[q35_educacion_discriminacion == "Prefiero no responder"]),0),
+            'Sufrió discriminación'          = round(Discr_si/Total*100,1),
+'No sufrió discriminación'          = round(Discr_no/Total*100,1),
+      'Prefiere no responder'            = round(Discr_nr/Total*100,1))
 
 
 ```
-### dificultades de acceso a la documentación segun tenencia de hijes
-
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
-
-qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'q29_hijos_num', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q20_hijes.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
 
 
+###Estudio personas adultas
+```{r}
 
-```
+#Construyo gráfico 3.8
+Grafico_3.8<-enma %>%
+  filter(!is.na(q47_estudiando_argentina)) %>% 
+  group_by(q47_estudiando_argentina) %>%
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc=round(cant/sum(cant)*100,1))
 
+#cálculo para población de 18 a 34 años
+q47_edad<-enma %>% 
+  filter(!is.na(q47_estudiando_argentina) & q2_edad<35) %>% 
+  group_by(q47_estudiando_argentina) %>%
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc=round(cant/sum(cant)*100,1))  
 
-### Tenencia DNI según tipo de familia
-
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
-
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'familia_hijos', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q17_familia.xls", row.names = FALSE, sheetName ="q17",append = TRUE)
-
-
-
-```
-
-
-### dificultades de acceso a la documentación segun tenencia de hijes
-
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
-
-qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'familia_hijos', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q20_familia.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
+#Porcentaje de población que se encuentra estudiando que migró por motivos de estudio
+q47_motivos<-enma %>% 
+    mutate(q14_motivos_estudio=case_when(
+    q14_motivos_estudio==1 ~ 1,
+    TRUE ~ 0)) %>%
+  filter(q47_estudiando_argentina=="Si") %>% 
+  summarise(Total= round(sum(weightvec),0),
+            Motivos_estudio = round(sum(weightvec[q14_motivos_estudio== 1]),0),
+            'Motivos estudios' = round(Motivos_estudio/Total*100,1))
 
 
+#Construyo el gráfico 3.9
+Grafico_3.9<-enma %>% 
+    filter(!is.na(q47_estudiando_argentina) & !is.na(region_amba_var) & region_amba_var!="99") %>% 
+  group_by(region_amba_var) %>%
+  summarise(Total=round(sum(weightvec),0),
+            Total_si=round(sum(weightvec[q47_estudiando_argentina=="Si"]),0),
+            Total_no=round(sum(weightvec[q47_estudiando_argentina=="No"]),0),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
 
+#Construyo el gráfico 3.10
+Grafico_3.10<-enma %>% 
+    filter(!is.na(q47_estudiando_argentina) & !is.na(nacionalidad_var)) %>%
+  group_by(nacionalidad_var)%>%
+  summarise(Total=round(sum(weightvec_0),0),
+            Total_si=round(sum(weightvec_0[q47_estudiando_argentina=="Si"]),0),
+            Total_no=round(sum(weightvec_0[q47_estudiando_argentina=="No"]),0),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
+
+#Construcción gráfico 3.12
+Grafico_3.11<-enma %>% 
+  #convierto variable en numérica
+  mutate(q48_prim=case_when(q48_estudiando_nivel_prim==1 ~ 1,
+         TRUE ~0)) %>% 
+  mutate(q48_sec=case_when(q48_estudiando_nivel_sec==1 ~1,
+                           TRUE~0)) %>% 
+  mutate(q48_superior= case_when(q48_estudiando_nivel_ter==1 | q48_estudiando_nivel_uni==1 | q48_estudiando_nivel_postgrado==1 ~ 1,
+                                 TRUE ~0)) %>% 
+  mutate(q48_capacitaciones=case_when(q48_estudiando_nivel_capacitaciones==1 ~ 1,
+                                      TRUE~0)) %>% 
+  filter(!is.na(q48_estudiando_nivel)) %>%
+  summarise(Total=round(sum(weightvec),0),
+            Total_prim=round(sum(weightvec[q48_prim==1]),0),
+            Total_sec=round(sum(weightvec[q48_sec==1]),0),
+            Total_superior=round(sum(weightvec[q48_superior==1]),0),
+            Total_capacitaciones=round(sum(weightvec[q48_capacitaciones==1]),0),
+            Porcentaje_prim=round(Total_prim/Total*100,1),
+            Porcentaje_sec=round(Total_sec/Total*100,1),
+            Porcentaje_sup=round(Total_superior/Total*100,1),
+            Porcentaje_capac=round(Total_capacitaciones/Total*100,1))
+
+#Construcción gráfico 3.12
+Grafico_3.12<-enma %>% 
+  filter(!is.na(q49_estudiando_inconvenientes)) %>% 
+  group_by(q49_estudiando_inconvenientes) %>% 
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc=round(cant/sum(cant)*100,1))
+
+#Construyo el gráfico 3.13
+Grafico_3.13<-enma %>% 
+  #convierto variable en numérica
+  mutate(q50_problemas_titulos_origen=case_when(q50_problemas_titulos_origen==1 ~1,
+                                                TRUE ~0)) %>% 
+  mutate(q50_problemas_costos=case_when(q50_problemas_costos==1 ~1,
+                                        TRUE~0)) %>% 
+  mutate(q50_problemas_discriminacion=case_when(q50_problemas_discriminacion==1~1,
+                                                TRUE~0)) %>% 
+  mutate(q50_problemas_dni=case_when(q50_problemas_dni==1~1,
+                                     TRUE~0)) %>% 
+  mutate(q50_problemas_doc_escolar=case_when(q50_problemas_doc_escolar==1~1,
+                                             TRUE~0)) %>% 
+  mutate(q50_problemas_inscripcion_online=case_when(q50_problemas_inscripcion_online==1~1,
+                                                    TRUE~0)) %>% 
+  mutate(q50_problemas_otros=case_when(q50_problemas_otros==1~1,
+                                       TRUE~0)) %>% 
+  filter(!is.na(q50_estudiando_problemas)) %>% 
+  summarise(Total=round(sum(weightvec),0),
+            Total_titulos=round(sum(weightvec[q50_problemas_titulos_origen==1]),0),
+            Total_dni=round(sum(weightvec[q50_problemas_dni==1]),0),
+            Total_doc_escolar=round(sum(weightvec[q50_problemas_doc_escolar==1]),0),
+            Total_inscr=round(sum(weightvec[q50_problemas_inscripcion_online==1]),0),
+            Total_costos=round(sum(weightvec[q50_problemas_costos==1]),0),
+            Total_discr=round(sum(weightvec[q50_problemas_discriminacion==1]),0),
+            Total_otros=round(sum(weightvec[q50_problemas_otros==1]),0))
+  
 ```
