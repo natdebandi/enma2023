@@ -1,0 +1,2505 @@
+---
+title: "ENMA 2023 - nacionalidades de interés"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+
+library(eph)
+library(dplyr)
+library(readr)
+library(xlsx)
+library(tidyr)
+
+#devtools::install_github("matherion/userfriendlyscience", dependencies=TRUE)
+library(userfriendlyscience)
+
+
+#rm(list = ls())
+```
+
+# Nacionalidades de interés
+## Situación socioeconómica
+
+
+
+```{r carga_datos}
+
+
+#Cargo los datos ENMA
+enma <-  read_csv2("datos/ENMA_pond-censal-publica_v2.csv",col_names = TRUE,col_types = NULL)
+
+
+#names(enma) 
+
+#nacionalidades<-c("COLOMBIA","VENEZUELA","HAITÍ","REPÚBLICA DOMINICANA","CUBA")
+
+```
+
+### tasa de actividad, ocupacion y desocupacion
+
+51.	Actualmente, usted se encuentra… (*)  
+Elija la opción que mejor describe su situación ocupacional  
+Con trabajo y una remuneración fija (*)  
+Con trabajo por cuenta propia (*)  
+Venta ambulante (*)  
+Realizando changas, trabajos esporádicos o subempleado (*)  
+Realizando trabajos sin remuneración (*)  
+Desempleado/a buscando trabajo  
+Sin trabajar con licencia (*)  
+Jubilado/a, retirado/a  
+Estudiando  
+Otra    
+
+Revisar la decisión sobre como calcular actividad, desempleo y ocupación  
+
+
+
+```{r indicadores}
+
+consulta <- enma %>% 
+  group_by(q51_situacion_ocupacional) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+## la ENMA indaga sobr mayores a 18 años, ese es el recorte que se toma para los 3 indicadores
+
+## actividad 
+
+## No s eincluye como ocupado ni activo Trabajo sin remuneracion
+
+
+enma<- enma %>% mutate(activo=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+    q51_situacion_ocupacional=="Estudiando" ~ 0,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 1,
+    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+## ocupacion
+
+##habria que filtrarlo por edad para que sea mejor... revisar esto
+enma<- enma %>%
+  mutate(ocupado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 1,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 1,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 0,
+    q51_situacion_ocupacional=="Estudiando" ~ 1,
+    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 1,
+    q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 0,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 1,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 1,
+    q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+## desempleado
+enma<- enma %>%
+  mutate(desempleado=case_when(
+    q51_situacion_ocupacional=="Con trabajo por cuenta propia" ~ 0,
+    q51_situacion_ocupacional=="Con trabajo y una remuneración fija" ~ 0,
+    q51_situacion_ocupacional=="Desempleado/ buscando trabajo" ~ 1,
+#    q51_situacion_ocupacional=="Estudiando" ~ 0,
+#    q51_situacion_ocupacional=="Jubilado/a, retirado/aa" ~ 0,
+    q51_situacion_ocupacional=="Realizando changas, trabajos esporádicos o subempleado" ~ 0,
+ #   q51_situacion_ocupacional=="Realizando trabajos sin remuneración" ~ 1,
+    q51_situacion_ocupacional=="Sin trabajar con licencia" ~ 0,
+    q51_situacion_ocupacional=="Venta ambulante" ~ 0,
+ #   q51_situacion_ocupacional=="Otra" ~ 0,
+    TRUE ~ NA
+  ))
+
+
+
+```
+
+
+### Actividad
+
+
+```{r actividad}
+
+cc<- calculate_tabulates(base = enma, x = 'activo', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="actividad",append = TRUE)    
+
+print(cc)
+
+
+```
+
+### Ocupados   
+
+Esto está calculado excluyendo jubiladxs pero hay que revisarlo 
+
+
+
+```{r ocupados}
+
+cc<- calculate_tabulates(base = enma, x = 'ocupado', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="ocupado",append = TRUE)    
+
+print(cc)
+
+```
+### desempleados   
+
+Esto está calculado excluyendo jubiladxs pero hay que revisarlo 
+
+
+```{r desempleados}
+
+cc<- calculate_tabulates(base = enma, x = 'desempleado', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="desempleado",append = TRUE)    
+
+print(cc)
+
+```
+### situación ocupacional
+
+Absolutos
+
+
+```{r q51_situacion_ocupacional}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q51_situacion_ocupacional) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q51_situacion_ocupacional, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q51_situacionl",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q51_situacion_ocupacional_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q51_situacion_ocupacional', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q51_situacion_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+
+### Distribución según ocupación
+
+
+Absolutos  
+
+
+```{r q52_trabaja}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q52_trabaja) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q52_trabaja, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q52_trabaja",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q52_trabaja_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q52_trabaja', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q52_trabaja_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+
+### Porcentaje de población ocupada que su actividad laboral no está registrada  
+
+
+Absolutos  
+
+
+```{r q53_trabajo_formal}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q53_trabajo_formal) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q53_trabajo_formal, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q53_registro",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q53_trabajo_formal_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q53_trabajo_formal', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q53_registro_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+
+### Porcentaje de población que en Argentina logró trabajar en el área u oficio correspondiente con sus conocimientos y/o experiencia  
+
+Absolutos  
+
+
+```{r q55_experiencia}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q55_experiencia) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q55_experiencia, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q55_experiencia",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q55_experiencia_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q55_experiencia', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q55_experiencia_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+### Porcentaje de población que ha tenido dificultades para acceder a un trabajo en Argentina
+
+Absolutos  
+
+
+```{r q56_ocupacion_dificultad}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q56_ocupacion_dificultad) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q56_ocupacion_dificultad, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q56_dificultad",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q56_ocupacion_dificultad_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q56_ocupacion_dificultad', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q56_difi_prop",append = TRUE)    
+
+print(cc)
+
+```
+### Principales dificultades para acceder a un trabajo en Argentina
+
+Pregunta de selección múltiple
+
+
+```{r q57_dificultad_trabajo}
+
+
+
+## la primera es con todas las nacionalidades
+dificultades<-multiResponse(enma, items = c(
+"q57_dificultad_titulos",
+"q57_dificultad_discriminacion",
+"q57_dificultad_hogar",
+"q57_dificultad_sexual",
+"q57_dificultad_documentacion",
+"q57_dificultad_idioma",
+"q57_dificultad_edad",
+"q57_dificultad_inexperiencia",
+"q57_dificultad_falta_oferta",
+"q57_dificultad_salud",
+"q57_dificultad_desconocimiento",
+"q57_dificultad_prefiero_no" ),
+                          endorsedOption = 1)
+print("todas las nacionalidades")
+print(dificultades)
+
+write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q57_dificultad.xlsx", row.names = FALSE, sheetName ="todos",append = TRUE)    
+
+
+for (nac in nacionalidades) {
+  
+  enma_nac<-enma %>% filter(nacionalidad_var==nac)
+
+dificultades<-multiResponse(enma_nac, items = c(
+"q57_dificultad_titulos",
+"q57_dificultad_discriminacion",
+"q57_dificultad_hogar",
+"q57_dificultad_sexual",
+"q57_dificultad_documentacion",
+"q57_dificultad_idioma",
+"q57_dificultad_edad",
+"q57_dificultad_inexperiencia",
+"q57_dificultad_falta_oferta",
+"q57_dificultad_salud",
+"q57_dificultad_desconocimiento",
+"q57_dificultad_prefiero_no"),
+                          endorsedOption = 1)
+  
+  write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q57_dificultad.xlsx", row.names = FALSE, sheetName = nac, append = TRUE) 
+ 
+  print(nac)
+  print(dificultades)
+
+}
+
+
+```
+
+## Porcentaje de población que recibe subsidios o prestaciones sociales del Estado argentino
+
+
+Creo una variable subsidio=si o NO  
+
+
+
+```{r q60_subsidios}
+
+
+##creo una variable subsidio y contabilizo los que dijeron alguno
+## exccluyo los que no quisieron responder y los missing
+
+enma<- enma %>% mutate(subsidio=case_when(
+    q60_subsidios_no==1 ~ 0,
+    q60_subsidios_auh==1 ~ 1,
+    q60_subsidios_embarazo==1 ~ 1,
+    q60_subsidios_jubilacion==1 ~ 1,
+    q60_subsidios_pension==1 ~ 1,
+    q60_subsidios_pension_no_contrib==1 ~ 1,
+    q60_subsidios_progresar==1 ~ 1,
+    q60_subsidios_potenciar_trabajo==1 ~ 1,
+    q60_subsidios_inclusion_joven==1 ~ 1,
+    q60_subsidios_tarjeta_alimentar==1 ~ 1,
+    q60_subsidios_pieza==1 ~ 1,
+    q60_subsidios_desempleo==1 ~ 1,
+    q60_subsidios_otro==1 ~ 1,
+    TRUE ~ NA
+  ))
+
+
+```
+
+Absolutos  
+
+
+```{r q60_subsidios_abs}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,subsidio) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = subsidio, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="subsidio",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q60_subsidios_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'subsidio', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="subsidio_prop",append = TRUE)    
+
+print(cc)
+
+```
+###  Principales subsidios o prestaciones que recibe la población migrante del Estado argentino 
+
+Se presentan los % sobre quienes indicaron algun tipo de subsidio.  
+Se exluyen quienes no quisieron contestar y quienes indicaron no teners subsidio  
+
+
+
+```{r q60_subsidios_detalle}
+
+##excluyo de la seleccion multiple los que NO tienen subsidios y los que prefieren no contestar
+
+
+## la primera es con todas las nacionalidades
+dificultades<-multiResponse(enma, items = c(
+"q60_subsidios_auh",
+"q60_subsidios_embarazo",
+"q60_subsidios_jubilacion",
+"q60_subsidios_pension",
+"q60_subsidios_pension_no_contrib",
+"q60_subsidios_progresar",
+"q60_subsidios_potenciar_trabajo",
+"q60_subsidios_inclusion_joven",
+"q60_subsidios_tarjeta_alimentar",
+"q60_subsidios_pieza",
+"q60_subsidios_desempleo",
+"q60_subsidios_otro"),
+                          endorsedOption = 1)
+print("todas las nacionalidades")
+print(dificultades)
+
+write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q60_subsidios.xlsx", row.names = FALSE, sheetName ="todos",append = TRUE)    
+
+
+for (nac in nacionalidades) {
+  
+  enma_nac<-enma %>% filter(nacionalidad_var==nac)
+
+dificultades<-multiResponse(enma_nac, items = c(
+"q60_subsidios_auh",
+"q60_subsidios_embarazo",
+"q60_subsidios_jubilacion",
+"q60_subsidios_pension",
+"q60_subsidios_pension_no_contrib",
+"q60_subsidios_progresar",
+"q60_subsidios_potenciar_trabajo",
+"q60_subsidios_inclusion_joven",
+"q60_subsidios_tarjeta_alimentar",
+"q60_subsidios_pieza",
+"q60_subsidios_desempleo",
+"q60_subsidios_otro"),
+                          endorsedOption = 1)
+  
+  write.xlsx2(as.data.frame(dificultades), "tables\\socioeconomica\\q60_subsidios.xlsx", row.names = FALSE, sheetName = nac, append = TRUE) 
+ 
+  print(nac)
+  print(dificultades)
+
+}
+
+
+```
+
+
+### Distribución de las dificultades que ha tenido la población para gestionar subsidios o prestaciones sociales del Estado argentino
+
+
+
+
+
+Absolutos  
+
+
+```{r q61_subsidios_problemas}
+
+consulta <- enma %>% 
+  group_by(nacionalidad_var,q61_subsidios_problemas) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = q61_subsidios_problemas, values_from = cantidad)
+
+
+write.xlsx2(as.data.frame(consulta_w), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q61_subsidios_pbm",append = TRUE)    
+print(consulta_w)
+
+
+```
+
+Distribución   
+
+
+
+```{r q61_subsidios_problemas_prop}
+
+cc<- calculate_tabulates(base = enma, x = 'q61_subsidios_problemas', y = 'nacionalidad_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+write.xlsx2(as.data.frame(cc), "tables\\socioeconomica\\socioeconomica.xlsx", row.names = FALSE, sheetName ="q61_subss_pbm_prop",append = TRUE)    
+
+print(cc)
+
+```
+
+```{r}
+q54_rec<-unique(enma$q54_ocupacion)
+write.xlsx2(as.data.frame(q54_rec), "tables/5.Socioeconómica/q54_rec.xlsx", row.names = FALSE, sheetName ="categorías",append = TRUE) 
+
+```
+
+
+```{r}
+
+enma<-enma %>% 
+  mutate(q54_rec=case_when( q54_ocupacion=="PRODUCTOR DE VERDURAS"~1,
+                            q54_ocupacion=="escribano y abogado penalista"~5,
+                            q54_ocupacion=="ayudante de taller metalurgico"~2,
+                            q54_ocupacion=="EMPLEADA"~4,
+                            q54_ocupacion=="Orfebreria"~5,
+                            q54_ocupacion=="Funcionaria de un Consulado"~2,
+                            q54_ocupacion=="Estudiante y manicuras"~5,
+                            q54_ocupacion=="Empleada de casas particularesc"~4,
+                            q54_ocupacion=="Carpintero"~5,
+                            q54_ocupacion=="Modista"~5,
+                            q54_ocupacion=="Contructor"~5,
+                            q54_ocupacion=="Empleada de casas particulares"~4,
+                            q54_ocupacion=="Comerciante"~5,
+                            q54_ocupacion=="Empresa constructora"~5,
+                            q54_ocupacion=="Albañil"~5,
+                            q54_ocupacion=="Cuido mi bisnieto"~4,
+                            q54_ocupacion=="Empleada casas particulares"~4,
+                            q54_ocupacion=="Cuido niños en mi casa"~4,
+                            q54_ocupacion=="funcionaria jerarquica en uiversidad"~2,
+                            q54_ocupacion=="encargada de edificio"~2,
+                            q54_ocupacion=="diseño grafico"~5,
+                            q54_ocupacion=="empleada casa de familia"~4,
+                            q54_ocupacion=="fotografa"~5,
+                            q54_ocupacion=="transportista"~5,
+                            q54_ocupacion=="gestion y coperativa gastronomica"~5,
+                            q54_ocupacion=="encargado de edificio"~2,
+                            q54_ocupacion=="administrativa"~2,
+                            q54_ocupacion=="comercio"~5,
+                            q54_ocupacion=="Obrero"~2,
+                            q54_ocupacion=="Gastronomía dirige un restaurante"~1,
+                            q54_ocupacion=="Venta de flores"~5,
+                            q54_ocupacion=="Comerciante, compra y venta de mercadería en puesto en la calle"~5,
+                            q54_ocupacion=="Trabajo construcción"~5,
+                            q54_ocupacion=="Ventas"~2,
+                            q54_ocupacion=="Vendedor"~2,
+                            q54_ocupacion=="Ama de casa"~4,
+                            q54_ocupacion=="Chofer"~5,
+                            q54_ocupacion=="Vendedora"~2,
+                            q54_ocupacion=="Vendedor ambulante"~5,
+                            q54_ocupacion=="Ama de casa y ventas"~2,
+                            q54_ocupacion=="Atender un kiosco"~2,
+                            q54_ocupacion=="Venta ambulante"~5,
+                            q54_ocupacion=="Remisero"~5,
+                            q54_ocupacion=="Vendedora ambulante"~5,
+                            q54_ocupacion=="Deporte y ayuda con tareas de cuidado"~4,
+                            q54_ocupacion=="Comerciante de prendas de Vestir"~5,
+                            q54_ocupacion=="Chófer de Aplicaciones"~5,
+                            q54_ocupacion=="Venta de abarrotes"~5,
+                            q54_ocupacion=="Venta de ropa"~5,
+                            q54_ocupacion=="Venta ropa"~2,
+                            q54_ocupacion=="Venta de ropa y perfumes"~2,
+                            q54_ocupacion=="Venta de ropa, Mesera"~2,
+                            q54_ocupacion=="Limpieza"~4,
+                            q54_ocupacion=="Colectivero"~2,
+                            q54_ocupacion=="Secretaria"~2,
+                            q54_ocupacion=="Fletero"~5,
+                            q54_ocupacion=="Venta de caramelos"~5,
+                            q54_ocupacion=="Amo de casa"~4,
+                            q54_ocupacion=="Tapicero"~5,
+                            q54_ocupacion=="Metalurgia"~5,
+                            q54_ocupacion=="Limpiando autos"~5,
+                            q54_ocupacion=="Vendedor de chipa"~5,
+                            q54_ocupacion=="Venta de comida"~5,
+                            q54_ocupacion=="Changas de albañil"~5,
+                            q54_ocupacion=="Tengo una verdulería"~5,
+                            q54_ocupacion=="Trabajador de la construcción"~5,
+                            q54_ocupacion=="Costura"~5,
+                            q54_ocupacion=="Zapatero"~5,
+                            q54_ocupacion=="Obras"~5,
+                            q54_ocupacion=="Limpiadora de hoteles"~2,
+                            q54_ocupacion=="Electricista"~5,
+                            q54_ocupacion=="Ayudante de construcción"~5,
+                            q54_ocupacion=="Costurera"~5,
+                            q54_ocupacion=="Estampador"~5,
+                            q54_ocupacion=="Licencia en enfermeria"~4,
+                            q54_ocupacion=="Carnicero"~1,
+                            q54_ocupacion=="Jardinero y piletero"~4,
+                            q54_ocupacion=="Empleada doméstica"~4,
+                            q54_ocupacion=="Mecánico"~5,
+                            q54_ocupacion=="Repositora de supermercado"~2,
+                            q54_ocupacion=="Pintor"~5,
+                            q54_ocupacion=="Construcción"~5,
+                            q54_ocupacion=="Plomero"~5,
+                            q54_ocupacion=="Vendedor de ropa"~2,
+                            q54_ocupacion=="Negocios"~5,
+                            q54_ocupacion=="Peluquería"~5,
+                            q54_ocupacion=="Jardinero en el tigre"~4,
+                            q54_ocupacion=="Venta de ropa y juguetes"~2,
+                            q54_ocupacion=="Barbero"~5,
+                            q54_ocupacion=="Vendedor de ropa y juguetes"~2,
+                            q54_ocupacion=="Vendedor de ropa americana"~2,
+                            q54_ocupacion=="Vendedora de comida y ama de casa."~5,
+                            q54_ocupacion=="Venta de ropa en feria"~5,
+                            q54_ocupacion=="Vendo condimentos y ayudo en un taller mecánico"~5,
+                            q54_ocupacion=="Preparar saumerios y venta de artículos para saumar/ama de casa"~5,
+                            q54_ocupacion=="funcionaria"~2,
+                            q54_ocupacion=="Jornalera"~1,
+                            q54_ocupacion=="Mantenimiento de transporte - mecanico"~5,
+                            q54_ocupacion=="Técnico de celular"~5,
+                            q54_ocupacion=="Trabajador agricola"~1,
+                            q54_ocupacion=="Consul de Bolivia en San Salvador de jujuy"~2,
+                            q54_ocupacion=="Construccion"~5,
+                            q54_ocupacion=="Mantenimiento del hogar"~4,
+                            q54_ocupacion=="Vendedor de artículos para el hogar"~5,
+                            q54_ocupacion=="Amma de casa
+"~4,
+                            q54_ocupacion=="Limpiezas"~4,
+                            q54_ocupacion=="Cuidadora de ancianos"~4,
+                            q54_ocupacion=="Niñera"~4,
+                            q54_ocupacion=="Trabajador de construcción"~5,
+                            q54_ocupacion=="Atención al público"~2,
+                            q54_ocupacion=="Cuidador"~4,
+                            q54_ocupacion=="Peluquero"~5,
+                            q54_ocupacion=="Cuidadora"~4,
+                            q54_ocupacion=="Docencia de musica"~3,
+                            q54_ocupacion=="Empleado de empresa"~2,
+                            q54_ocupacion=="Dependiente"~2,
+                            q54_ocupacion=="Tecnico en telecomunicaciones"~3,
+                            q54_ocupacion=="Supervisor de sistemas de comunicacion"~2,
+                            q54_ocupacion=="Atencíon al cliente"~2,
+                            q54_ocupacion=="Funcionario público de Bolivia"~2,
+                            q54_ocupacion=="Peluquera"~5,
+                            q54_ocupacion=="Vendo ropa en la feria"~5,
+                            q54_ocupacion=="Cocinera"~1,
+                            q54_ocupacion=="Encargada de negocio familiar"~5,
+                            q54_ocupacion=="Trabajo en la cosecha"~5,
+                            q54_ocupacion=="Venta"~5,
+                            q54_ocupacion=="Artesanías"~5,
+                            q54_ocupacion=="Agricultor"~1,
+                            q54_ocupacion=="Tareas de limpieza"~4,
+                            q54_ocupacion=="Atencion al cliente"~2,
+                            q54_ocupacion=="Mozo"~1,
+                            q54_ocupacion=="Agricultura
+"~1,
+                            q54_ocupacion=="Artesana"~5,
+                            q54_ocupacion=="Artista plastica"~5,
+                            q54_ocupacion=="Limpieza de casa"~4,
+                            q54_ocupacion=="Chofer , escritor y profesor de folklore"~5,
+                            q54_ocupacion=="Trabajo en el campo"~1,
+                            q54_ocupacion=="Cajera"~2,
+                            q54_ocupacion=="Amam de casa"~4,
+                            q54_ocupacion=="Masajista"~5,
+                            q54_ocupacion=="Cuidado plantas huerta"~1,
+                            q54_ocupacion=="Chapa y pintura y mecánica"~5,
+                            q54_ocupacion=="Trabajo en una cochera"~2,
+                            q54_ocupacion=="Técnico  de lava ropa  y"~5,
+                            q54_ocupacion=="Técnico"~5,
+                            q54_ocupacion=="Docente"~3,
+                            q54_ocupacion=="Empleada"~4,
+                            q54_ocupacion=="Trabajador de la Construccion"~5,
+                            q54_ocupacion=="Empleado de industria"~2,
+                            q54_ocupacion=="Tetapias holisticas"~4,
+                            q54_ocupacion=="Profesor"~3,
+                            q54_ocupacion=="Rapipago"~2,
+                            q54_ocupacion=="Changarista"~5,
+                            q54_ocupacion=="Changarin"~5,
+                            q54_ocupacion=="Delivery"~5,
+                            q54_ocupacion=="Técnico refrigeración"~5,
+                            q54_ocupacion=="Chipero"~5,
+                            q54_ocupacion=="Ganadero"~1,
+                            q54_ocupacion=="Independiente"~5,
+                            q54_ocupacion=="Madre doméstica"~4,
+                            q54_ocupacion=="Trabajador agrícola"~1,
+                            q54_ocupacion=="Vendedor de artesanias"~5,
+                            q54_ocupacion=="Jardinero"~4,
+                            q54_ocupacion=="Carpinteria"~5,
+                            q54_ocupacion=="Conductor"~5,
+                            q54_ocupacion=="Carpintería"~5,
+                            q54_ocupacion=="Obra"~5,
+                            q54_ocupacion=="Repartidora"~5,
+                            q54_ocupacion=="Vendedora en ferias barriales"~5,
+                            q54_ocupacion=="Mantenimiento"~5,
+                            q54_ocupacion=="Guardia de seguridad"~2,
+                            q54_ocupacion=="albañil, pintura"~5,
+                            q54_ocupacion=="Refrigeracion y reparacion"~5,
+                            q54_ocupacion=="Albañil refacciones"~5,
+                            q54_ocupacion=="obra"~5,
+                            q54_ocupacion=="Mucama"~4,
+                            q54_ocupacion=="Costura  rectista"~5,
+                            q54_ocupacion=="varios"~5,
+                            q54_ocupacion=="Arista"~5,
+                            q54_ocupacion=="Feriante"~5,
+                            q54_ocupacion=="Vendo en la calle"~5,
+                            q54_ocupacion=="Jornalero"~1,
+                            q54_ocupacion=="Trabajo rural"~1,
+                            q54_ocupacion=="Albañilería"~5,
+                            q54_ocupacion=="Jornalero
+"~5,
+                            q54_ocupacion=="Ama de casa y trabajando esporadicamente"~4,
+                            q54_ocupacion=="Chapista
+"~5,
+                            q54_ocupacion=="Playero en una estación de servicio"~5,
+                            q54_ocupacion=="Atención al cliente"~2,
+                            q54_ocupacion=="Vendedora de ropa en ferias"~5,
+                            q54_ocupacion=="Limpieza de casas"~4,
+                            q54_ocupacion=="Construccion albañil"~5,
+                            q54_ocupacion=="Pintor albañil"~5,
+                            q54_ocupacion=="ama de casa"~4,
+                            q54_ocupacion=="Herrero"~5,
+                            q54_ocupacion=="Empleada casa particulares"~4,
+                            q54_ocupacion=="Limpieza6"~4,
+                            q54_ocupacion=="Albyesero"~5,
+                            q54_ocupacion=="Constructor"~5,
+                            q54_ocupacion=="Empleada domestica"~4,
+                            q54_ocupacion=="empleada domestica"~4,
+                            q54_ocupacion=="Empleada de casa particulares"~4,
+                            q54_ocupacion=="Asistente social"~2,
+                            q54_ocupacion=="Pedido lla"~5,
+                            q54_ocupacion=="Ama de  casa"~4,
+                            q54_ocupacion=="Vendedora  dependiente"~2,
+                            q54_ocupacion=="Niñeras"~4,
+                            q54_ocupacion=="Emprendedor"~5,
+                            q54_ocupacion=="Taxista"~5,
+                            q54_ocupacion=="Farmacéutica"~2,
+                            q54_ocupacion=="Trabajo en un restaurante"~1,
+                            q54_ocupacion=="Comercio"~5,
+                            q54_ocupacion=="Delivery y feriante"~5,
+                            q54_ocupacion=="Economista"~5,
+                            q54_ocupacion=="Vendedora de ropa"~2,
+                            q54_ocupacion=="Hago delivery"~5,
+                            q54_ocupacion=="Manicurista"~5,
+                            q54_ocupacion=="El campo"~1,
+                            q54_ocupacion=="Enfermera"~4,
+                            q54_ocupacion=="Docente de creole haitiano, particular"~3,
+                            q54_ocupacion=="Mecera"~1,
+                            q54_ocupacion=="Ama  de casa"~4,
+                            q54_ocupacion=="Docente de jardín"~3,
+                            q54_ocupacion=="Enfermero"~4,
+                            q54_ocupacion=="Promotora de genero"~5,
+                            q54_ocupacion=="Maestro mayor de obra"~5,
+                            q54_ocupacion=="Pintor, arreglos albañil, changas"~5,
+                            q54_ocupacion=="Trabajos de albañilería"~5,
+                            q54_ocupacion=="Ladrilleros"~5,
+                            q54_ocupacion=="Cebollero"~1,
+                            q54_ocupacion=="Vendo"~5,
+                            q54_ocupacion=="Changas en el campo"~1,
+                            q54_ocupacion=="Changas"~5,
+                            q54_ocupacion=="Empleado"~2,
+                            q54_ocupacion=="Encargado"~2,
+                            q54_ocupacion=="Martillera y Corredora publica"~5,
+                            q54_ocupacion=="Tecnico en refrigeracion y aire acondicionado"~5,
+                            q54_ocupacion=="Vendedora de ropa en la calle y en las ferias"~5,
+                            q54_ocupacion=="Costurera , empleada doméstica , vendedora  de comida"~5,
+                            q54_ocupacion=="Taller de costura
+"~5,
+                            q54_ocupacion=="Batender, atención al público."~5,
+                            q54_ocupacion=="Trabajo independiente"~5,
+                            q54_ocupacion=="Médico"~4,
+                            q54_ocupacion=="Camillero"~2,
+                            q54_ocupacion=="Enfermera jubilada (no diplomada)"~4,
+                            q54_ocupacion=="Maestra (Profesora de Educación Primaria)"~3,
+                            q54_ocupacion=="Médica Veterinaria /Profesora en un Instituto terciario"~4,
+                            q54_ocupacion=="Docente jubilada /comerciante"~5,
+                            q54_ocupacion=="Tesorera de la municipalidad"~2,
+                            q54_ocupacion=="Vendedora de productos cosméticos"~5,
+                            q54_ocupacion=="Vendedor de chipas"~5,
+                            q54_ocupacion=="Comunicador social"~5,
+                            q54_ocupacion=="Politólogo"~3,
+                            q54_ocupacion=="Promotora de Genero y masajista"~5,
+                            q54_ocupacion=="Desarrollador de software"~3,
+                            q54_ocupacion=="Becario"~3,
+                            q54_ocupacion=="Investigación"~3,
+                            q54_ocupacion=="turismo"~2,
+                            q54_ocupacion=="Calle center"~2,
+                            q54_ocupacion=="Sociólogo"~3,
+                            q54_ocupacion=="Abogado"~5,
+                            q54_ocupacion=="DOCENTE"~3,
+                            q54_ocupacion=="Prestador de servicios"~5,
+                            q54_ocupacion=="TIC"~3,
+                            q54_ocupacion=="Publicista"~5,
+                            q54_ocupacion=="Chofer de taxi"~5,
+                            q54_ocupacion=="arq"~5,
+                            q54_ocupacion=="Productora de semillas agroecológicos"~1,
+                            q54_ocupacion=="investigación"~3,
+                            q54_ocupacion=="Freelancer"~3,
+                            q54_ocupacion=="Trabajador ambulante"~5,
+                            q54_ocupacion=="Administrativa"~2,
+                            q54_ocupacion=="Artista"~5,
+                            q54_ocupacion=="Varios"~5,
+                            q54_ocupacion=="Gestión de redes sociales freelancer"~5,
+                            q54_ocupacion=="Docente a nivel superior"~3,
+                            q54_ocupacion=="Estrcturista"~5,
+                            q54_ocupacion=="Becaria conicet"~3,
+                            q54_ocupacion=="Técnico en laboratorio"~5,
+                            q54_ocupacion=="estudiante y emprendedora"~5,
+                            q54_ocupacion=="Investigador"~3,
+                            q54_ocupacion=="Paseador de perros"~5,
+                            q54_ocupacion=="Trabajo en oficina"~2,
+                            q54_ocupacion=="Terapista Ocupacional"~4,
+                            q54_ocupacion=="Consultor"~3,
+                            q54_ocupacion=="Traductora"~3,
+                            q54_ocupacion=="Guionista"~5,
+                            q54_ocupacion=="Profesora de danza"~3,
+                            q54_ocupacion=="trabajadora de la construcción,ama de casa y ayuda social"~5,
+                            q54_ocupacion=="Chef pastelera"~1,
+                            q54_ocupacion=="Departamento de cuentas por pagar"~2,
+                            q54_ocupacion=="Psicólogo"~5,
+                            q54_ocupacion=="Programador"~3,
+                            q54_ocupacion=="Madre y Psicologa"~4,
+                            q54_ocupacion=="Programação"~3,
+                            q54_ocupacion=="ANALISTA"~3,
+                            q54_ocupacion=="Enseñanzas de arte"~3,
+                            q54_ocupacion=="Ingeniera"~5,
+                            q54_ocupacion=="La cocina.  Comidas rápidas"~4,
+                            q54_ocupacion=="Como cuidadora domiciliaria"~4,
+                            q54_ocupacion=="Diseñadora gráfica"~5,
+                            q54_ocupacion=="Ingeniero"~5,
+
+                          q54_ocupacion=="Camarero"~1,
+                            q54_ocupacion=="Trabajo cuidado de abuelos y limpiando casas"~4,
+                            q54_ocupacion=="vendedora"~2,
+                            q54_ocupacion=="Estética y belleza"~5,
+                            q54_ocupacion=="geógrafa"~3,
+                            q54_ocupacion=="Fotografo"~5,
+                            q54_ocupacion=="Comunicadora social"~3,
+                            q54_ocupacion=="Consultor de procesos y proyectos"~3,
+                            q54_ocupacion=="Coordinación de casa de oficios"~2,
+                            q54_ocupacion=="Vendedora de comida ambulante"~5,
+                            q54_ocupacion=="Sonidista Audiovisual"~5,
+                            q54_ocupacion=="Arquitecta - Coordinadora territorial del Movimiento de Trabajadores Excluidos"~2,
+                            q54_ocupacion=="becario de postgrado"~3,
+                            q54_ocupacion=="Analista de red"~3,
+                            q54_ocupacion=="Atención psicológica y apoyo psicosocial"~4,
+                            q54_ocupacion=="manicurista"~5,
+                            q54_ocupacion=="Profesor de inglés en academia virtual (trabajo remoto)"~3,
+                            q54_ocupacion=="Docente de programa socioeducativo"~3,
+                            q54_ocupacion=="Trabajo manual"~2,
+                            q54_ocupacion=="Directora de Diseño"~2,
+                            q54_ocupacion=="Pastelera"~1,
+                            q54_ocupacion=="Informática"~3,
+                            q54_ocupacion=="Servidor pùblico"~2,
+                            q54_ocupacion=="Repartidor"~2,
+                            q54_ocupacion=="Project manager"~3,
+                            q54_ocupacion=="trabajador de la administración pública"~2,
+                            q54_ocupacion=="redacción"~5,
+                            q54_ocupacion=="Productora cultural"~3,
+                            q54_ocupacion=="Reportero gráfico del Darío Clarín"~2,
+                            q54_ocupacion=="Nomade digitale"~5,
+                            q54_ocupacion=="Barman"~5,
+                            q54_ocupacion=="Profesora"~3,
+                            q54_ocupacion=="Docente técnico de adultos"~3,
+                            q54_ocupacion=="profe de idiomas en una academia y por mi cuenta online"~3,
+                            q54_ocupacion=="Consultor IT"~3,
+                            q54_ocupacion=="Administrativo"~2,
+                            q54_ocupacion=="Gastronomía"~1,
+                            q54_ocupacion=="Consultora"~3,
+                            q54_ocupacion=="Editora"~3,
+                            q54_ocupacion=="Profesor de lenguas"~3,
+                            q54_ocupacion=="AT"~4,
+                            q54_ocupacion=="Cocina"~1,
+                            q54_ocupacion=="Diseñadora Gráfica"~5,
+                            q54_ocupacion=="Publicitário"~5,
+                            q54_ocupacion=="Trabajo con turismo y TIC"~2,
+                            q54_ocupacion=="Analista de datos"~3,
+                            q54_ocupacion=="Docente en el extranjero (virtual) con contrato de independiente"~3,
+                            q54_ocupacion=="Waiter"~5,
+                            q54_ocupacion=="Periodista"~5,
+                            q54_ocupacion=="atencion al cliente"~2,
+                            q54_ocupacion=="Reparación e instalación de ascensores."~5,
+                            q54_ocupacion=="Empleada municipal"~2,
+                            q54_ocupacion=="Actriz"~5,
+                            q54_ocupacion=="Acompañamiento tramite migratotio y genero y social y infancia y trabajo a compañera y en el barrio con todos los teamites"~5,
+                            q54_ocupacion=="Terapeuta Holística"~4,
+                            q54_ocupacion=="Informático"~3,
+                            q54_ocupacion=="Consultora política"~3,
+                            q54_ocupacion=="Astrologa"~5,
+                            q54_ocupacion=="medicina"~4,
+                            q54_ocupacion=="Terapeuta Ocupacional infantil"~4,
+                            q54_ocupacion=="Ama de casa, estudiante de tecnicatura en Hemoterapia (última materia para recibirme, pero sufrí abuso de autoridad y exclusión por embarazo para la materia de prácticas profesionalizantes hospitalaria). También estoy cursando profesorado de portugués en 2° año."~4,
+                            q54_ocupacion=="Trabajo como manicurista en casa"~5,
+                            q54_ocupacion=="Cuidar a mi bebé"~4,
+                            q54_ocupacion=="Geografa especialista en datos"~3,
+                            q54_ocupacion=="Comercial Tecnología"~5,
+                            q54_ocupacion=="Analista GIS"~3,
+                            q54_ocupacion=="Actriz y bailarina (docente)"~3,
+                            q54_ocupacion=="Ingeniería industrial"~5,
+                            q54_ocupacion=="Analista QA"~3,
+                            q54_ocupacion=="Emprendimiento postres"~5,
+                            q54_ocupacion=="Atencion al público"~2,
+                            q54_ocupacion=="Comunity manager"~3,
+                            q54_ocupacion=="Medica"~4,
+                            q54_ocupacion=="empleado administrativo"~2,
+                            q54_ocupacion=="Directora de Comunicación"~2,
+                            q54_ocupacion=="Diseñador Grafico"~3,
+                            q54_ocupacion=="Limpieza por hora"~4,
+                            q54_ocupacion=="Empleada administrativa"~2,
+                            q54_ocupacion=="Docente de educación superior y de adultos."~3,
+                            q54_ocupacion=="Operador"~2,
+                            q54_ocupacion=="Administrador de red"~2,
+                            q54_ocupacion=="ingeniero civil"~5,
+                            q54_ocupacion=="Antropóloga social"~3,
+                            q54_ocupacion=="becaria CONICET"~3,
+                            q54_ocupacion=="Estudiante y escritor"~3,
+                            q54_ocupacion=="Pintura de obra"~5,
+                            q54_ocupacion=="Programadora"~3,
+                            q54_ocupacion=="Docente universitaria"~3,
+                            q54_ocupacion=="Gestor Judicial"~5,
+                            q54_ocupacion=="Psicoterapeuta"~5,
+                            q54_ocupacion=="Administración"~2,
+                            q54_ocupacion=="Maestranza"~2,
+                            q54_ocupacion=="Encuestador"~2,
+                            q54_ocupacion=="Investigador CONICET"~3,
+                            q54_ocupacion=="Técnico electricista y técnico en construcción"~5,
+                            q54_ocupacion=="Vendedor de mostrador"~2,
+                            q54_ocupacion=="trabajadora social"~4,
+                            q54_ocupacion=="Gerente de Proyectos"~2,
+                            q54_ocupacion=="Docente y Enfermero"~3,
+                            q54_ocupacion=="Acompañante"~4,
+                            q54_ocupacion=="Líder de Proyectos de Tecnología"~3,
+                            q54_ocupacion=="Psiquiatra Infanto-Juvenil"~5,
+                            q54_ocupacion=="Emprendedora"~5,
+                            q54_ocupacion=="Agente reclutador agencia"~2,
+                            q54_ocupacion=="Estudiante y trabajo en una radio cooperativa y de niñera por horas"~5,
+                            q54_ocupacion=="Trabajador de la industria farmacéutica"~2,
+                            q54_ocupacion=="publicitaria"~5,
+                            q54_ocupacion=="Contadora"~5,
+                            q54_ocupacion=="Licenciada Educacion Fisica"~3,
+                            q54_ocupacion=="Asesora de admisiones universitaria"~3,
+                            q54_ocupacion=="Becario postdoctoral"~3,
+                            q54_ocupacion=="CUIDADO DE ADULTO MAYOR Y AGENTE SANITARIA"~4,
+                            q54_ocupacion=="Especialista en Comercio Exterior"~5,
+                            q54_ocupacion=="Asistente Tecnico"~3,
+                            q54_ocupacion=="Ama dé hogar"~4,
+                            q54_ocupacion=="INGENIERO"~5,
+                            q54_ocupacion=="Dirigente Sindiacal."~2,
+                            q54_ocupacion=="Becaria de postdoctorado"~3,
+                            q54_ocupacion=="Project Manager"~3,
+                            q54_ocupacion=="Rehabilitation"~4,
+                            q54_ocupacion=="Empleada de comercio"~2,
+                            q54_ocupacion=="docente"~3,
+                            q54_ocupacion=="business partner"~5,
+                            q54_ocupacion=="Servicio doméstica"~4,
+                            q54_ocupacion=="Coordinación"~2,
+                            q54_ocupacion=="Vestuarista"~5,
+                            q54_ocupacion=="Cordinadora de asistencias"~2,
+                            q54_ocupacion=="terapista ocupacional"~4,
+                            q54_ocupacion=="Dirigente social"~4,
+                            q54_ocupacion=="Atención a clientes"~2,
+                            q54_ocupacion=="Psicoanalista"~5,
+                            q54_ocupacion=="Múltiples tareas"~5,
+                            q54_ocupacion=="Secretaria administrativa"~2,
+                            q54_ocupacion=="Ama de Casa"~4,
+                            q54_ocupacion=="Organizacion social"~5,
+                            q54_ocupacion=="coordinador y secretaria de una persona en arte"~2,
+                            q54_ocupacion=="Limpieza de apartamentos"~4,
+                            q54_ocupacion=="Operadora de call center"~2,
+                            q54_ocupacion=="Audiovisual"~5,
+                            q54_ocupacion=="Traductora y productora"~3,
+                            q54_ocupacion=="periodismo"~5,
+                            q54_ocupacion=="Venta de prodyde panificación"~5,
+                            q54_ocupacion=="Servicios Productor de seguros"~5,
+                            q54_ocupacion=="ingeniero"~5,
+                            q54_ocupacion=="Nutricionizta"~5,
+                            q54_ocupacion=="Investigador en temas de derechos humanos"~3,
+                            q54_ocupacion=="Marketing Digital"~5,
+                            q54_ocupacion=="Atencion al cliente en avicola"~2,
+                            q54_ocupacion=="Becario de Conicet"~3,
+                            q54_ocupacion=="Música"~5,
+                            q54_ocupacion=="Docente de secundaria"~3,
+                            q54_ocupacion=="Encargado control de stock"~2,
+                            q54_ocupacion=="Cosmiatría/esteticista"~5,
+                            q54_ocupacion=="Administración de Recursos Humanos"~2,
+                            q54_ocupacion=="Analista de seguridad"~3,
+                            q54_ocupacion=="Becaria doctoral CONICET"~3,
+                            q54_ocupacion=="Investigadora CONICET/Docente UBA-FLACSO"~3,
+                            q54_ocupacion=="Productor de cine"~5,
+                            q54_ocupacion=="Tic"~3,
+                            q54_ocupacion=="Logística"~5,
+                            q54_ocupacion=="Periodista - Trabajador Social"~5,
+                            q54_ocupacion=="Investigador Conicet, Profesor Universitario"~3,
+                            q54_ocupacion=="Cuidador de Mayores"~4,
+                            q54_ocupacion=="AMA DE CASA"~4,
+                            q54_ocupacion=="Herrería"~5,
+                            q54_ocupacion=="Acompañante de persona mayor"~4,
+                            q54_ocupacion=="Veterinario"~5,
+                            q54_ocupacion=="niñera"~4,
+                            q54_ocupacion=="Arquitecta empleada publica"~2,
+                            q54_ocupacion=="Asesor en Comunicación"~5,
+                            q54_ocupacion=="Véntás dé çómída"~5,
+                            q54_ocupacion=="Analista de medios"~3,
+                            q54_ocupacion=="electricista"~5,
+                            q54_ocupacion=="Administrativo/ músico"~2,
+                            q54_ocupacion=="Plomero y electricidad"~5,
+                            q54_ocupacion=="Madre y estudiante"~4,
+                            q54_ocupacion=="Psicológo y profesor de psicología"~5,
+                            q54_ocupacion=="Facturacion"~2,
+                            q54_ocupacion=="Químico"~5,
+                            q54_ocupacion=="Coordinadora"~2,
+                            q54_ocupacion=="Becario Conicet"~3,
+                            q54_ocupacion=="Estudiante, Ama de casa"~4,
+                            q54_ocupacion=="Creación de contenido, Community Manager y Editora de vídeo"~3,
+                            q54_ocupacion=="Estética"~5,
+                            q54_ocupacion=="Abogada"~5,
+                            q54_ocupacion=="Autonomo"~5,
+                            q54_ocupacion=="Cajera, personal de limpieza"~2,
+                            q54_ocupacion=="Vendedor de comida en la calle"~5,
+                            q54_ocupacion=="DOCENTE VIRTUAL"~3,
+                            q54_ocupacion=="Licenciada pedagogía infantil"~3,
+                            q54_ocupacion=="Analista de Datos"~3,
+                            q54_ocupacion=="conductor en aplicación"~5,
+                            q54_ocupacion=="Fotografa"~5,
+                            q54_ocupacion=="Analista de finanzas"~3,
+                            q54_ocupacion=="Capacitación socioeducativo para adolescentes y niños"~3,
+                            q54_ocupacion=="Múltiple"~5,
+                            q54_ocupacion=="Fotógrafo"~5,
+                            q54_ocupacion=="Gestor administrativo"~5,
+                            q54_ocupacion=="Trabajadora de la cultura"~2,
+                            q54_ocupacion=="Tec.pc.y redes y mecänico textil"~3,
+                            q54_ocupacion=="Docente de primaria y secundaria"~3,
+                            q54_ocupacion=="Operaciones"~2,
+                            q54_ocupacion=="Licenciada en Ciencias de la Educación"~3,
+                            q54_ocupacion=="Arquitecto"~5,
+                            q54_ocupacion=="Ama se casa"~4,
+                            q54_ocupacion=="Ilustradora y bibliotecaria"~3,
+                            q54_ocupacion=="Abogada/Docente Universitaria"~3,
+                            q54_ocupacion=="Bioquímica"~5,
+                            q54_ocupacion=="Diseño web, grafico"~5,
+                            q54_ocupacion=="Estilista"~5,
+                            q54_ocupacion=="Comida arabe"~5,
+                            q54_ocupacion=="auxiliar casas particulares"~4,
+                            q54_ocupacion=="Kinesiologo"~5,
+                            q54_ocupacion=="Cajero"~2,
+                            q54_ocupacion=="medico"~4,
+                            q54_ocupacion=="Contaduría"~5,
+                            q54_ocupacion=="becaria conicet"~3,
+                            q54_ocupacion=="Inspector"~2,
+                            q54_ocupacion=="Agente inmobiliario"~2,
+                            q54_ocupacion=="Docente de música y tecnología"~3,
+                            q54_ocupacion=="Trabajador independiente. Monotributista"~5,
+                            q54_ocupacion=="Investigación de experiencia de usuario"~3,
+                            q54_ocupacion=="Asistente de Investigación"~3,
+                            q54_ocupacion=="Docente de teatro"~3,
+                            q54_ocupacion=="Becaria Conicet"~3,
+                            q54_ocupacion=="Operario"~2,
+                            q54_ocupacion=="Diseñador gráfico"~5,
+                            q54_ocupacion=="Microbiologa"~5,
+                            q54_ocupacion=="Trabajadora de cocina"~4,
+                            q54_ocupacion=="Empleada agencia de viajes"~2,
+                            q54_ocupacion=="Maestra"~3,
+                            q54_ocupacion=="Docente de circo"~3,
+                            q54_ocupacion=="Cicinero"~1,
+                            q54_ocupacion=="Enfermera profesional"~4,
+                            q54_ocupacion=="Medico"~4,
+                            q54_ocupacion=="Seguridad Privada"~2,
+                            q54_ocupacion=="Electromecánico"~5,
+                            q54_ocupacion=="Trabajo en una Carnicería"~1,
+                            q54_ocupacion=="Asesor de ventas"~5,
+                            q54_ocupacion=="Asistente gerontológico"~4,
+                            q54_ocupacion=="Mayorista de productos de dietética"~5,
+                            q54_ocupacion=="Asesora"~5,
+                            q54_ocupacion=="Confecciónista"~5,
+                            q54_ocupacion=="Diseñador UX"~5,
+                            q54_ocupacion=="Técnico en teatro"~5,
+                            q54_ocupacion=="Lic. en Comunicación Social"~5,
+                            q54_ocupacion=="Callcentera precarizada para USA"~2,
+                            q54_ocupacion=="computacion"~3,
+                            q54_ocupacion=="Atención al cliente telefónico"~2,
+                            q54_ocupacion=="Ayudar al migrante"~4,
+                            q54_ocupacion=="Docente de Primaria"~3,
+                            q54_ocupacion=="Arquitecta"~5,
+
+                            q54_ocupacion=="Interprete de LSA"~3,
+
+                            q54_ocupacion=="empleado"~2,
+
+                            q54_ocupacion=="Gestoria"~3,
+
+                            q54_ocupacion=="Del hogar"~4,
+                            q54_ocupacion=="Bibliotecario"~3,
+                            q54_ocupacion=="Cuidados de personas"~4,
+                            q54_ocupacion=="Entrenador personal"~5,
+                            q54_ocupacion=="trabajador estatal"~2,
+                            q54_ocupacion=="Community Manager."~5,
+                            q54_ocupacion=="Contador"~5,
+                            q54_ocupacion=="investigadora doctoral"~3,
+                            q54_ocupacion=="De todo un poco, servicio doméstico,comerciante"~4,
+                            q54_ocupacion=="Trabajo administrativo"~2,
+                            q54_ocupacion=="Gestión de servicios"~5,
+                            q54_ocupacion=="Profesional de recursos humanos"~2,
+                            q54_ocupacion=="traductora"~3,
+                            q54_ocupacion=="Trabajador enONG"~2,
+                            q54_ocupacion=="Consultor de procesos de negocios"~3,
+                            q54_ocupacion=="Analista sr de Cultura y clima"~3,
+                            q54_ocupacion=="Técnico en reparación PC"~3,
+                            q54_ocupacion=="Trabajo doméstico"~4,
+                            q54_ocupacion=="desarrollador de software"~3,
+                            q54_ocupacion=="Profesor particular de idiomas"~3,
+                            q54_ocupacion=="Asesor en calidad y medio ambiente"~5,
+                            q54_ocupacion=="Encargada de comunicaciones"~2,
+                            q54_ocupacion=="Venta de desayuno sorpresa"~5,
+                            q54_ocupacion=="Empleado de comercio."~2,
+                            q54_ocupacion=="Diseñador Gráfico"~5,
+                            q54_ocupacion=="Economista y profesora en nivel secundario y superior"~3,
+                            q54_ocupacion=="Administrativo/operador social"~2,
+                            q54_ocupacion=="encargada comercio exterior"~2,
+                            q54_ocupacion=="GEstion de proyectos IT"~3,
+                            q54_ocupacion=="artista"~5,
+                            q54_ocupacion=="Psicóloga"~5,
+                            q54_ocupacion=="Cuidadora domiciliaria"~4,
+                            q54_ocupacion=="periodista"~5,
+                            q54_ocupacion=="Atención al clie te"~2,
+                            q54_ocupacion=="consultor de negocio especializado en transformación digital e innovación"~3,
+                            q54_ocupacion=="Empleada del ministerio de justicia"~2,
+                            q54_ocupacion=="Estatal"~2,
+                            q54_ocupacion=="Cocinero chef peruano"~1,
+                            q54_ocupacion=="Analista Opinión Publica"~3,
+                            q54_ocupacion=="Operario logístico"~2,
+                            q54_ocupacion=="Trabajo en el área gastronómica"~1,
+                            q54_ocupacion=="Operadora socioterapeutico"~4,
+                            q54_ocupacion=="Gastronómico"~1,
+                            q54_ocupacion=="Encargada de edificio"~2,
+                            q54_ocupacion=="Becario Conicet - Docente"~3,
+                            q54_ocupacion=="Promotora de salud"~5,
+                            q54_ocupacion=="Editor"~5,
+                            q54_ocupacion=="Docente de ciencias sociales"~3,
+                            q54_ocupacion=="abogado"~5,
+                            q54_ocupacion=="Monotributista"~5,
+                            q54_ocupacion=="Asistente domiciliaria"~5,
+                            q54_ocupacion=="Tutora"~5,
+                            q54_ocupacion=="Administrador"~2,
+                            q54_ocupacion=="Técnica Administrativa en el sector público"~5,
+                            q54_ocupacion=="Manicure"~5,
+                            q54_ocupacion=="Analista de sistemas"~3,
+                            q54_ocupacion=="supervisor"~2,
+                            q54_ocupacion=="Analista de marketing"~3,
+                            q54_ocupacion=="Editor de video y activista"~5,
+                            q54_ocupacion=="Docencia"~3,
+                            q54_ocupacion=="Mecánico Dental"~5,
+                            q54_ocupacion=="Instructora de gimnasia"~5,
+                            q54_ocupacion=="personal de casas particulares"~4,
+                            q54_ocupacion=="Traductor(a)"~3,
+                            q54_ocupacion=="Ingeniero forestal"~5,
+                            q54_ocupacion=="Asistente administrativo remoto"~2,
+                            q54_ocupacion=="Agricultora"~1,
+                            q54_ocupacion=="Encargado de ventas online"~2,
+                            q54_ocupacion=="Desarrollo digital"~5,
+                            q54_ocupacion=="Trabajar cuidado de mis hijos"~4,
+                            q54_ocupacion=="Analista de compras"~3,
+                            q54_ocupacion=="Asistente administrativo"~2,
+                            q54_ocupacion=="Docente secundaria"~3,
+                            q54_ocupacion=="Becario del CONICET"~3,
+                            q54_ocupacion=="Director de Marketing y Comunicaciones"~2,
+                            q54_ocupacion=="Pastor Protestante"~5,
+                            q54_ocupacion=="Representante Legal de Escuela"~5,
+                            q54_ocupacion=="Doméstica"~4,
+                            q54_ocupacion=="Soy costurera"~5,
+                            q54_ocupacion=="Becaria doctoral"~3,
+                            q54_ocupacion=="Manicura y pedicura"~5,
+                            q54_ocupacion=="administrativo"~2,
+                            q54_ocupacion=="Investigadora social"~3,
+                            q54_ocupacion=="Licenciado en seguridad e higiene"~5,
+                            q54_ocupacion=="Secretaria Administrativa"~2,
+                            q54_ocupacion=="Deliverry"~5,
+                            q54_ocupacion=="Analista"~3,
+                            q54_ocupacion=="Conductor de ambulancias"~2,
+                            q54_ocupacion=="Confección de prendas de vestir"~5,
+                            q54_ocupacion=="Cocinera/ profesora de frances"~1,
+                            q54_ocupacion=="Estudiante y vendedora"~2,
+                            q54_ocupacion=="Gestora cultural"~5,
+                            q54_ocupacion=="Diseñador gráfico y Programador"~3,
+                            q54_ocupacion=="Empleada pública"~2,
+                            q54_ocupacion=="Arte"~5,
+                            q54_ocupacion=="Gestión de proyectos de tecnología"~3,
+                            q54_ocupacion=="Docente de Yoga y Pilates"~3,
+                            q54_ocupacion=="Comunicador/periodista"~5,
+                            q54_ocupacion=="ADMINISTRATIVA"~2,
+                            q54_ocupacion=="Empleado bancario"~2,
+                            q54_ocupacion=="Cuidado de Personas"~4,
+                            q54_ocupacion=="Cajera/ mesera"~2,
+                            q54_ocupacion=="Acompañane Terapéutica"~4,
+                            q54_ocupacion=="Capacitación docente"~3,
+                            q54_ocupacion=="Consultorio"~5,
+                            q54_ocupacion=="Productor agricola y docente"~1,
+                            q54_ocupacion=="Trabajadora Social"~4,
+                            q54_ocupacion=="Compra y venta de artículos para el hogar"~5,
+                            q54_ocupacion=="Gestion de Proyecto"~3,
+                            q54_ocupacion=="Trabajador metalúrgico"~5,
+                            q54_ocupacion=="Trabajo Rural"~1,
+                            q54_ocupacion=="Costurero"~5,
+                            q54_ocupacion=="Empleado administrativo"~2,
+                            q54_ocupacion=="Limpiar casa de familia"~4,
+                            q54_ocupacion=="Gastronomica"~1,
+                            q54_ocupacion=="Salud"~4,
+                            q54_ocupacion=="Artista pintora y filatelista"~5,
+                            q54_ocupacion=="Cuidadora de pacientes"~4,
+                            q54_ocupacion=="Repostera"~5,
+                            q54_ocupacion=="Diseño Gráfico y Preprensa"~5,
+                            q54_ocupacion=="Docente nivel secundario y superior"~3,
+                            q54_ocupacion=="becario doctoral"~3,
+                            q54_ocupacion=="Venta por menor"~5,
+                            q54_ocupacion=="Trabajador del campo"~1,
+                            q54_ocupacion=="Smart de casa y escritura"~4,
+                            q54_ocupacion=="Administración tesorería"~2,
+                            q54_ocupacion=="Chofer transporte discapacidad"~5,
+                            q54_ocupacion=="diseñador"~5,
+                            q54_ocupacion=="Asistente"~2,
+                            q54_ocupacion=="estampado"~5,
+                            q54_ocupacion=="Trabajo y estudio"~5,
+                            q54_ocupacion=="Delivery ( Cadeteria)"~5,
+                            q54_ocupacion=="Programador de sistemas"~3,
+                            q54_ocupacion=="Educadora"~3,
+                            q54_ocupacion=="Servicio doméstico"~4,
+                            q54_ocupacion=="Gastronomía, eventualidades"~1,
+                            q54_ocupacion=="Finanzas"~5,
+                            q54_ocupacion=="Gastronómica"~1,
+
+                          q54_ocupacion=="Recursos humanos"~2,
+                            q54_ocupacion=="Technical Project Manager"~3,
+                            q54_ocupacion=="Relacionista Público"~5,
+                            q54_ocupacion=="Secretaria Médica"~2,
+                            q54_ocupacion=="Productora"~1,
+                            q54_ocupacion=="Presto servicio de encomiendas"~5,
+                            q54_ocupacion=="Lcda Comercio Internacional"~5,
+                            q54_ocupacion=="Diaconía integral y asesor"~3,
+                            q54_ocupacion=="Marketing"~5,
+                            q54_ocupacion=="Financial Analyst"~3,
+                            q54_ocupacion=="Comunicador Social"~5,
+                            q54_ocupacion=="Atención al cliente e-commerce"~2,
+                            q54_ocupacion=="Perito"~5,
+                            q54_ocupacion=="Docente de primaria"~3,
+                            q54_ocupacion=="Odontóloga"~5,
+                            q54_ocupacion=="Chofer de colectivos de media distancia"~2,
+                            q54_ocupacion=="Vendedor de ropa en la calle"~5,
+                            q54_ocupacion=="Consultor de tecnología"~3,
+                            q54_ocupacion=="Esteticista"~5,
+                            q54_ocupacion=="Venta independiente de productos para el hogar"~5,
+                            q54_ocupacion=="Docente de orquesta escuela"~3,
+                            q54_ocupacion=="Docente universitario"~3,
+                            q54_ocupacion=="Ama de casa, emprendimiento de pastelería"~4,
+                            q54_ocupacion=="psicopedagoga"~5,
+                            q54_ocupacion=="Músico"~5,
+                            q54_ocupacion=="Reclutadora de personal"~2,
+                            q54_ocupacion=="Puericultora"~5,
+                            q54_ocupacion=="Bartender"~5,
+                            q54_ocupacion=="En internet"~5,
+                            q54_ocupacion=="Gestor de Riesgo"~5,
+                            q54_ocupacion=="costura"~5,
+                            q54_ocupacion=="Ingeniero de producción"~5,
+                            q54_ocupacion=="ingeniera ambiental"~5,
+                            q54_ocupacion=="Remis ejecutivos"~5,
+                            q54_ocupacion=="Instructor deportivo"~5,
+                            q54_ocupacion=="Auxiliar juridico"~5,
+                            q54_ocupacion=="Limpieza de una casa y cuidar una viejita"~4,
+                            q54_ocupacion=="Venta por internet"~5,
+                            q54_ocupacion=="Agente de viajes"~2,
+                            q54_ocupacion=="Contador público"~5,
+                            q54_ocupacion=="Kinesiologa"~5,
+                            q54_ocupacion=="prensa"~2,
+                            q54_ocupacion=="Técnico en telecomunicaciones"~3,
+                            q54_ocupacion=="vendedor"~2,
+                            q54_ocupacion=="Investigadora"~3,
+                            q54_ocupacion=="Servicio domestico"~4,
+                            q54_ocupacion=="Traductor"~3,
+                            q54_ocupacion=="Compradora"~5,
+                            q54_ocupacion=="Recepcionista / estudiante"~2,
+                            q54_ocupacion=="Médica"~4,
+                            q54_ocupacion=="Comarografo"~5,
+                            q54_ocupacion=="Diseñadora freelance"~5,
+                            q54_ocupacion=="docente de lengua extranjera"~3,
+                            q54_ocupacion=="Ama de casa-estudiante"~4,
+                            q54_ocupacion=="Consultor de organizaciones internacionales"~3,
+                            q54_ocupacion=="Madre"~4,
+                            q54_ocupacion=="Agente humanitario"~4,
+                            q54_ocupacion=="Recepcionista"~2,
+                            q54_ocupacion=="Psicologa"~5,
+                            q54_ocupacion=="Comerciante y ama de casa ya que tengo mi negocio en mi casa"~5,
+                            q54_ocupacion=="Auditor"~2,
+                            q54_ocupacion=="Chef"~1,
+                            q54_ocupacion=="atención al cliente"~2,
+                            q54_ocupacion=="Becaria Posdoctoral - CONICET"~3,
+                            q54_ocupacion=="Psicóloga areas de Recursos Humanos"~5,
+                            q54_ocupacion=="actor"~5,
+                            q54_ocupacion=="Secretaria ejecutiva"~2,
+                            q54_ocupacion=="Delivery en PedidosYa/Rappi"~5,
+                            q54_ocupacion=="Becaria doctoral de Conicet"~3,
+                            q54_ocupacion=="Trabajor agropecuario"~1,
+                            q54_ocupacion=="chef de cocina"~1,
+                            q54_ocupacion=="Soy docente, pero en Argentina gastronomía"~3,
+                            q54_ocupacion=="Asistente enfermería"~4,
+                            q54_ocupacion=="Community manager"~5,
+                            q54_ocupacion=="Trabajador administrativo y estudiante"~2,
+                            q54_ocupacion=="Estudiante, y profesora de diseño gráfico"~3,
+                            q54_ocupacion=="Consultora en recursos humanos"~3,
+                            q54_ocupacion=="Guía de museo"~2,
+                            q54_ocupacion=="profesional universitario"~5,
+                            q54_ocupacion=="ama de cas"~4,
+                            q54_ocupacion=="Profesional del área Salud y Docente Universitaria"~3,
+                            q54_ocupacion=="ING. De Calidad"~5,
+                            q54_ocupacion=="Docente de ballet"~3,
+                            q54_ocupacion=="Lic terapia ocupacional"~5,
+                            q54_ocupacion=="Ingeniero Agrónomo"~1,
+                            q54_ocupacion=="Trabajodor textil"~2,
+                            q54_ocupacion=="Chief Business Officer"~3,
+                            q54_ocupacion=="Receutadora"~2,
+                            q54_ocupacion=="Gestor Cultural y Docente"~3,
+                            q54_ocupacion=="Taller de costura"~5,
+                            q54_ocupacion=="Diseñador web"~5,
+                            q54_ocupacion=="Asistencia de personas"~4,
+                            q54_ocupacion=="Soy At y Auxiliar de farmacia con titulos"~5,q54_ocupacion=="Pizzero"~1,
+                            q54_ocupacion=="Ingeniera en telecomunicaciones"~3,
+                            q54_ocupacion=="Labor en mi casa"~4,
+                            q54_ocupacion=="Cudar mis hijos"~4,
+                            q54_ocupacion=="Promotora Aysa"~5,
+                            q54_ocupacion=="Trabajo como Community Manager de una radio"~5,
+                            q54_ocupacion=="Empleada Doméstica"~4,
+                            q54_ocupacion=="operadora telefonica"~2,
+                            q54_ocupacion=="Tatuador"~5,
+                            q54_ocupacion=="Secretaria/Asistente/Atención al cliente"~2,
+                            q54_ocupacion=="IT"~3,
+                            q54_ocupacion=="Trabajadora de casa particular"~4,
+                            q54_ocupacion=="Cuido a una señora mayor"~4,
+                            q54_ocupacion=="Suministro de insumos del sector salud"~5,
+                            q54_ocupacion=="Asesoría"~5,
+                            q54_ocupacion=="Acompaño pacientes"~4,
+                            q54_ocupacion=="Acompañante terapeutico"~4,
+                            q54_ocupacion=="Atención en kiosco"~2,
+                            q54_ocupacion=="Lic.en producción de bioimágenes"~5,
+                            q54_ocupacion=="Cuidador de adultos mayores"~4,
+                            q54_ocupacion=="Por el momento ama de casa"~4,
+                            q54_ocupacion=="Empleada  domestica"~4,
+                            q54_ocupacion=="Cuidador de Adulto mayor"~4,
+                            q54_ocupacion=="Socióloga en ministerio de Salud"~3,
+                            q54_ocupacion=="Empleado de comercio"~2,
+                            q54_ocupacion=="Psicologia selección personal"~5,
+                            q54_ocupacion=="Operador de maquina de hormigón celular"~2,
+                            q54_ocupacion=="Tecnico"~5,
+                            q54_ocupacion=="profesor de música"~3,
+                            q54_ocupacion=="Administración pública"~2,
+                            q54_ocupacion=="Promotor musical"~5,
+                            q54_ocupacion=="Personal de mantenimieto industrial"~2,
+                            q54_ocupacion=="Asistencia legal"~5,
+                            q54_ocupacion=="Secretaria, vendedora, atención al cliente"~2,
+                            q54_ocupacion=="Acompañándote terapeuta"~4,
+q54_ocupacion=="enfermero"~4,
+                            q54_ocupacion=="Asistente administrativa"~2,
+                            q54_ocupacion=="lider de una organizacion social"~4,
+                            q54_ocupacion=="Voluntario de Auxiliar de enfermería"~4,
+                            q54_ocupacion=="Ahora empleada domestica"~4,
+                            q54_ocupacion=="Autonoma"~5,
+                            q54_ocupacion=="Empleada doméstica por horas"~4,
+                            q54_ocupacion=="Comunicadora"~5,
+                            q54_ocupacion=="Especialista de proyectos"~5,
+                            q54_ocupacion=="Ama de casa y trabajo de limpieza en casa de familia"~4,
+                            q54_ocupacion=="Empresario"~5,
+                            q54_ocupacion=="Ingeniería"~5,
+                            q54_ocupacion=="Cuidadora de adulto"~4,
+                            q54_ocupacion=="Funcionaria internacional"~2,
+                            q54_ocupacion=="Investigadora y docente"~3,
+                            q54_ocupacion=="Panadero"~1,
+                            q54_ocupacion=="Profesional técnica de un Ministerio"~2,
+                            q54_ocupacion=="Ama de casa , costurera."~4,
+                            q54_ocupacion=="Ama de casa, vendedora"~4,
+                            q54_ocupacion=="Operadora sociales"~4,
+                            q54_ocupacion=="Domestica"~4,
+                            q54_ocupacion=="Asistente dental"~2,
+                            q54_ocupacion=="Investigador y Docente Universitario"~3,
+                            q54_ocupacion=="asistente de registro"~3,
+                            q54_ocupacion=="Estudiante- ama de casa"~4,
+                            q54_ocupacion=="Moza"~1,
+                            q54_ocupacion=="Ama de casa y estudiando"~4,
+                            q54_ocupacion=="Bibliotecaria"~3,
+                            q54_ocupacion=="Ayudante de albañil"~2,
+                            q54_ocupacion=="Gestion de tramites"~5,
+                            q54_ocupacion=="Diseñadora y Community manager"~5,
+                            q54_ocupacion=="Estudiante . Atención al cliente ase"~2,
+                            q54_ocupacion=="Cuidado de personas mayores"~4,
+                            q54_ocupacion=="Trabajador Informático"~3,
+                            q54_ocupacion=="Medico Veterinario"~4,
+                            q54_ocupacion=="Elaboración de muebles en madera y relacionados y venta de los mismos"~5,
+                            q54_ocupacion=="Docente, secretaria"~3,
+                            q54_ocupacion=="UX Designer"~5,
+                            q54_ocupacion=="delivery"~5,
+                            q54_ocupacion=="Doctorado con beca CONICET"~3,
+                            q54_ocupacion=="Seguridad privada"~2,
+                            q54_ocupacion=="investigador cientifico"~3,
+                            q54_ocupacion=="Tareas del hogar"~4,
+                            q54_ocupacion=="Compra venta de arándanos y aceite de oliva"~1,
+                            q54_ocupacion=="Ingeniera mecánica"~5,
+                            q54_ocupacion=="Educación a distancia"~3,
+                            q54_ocupacion=="Gerente de marketing"~2,
+                            q54_ocupacion=="albanil"~5,
+                            q54_ocupacion=="Ingeniero Agronomo"~1,
+                            q54_ocupacion=="Terapeuta ocupacional"~4,
+                            q54_ocupacion=="Plomer gasrsya"~5,
+                            q54_ocupacion=="Psicología - profesora universitaria"~5,
+                            q54_ocupacion=="docente universitario 3 horas semanal"~3,
+                            q54_ocupacion=="dirijo una institución"~2,
+                            q54_ocupacion=="Desarrollador de Sistemas"~3,
+                            q54_ocupacion=="Bióloga trabajo en investigación"~3,
+                            q54_ocupacion=="Profesional en educación ambiental"~5,
+                            q54_ocupacion=="Artes escénicas"~5,
+                            q54_ocupacion=="Empleada en MUNICIPALIDAD DEL PILAR"~2,
+                            q54_ocupacion=="Editor de textos"~3,
+                            q54_ocupacion=="Dar clase deportivas , servicios al cliente, dif. areas"~5,
+                            q54_ocupacion=="Ambientadora y vestuarista en cine y teatro"~5,
+                            q54_ocupacion=="Contrucción"~5,
+                            q54_ocupacion=="Colorista audiovisual"~5,
+                            q54_ocupacion=="Investigadora Conicet"~3,
+                            q54_ocupacion=="Trabajar con sistemas de control electronicos y reparaciones varias"~2,
+                            q54_ocupacion=="Soy Coach y Numeróloga"~5,
+                            q54_ocupacion=="Empleado en Farmacéutica"~2,
+                            q54_ocupacion=="Gestora Cultural"~5,
+                            q54_ocupacion=="Cuidadora personas mayores por horas"~4,
+                            q54_ocupacion=="Asistente jurídico"~2,
+                            q54_ocupacion=="Analista de datos estadísticos"~3,
+                            q54_ocupacion=="Docente educación inicial"~3,
+                            q54_ocupacion=="Antropóloga"~3,
+                            q54_ocupacion=="Comerciante y pintor"~5,
+                            q54_ocupacion=="Biólogo/investigador"~3,
+                            q54_ocupacion=="Medicina"~4,
+                            q54_ocupacion=="Emprendimiento propio"~5,
+                            q54_ocupacion=="Integrador escolar"~3,
+                            q54_ocupacion=="Programación"~3,
+                            q54_ocupacion=="ASESORA"~5,
+                            q54_ocupacion=="Cuido a mi nieta"~4,
+                            q54_ocupacion=="Directora teatral"~2,
+                            q54_ocupacion=="asistente virtual y marketer"~5,
+                            q54_ocupacion=="Docente primaria."~3,
+                            q54_ocupacion=="Contador Público"~5,
+                            q54_ocupacion=="Prestación de servicios a adultos mayores"~4,
+                            q54_ocupacion=="Ama de casa de profesión Abogada"~4,
+                            q54_ocupacion=="Residente de pediatría"~4,
+                            q54_ocupacion=="Ecomers de una importadora de tecnología"~3,
+                            q54_ocupacion=="Ventas en call Center"~2,
+                            q54_ocupacion=="Asistente Contable"~2,
+                            q54_ocupacion=="Diseñadora Instruccional"~5,
+                            q54_ocupacion=="Sicopedagogica"~5,
+                            q54_ocupacion=="Biologa"~3,
+                            q54_ocupacion=="médico"~4,
+                            q54_ocupacion=="Responsable ecommerce"~3,
+                            q54_ocupacion=="Taller de calzado"~5,
+                            q54_ocupacion=="Becario posdoctoral investigación"~3,
+                            q54_ocupacion=="IT Consultant"~3,
+                            q54_ocupacion=="It"~3,
+                            q54_ocupacion=="Educación"~3,
+                            q54_ocupacion=="Implementador de software"~5,
+                            q54_ocupacion=="Consultor de Sistemas IT"~3,
+                            q54_ocupacion=="changa"~5,
+                            q54_ocupacion=="Ama de casa por ahora"~4,
+                            q54_ocupacion=="Administrador de Empresas"~2,
+                            q54_ocupacion=="Atender el Hogar, mi hija y buscar algo Home Office"~4,
+                            q54_ocupacion=="Técnico radiologo"~5,
+                            q54_ocupacion=="Profesora de portugués"~3,
+                            q54_ocupacion=="Traductora, periodista"~3,
+                            q54_ocupacion=="Becaria doctoral (Ingeniera Electrónica)"~3,
+                            q54_ocupacion=="Escritor"~3,
+                            q54_ocupacion=="Directora General de Articulación Territorial del IDUAR (MUNICIPIO DE MORENO) DOCENTE DE SECUNDARIO DE ADULTOS - FINES"~2,
+                            q54_ocupacion=="Limpiadora de casas"~4,
+                            q54_ocupacion=="IT programación"~3,
+                            q54_ocupacion=="Cuidado de persona mayor"~4,
+                            q54_ocupacion=="Limpieza de Casas"~4,
+                            q54_ocupacion=="Docente de jardin."~3,
+                            q54_ocupacion=="Auditor gubernamental"~2,
+                            q54_ocupacion=="operadora de telemarketing monotributista"~2,
+                            q54_ocupacion=="Artista teatral y en ventas remotas"~5,
+                            q54_ocupacion=="Telemarketer"~2,
+                            q54_ocupacion=="Doccente particular"~3,
+                            q54_ocupacion=="Redactora (community manager)"~5,
+                            q54_ocupacion=="Técnico de laboratorio"~5,
+                            q54_ocupacion=="Masoterapeuta"~5,
+                            q54_ocupacion=="Becaria Doctoral"~3,
+                            q54_ocupacion=="Transcripción"~5,
+                            q54_ocupacion=="conferencista"~5,
+                            q54_ocupacion=="Trabajadora del área social del Proyecto Integral de Reurbanizacion del barrio Playon de Chacarita"~2,
+                            q54_ocupacion=="Verdurero"~1,
+                            q54_ocupacion=="Traductora ruso-español"~3,
+                            q54_ocupacion=="Agrónoma"~1,
+                            q54_ocupacion=="Becario Doctoral"~3,
+                            q54_ocupacion=="Servicios profesionales"~5,
+                            q54_ocupacion=="COMUNICADORA"~5,
+                            q54_ocupacion=="Relación de dependencia"~2,
+                            q54_ocupacion=="Obras públicas"~2,
+                            q54_ocupacion=="Dj y productor de eventos"~5,
+                            q54_ocupacion=="Lic en trabajo social"~5,
+                            q54_ocupacion=="Vendefora, ama de casa, estudiante"~5,
+                            q54_ocupacion=="Voluntario y atención al cliente"~4,
+                            q54_ocupacion=="Soltera /estudiante"~5,
+                            q54_ocupacion=="Cuidadora gerontologica ,,varios"~4,
+                            q54_ocupacion=="Ame de casa"~4,
+                            q54_ocupacion=="Trabajador de Construccion"~5,
+                            q54_ocupacion=="Confección"~5,
+                            q54_ocupacion=="Conserje"~2,
+                            q54_ocupacion=="Cuidadora de abula"~4,
+                            q54_ocupacion=="personal de salud"~2,
+                            q54_ocupacion=="Orientadora en una Fundacion formacion en tecnologias blandas"~5,
+                            q54_ocupacion=="atención al cliente (venta ambulante)"~5,
+                            q54_ocupacion=="Ama de casa, crew arcos dorados"~4,
+                            q54_ocupacion=="MONOTRIBUTO VENTAS"~5,
+                            q54_ocupacion=="Licenciada en enfermería"~4,
+                            q54_ocupacion=="Reventas"~5,
+                            q54_ocupacion=="Ejecutivo de atención al cliente"~2,
+                            q54_ocupacion=="Empleado aeroportuario"~2,
+                            q54_ocupacion=="Asesor De ventas"~5,
+                            q54_ocupacion=="Pedicuria manicura"~5,
+                            q54_ocupacion=="Atención cliente"~2,
+                            q54_ocupacion=="Trabajador de la municipalidad"~2,
+                            q54_ocupacion=="Repositor"~2,
+                            q54_ocupacion=="Trabajadora gastronomica"~5,
+                            q54_ocupacion=="Encargado de cocina"~2,
+                            q54_ocupacion=="Venta de comida colombiana"~5,
+                            q54_ocupacion=="Atencion al cliente y cajera"~2,
+                            q54_ocupacion=="Trabajador Social"~2,
+                            q54_ocupacion=="Cuidado y acompañamiento de adultos mayores"~4,
+                            q54_ocupacion=="Profesora de educación especial, ingeniera comercial"~3,
+                            q54_ocupacion=="Trabajadora social"~4,
+                            q54_ocupacion=="Ama.  De casa"~4,
+                            q54_ocupacion=="Ama de casa ..... costuras"~4,
+                            q54_ocupacion=="Docente apoyo escolar"~3,
+                            q54_ocupacion=="Empleado de limpieza"~2,
+                            q54_ocupacion=="Politóloga"~3,
+                            q54_ocupacion=="Marketing digital"~5,
+                            q54_ocupacion=="Administracion"~2,
+                            q54_ocupacion=="Funcionaria judicial"~2,
+                            q54_ocupacion=="Ayudante de cocina"~1,
+                            q54_ocupacion=="Gestión de proyectos sociales"~3,
+                            q54_ocupacion=="Ama de casa, cuidar nietos"~4,
+                            q54_ocupacion=="Encargado de parrilla y parrillero"~2,
+                            q54_ocupacion=="Psicologo"~5,
+                            q54_ocupacion=="Servicios editoriales"~3,
+                            q54_ocupacion=="Vendedor ambulante con parada fija por menor y mayor"~5,
+                            q54_ocupacion=="hotelero"~5,
+                            q54_ocupacion=="Empleada en relación de dependencia"~2,
+                            q54_ocupacion=="Bibliotecaria y ama de casa"~3,
+                            q54_ocupacion=="investigadora"~3,
+                            q54_ocupacion=="Domestica por hora"~4,
+                            q54_ocupacion=="Técnico en enfermería"~4,
+                            q54_ocupacion=="Soy licenciado en el área Archivista,  me desempeño en limpieza ( housekeeping) de hospitales, clinicas, hoteles. Recepcionista, atención al cliente,  cajero repositor de almacenes de mercadería y en otras áreas que no sepa, dispuesto aprender."~3,
+                            q54_ocupacion=="Repostería"~5,
+                            q54_ocupacion=="Medsen"~5,
+                            q54_ocupacion=="Trabajo en una feria de artesanos ..mi rubro porcelana fria"~5,
+                            q54_ocupacion=="Emprendedor gastronómico"~5,
+                            q54_ocupacion=="becario de Conicet"~3,
+                            q54_ocupacion=="Trabajador de la construcción, y ayudante de paisajista"~5,
+                            q54_ocupacion=="becaria doctoral"~3,
+                            q54_ocupacion=="Medico cardiólogo"~4,
+                            q54_ocupacion=="Invstigador CONICET, docente universitario"~3,
+                            q54_ocupacion=="Ejecutivo de ventas"~2,
+                            q54_ocupacion=="Acompañante Terapeutico"~4,
+                            q54_ocupacion=="Administradora"~2,
+                            q54_ocupacion=="Lavores de casa"~4,
+                            q54_ocupacion=="Empleo administrativo"~2,
+                            q54_ocupacion=="Comercial"~5,
+                            q54_ocupacion=="Consultoría"~3,
+                            q54_ocupacion=="Concejala Avellaneda fdt"~2,
+                            q54_ocupacion=="Clases particulares de portugues"~3,
+                            q54_ocupacion=="Cuidado de personas"~4,
+                            q54_ocupacion=="Licenciado en educación"~3,
+                            q54_ocupacion=="Cocinero"~1,
+                            q54_ocupacion=="Ama d casa"~4,
+                            q54_ocupacion=="Docente Universitario"~3,
+                            q54_ocupacion=="Costurera/ cocinera"~5,
+                            q54_ocupacion=="Trabajador de la economia popular"~5,
+                            q54_ocupacion=="Vigilador"~2,
+                            q54_ocupacion=="Personal administrativo de comercio"~2,
+                            q54_ocupacion=="Trabajo social"~4,
+                            q54_ocupacion=="Changarrin"~5,
+                            q54_ocupacion=="Artesana desde casa"~5,
+                            q54_ocupacion=="Ama de casa y estudiante"~4,
+                            q54_ocupacion=="Estetica"~5,
+                            q54_ocupacion=="Domestjca"~4,
+                            q54_ocupacion=="Becario conicet"~3,
+                            q54_ocupacion=="Community Manager"~5,
+                            q54_ocupacion=="Estudiante, mama, depiladora."~5,
+                            q54_ocupacion=="Trabajo como mecánico de motos."~5,
+                            q54_ocupacion=="Ama casa trabajo propio"~4,
+                            q54_ocupacion=="Amade casa"~4,
+                            q54_ocupacion=="Ambulante"~5,
+                            q54_ocupacion=="Logístico"~5,
+                            q54_ocupacion=="Ingeniero de Petróleo"~5,
+                            q54_ocupacion=="cooperativista"~5,
+                            q54_ocupacion=="Asesor telefónico"~2,
+                            q54_ocupacion=="Aten ion al cliente"~2,
+                            q54_ocupacion=="Atención al cliente,enfermería"~2,
+                            q54_ocupacion=="Educadora y Orientdora de Conducta con títulos universitarios de Venezuela"~3,
+                            q54_ocupacion=="Comunicador"~5,
+                            q54_ocupacion=="Psicología"~5,
+                            q54_ocupacion=="Mama emprendedora"~4,
+                            q54_ocupacion=="Servicios de cocina"~4,
+                            q54_ocupacion=="Cuidadora adulto mayor"~4,
+                            q54_ocupacion=="Auxiliar en un jardín maternal"~4,
+                            q54_ocupacion=="Geólogo"~3,
+                            q54_ocupacion=="Atención al Cliente"~2,
+                            q54_ocupacion=="Pedicugia"~5,
+                            q54_ocupacion=="Ingeniero de ventas"~5,
+                            q54_ocupacion=="Refrigeración"~5,
+                            q54_ocupacion=="Trabajo como académica en dos universidades públicas: en la coordinación de una maestría de la FADU-UBA y en un equipo de investigación de la UNDAV"~3,
+                            q54_ocupacion=="Ingeniero Mecánico"~5,
+                            q54_ocupacion=="Ingeniero De corrosión"~5,
+                            q54_ocupacion=="Tecnologia"~5,
+                            q54_ocupacion=="Docencia e Investigación"~3,
+                            q54_ocupacion=="Administradora Tributaria y Aduanera"~2,
+                            q54_ocupacion=="Limpieza de hogar"~4,
+                            q54_ocupacion=="Constuccion"~5,
+                            q54_ocupacion=="Cuidadora, auxiliar de enfermería"~4,
+                            q54_ocupacion=="Licenciada en Obstetricia"~5,
+                            q54_ocupacion=="Fabricante de juegos en madera"~5,
+                            q54_ocupacion=="Ejecutiva de cuenta en despachante de aduana"~2,
+                            q54_ocupacion=="Servicio técnico y logística."~3,
+                            q54_ocupacion=="Ingeniero, Jefe de Calidad"~2,
+                            q54_ocupacion=="Health Coach"~5,
+                            q54_ocupacion=="monotributo"~5,
+                            q54_ocupacion=="Comprador"~5,
+                            q54_ocupacion=="Cuidado de personas grande"~4,
+                            q54_ocupacion=="No docente"~3,
+                            q54_ocupacion=="Área de belleza, uñas pestañas cejas etc"~5,
+                            q54_ocupacion=="Dibujante de arquitectura"~5,
+                            q54_ocupacion=="Licenciada en Educacion"~3,
+                            q54_ocupacion=="Gestor Social"~5,
+                            q54_ocupacion=="Supervisora de Producción"~2,
+                            q54_ocupacion=="Capacitación"~3,
+                            q54_ocupacion=="Soy Peluquera y Barbera,y trabajo a,domicilio"~5,
+                            q54_ocupacion=="Empleada Mantenimiento"~4,
+                            q54_ocupacion=="Asesor"~5,
+                            q54_ocupacion=="Soy defensora deLOPNA en mi pais"~2,
+                            q54_ocupacion=="Emprendiendo"~5,
+                            q54_ocupacion=="Técnico aduanero ,o cargos administrativos."~3,
+                            q54_ocupacion=="Paramédico"~4,
+                            q54_ocupacion=="Textil"~5,
+                            q54_ocupacion=="Ama de casa y tengo un emprendimiento de comida en casa"~4,
+                            q54_ocupacion=="Venta de productos"~5,
+                            q54_ocupacion=="Compras y logística"~2,
+                            q54_ocupacion=="Cosina ama de casa"~4,
+                            q54_ocupacion=="comunicadora social"~3,
+                            q54_ocupacion=="Masaje terapéutico"~5,
+                            q54_ocupacion=="Socióloga"~3,
+                            q54_ocupacion=="acompañante escolar terapeutico"~4,
+                            q54_ocupacion=="Operadora sociocomunitaria"~4,
+                            q54_ocupacion=="Empleada a domicilio"~4,
+                            q54_ocupacion=="Por ahora no trabajo cuido a mis hijos"~4,
+                            q54_ocupacion=="Pastor"~5,
+                            q54_ocupacion=="Promotora Territorial"~5,
+                            q54_ocupacion=="Papelería creativa"~5,
+                            q54_ocupacion=="mucama"~4,
+                            q54_ocupacion=="Cuidado de niños y adultos mayor"~4,
+                            q54_ocupacion=="Cuidadora .modista"~4,
+                            q54_ocupacion=="Yo trabajo como cocinero en un emprendimiento gastronómico en la calle tipo feria y estudio para capacitarme en la misma arrea gastronómicos"~5,
+                            q54_ocupacion=="Construcción de hobra"~5,
+                            q54_ocupacion=="Auxiliar de portería en las escuela gobierno de la ciudads empresa tercerizada"~2,
+                            q54_ocupacion=="Trabajo de mozo"~2,
+                            q54_ocupacion=="Profesora en educación comercial"~3,
+                            q54_ocupacion=="Panaderia"~1,
+                            q54_ocupacion=="Trabajo de construcción"~5,
+                            q54_ocupacion=="Secretaria administrativo"~2,
+                            q54_ocupacion=="Venta de comida ambulant"~5,
+                            q54_ocupacion=="Vendo donas"~5,
+                            q54_ocupacion=="Maestra integradora"~3,
+                            q54_ocupacion=="Manicura"~5,
+                            q54_ocupacion=="Técnico informática"~3,
+                            q54_ocupacion=="Cadeteria"~2,
+                            q54_ocupacion=="Empleada domesTica"~4,
+                            q54_ocupacion=="Vender, pero nadie me compra, desean regalado las cosas."~5,
+                            q54_ocupacion=="Investigadora del CONICET"~3,
+                            q54_ocupacion=="Ingeniero en informática"~3,
+                            q54_ocupacion=="Enfermera. En el país me desempeño como cuidadora domiciliaria"~4,
+                            q54_ocupacion=="Analisis funcional , ui ux"~3,
+                            q54_ocupacion=="hacer trenzas"~5,
+                            q54_ocupacion=="Venta de Indumentaria"~5,
+                            q54_ocupacion=="Operadora Social en el programa adolescencia"~2,
+                            q54_ocupacion=="Consultol"~3,
+                            q54_ocupacion=="Casero"~4,
+                            q54_ocupacion=="Cocinero y organización de eventos."~1,
+                            q54_ocupacion=="Tractorista"~2,
+                            q54_ocupacion=="Artista visual, pintor"~5,
+                            q54_ocupacion=="empleado administrativo."~2,
+                            q54_ocupacion=="Coordinadora de una escuela en Brasil"~3,
+                            q54_ocupacion=="profesora particular de idiomas"~3,
+                            q54_ocupacion=="Acompañante terapéutica,  acompañamiento y asesoría  a proyectos socio-productivos"~4,
+                            q54_ocupacion=="Estudiando y cuidando una abuela de 93 años que vive conmigo"~4,
+                            q54_ocupacion=="Venta de productos correspondiente a la moda circular"~5,
+                            q54_ocupacion=="Atención al cliente en un local gastronómico"~1,
+                            q54_ocupacion=="Analista de Sistemas"~3,
+                            q54_ocupacion=="Mecánico automotriz, electricista"~5,
+                            q54_ocupacion=="Cooperativa"~4,
+                            q54_ocupacion=="arquitecta"~5,
+                            q54_ocupacion=="Podologia"~5,
+                            q54_ocupacion=="Software Freelance"~5,
+                            q54_ocupacion=="Funcionaria universitaria"~2,
+                            q54_ocupacion=="Jubilada, ama de casa."~4,
+                            q54_ocupacion=="Directivo"~2,
+                            q54_ocupacion=="Lavadero"~5,
+                            q54_ocupacion=="Oficinista"~2,
+                            q54_ocupacion=="Campo"~1,
+                            q54_ocupacion=="Agente de salud"~4,
+                            q54_ocupacion=="Servicios de Salud"~4,
+                            q54_ocupacion=="Soy tripulante de cabina"~2,
+                            q54_ocupacion=="Transportista"~5,
+                            q54_ocupacion=="Asistencia social"~2,
+                            q54_ocupacion=="Salon de belleza"~5,
+                            q54_ocupacion=="Auxiliar de la educación"~4,
+                            q54_ocupacion=="Analista comercial"~3,
+                            q54_ocupacion=="artesana ceramista"~5,
+                            q54_ocupacion=="Costurera .....en esto momentos ama de casa"~5,
+                            q54_ocupacion=="APND"~3,
+                            q54_ocupacion=="Cosmetóloga"~5,
+                            q54_ocupacion=="manicura"~5,
+                            q54_ocupacion=="Vender a la calle,cuidar mi hijos"~5,
+                            q54_ocupacion=="Empleado en empresa privada"~2,
+                            q54_ocupacion=="eempleado"~2,
+                            q54_ocupacion=="ventas"~2,
+                            q54_ocupacion=="Entrenador"~5,
+                            q54_ocupacion=="Productor Musical"~3,
+                            q54_ocupacion=="Tecnica en Kinesiología"~5,
+                            q54_ocupacion=="Ingeniero en Informática"~3,
+                            q54_ocupacion=="Docente de secundario"~3,
+                            q54_ocupacion=="Oficial de albañil"~5,
+                            q54_ocupacion=="Ingeniero civil"~5,
+                            q54_ocupacion=="Enpleado"~2,
+                            q54_ocupacion=="Licencia Negocios Internacionales"~5,
+                            q54_ocupacion=="Obrero de construcción"~5,
+                            q54_ocupacion=="Asistente en administración pública"~2,
+                            q54_ocupacion=="Ama de casa, estudiando pasteleria."~4,
+                            q54_ocupacion=="Bibliotecaria, ama de casa"~3,
+                            q54_ocupacion=="Añade casa"~4,
+                            q54_ocupacion=="Albañeleria"~5,
+                            q54_ocupacion=="Cuidar personas"~4,
+                            q54_ocupacion=="Operaria"~2,
+                            q54_ocupacion=="Organizadora de eventos y traductora"~5,
+                            q54_ocupacion=="Comprar vivienda"~5,
+                            q54_ocupacion=="Limpieza en casas particulares"~4,
+                            q54_ocupacion=="Trabajador pintor durlero"~5,
+                            q54_ocupacion=="Auxiliar"~5,
+                            q54_ocupacion=="Verduras"~1,
+                            q54_ocupacion=="Apoyo Escolar"~3,
+                            q54_ocupacion=="profesora de francés"~3,
+                            q54_ocupacion=="investigador"~3,
+                            q54_ocupacion=="Contratista de obras"~5,
+                            q54_ocupacion=="Consultora por medio de una organización social"~3,
+                            q54_ocupacion=="Enfermera Universitaria"~4,
+                            q54_ocupacion=="Martillero"~5,
+                            q54_ocupacion=="Docente de nivel inicial"~3,
+                            q54_ocupacion=="Camarografa"~5,
+                            q54_ocupacion=="Ama de casa y cuidado de personas"~4,
+                            q54_ocupacion=="Ana de casa"~4,
+                            q54_ocupacion=="Cuidado de enfermos"~4,
+                            q54_ocupacion=="Instructor de artes marciales y otras disciplinas (pakua)"~5,
+                            q54_ocupacion=="Venta  ambulante"~5,
+                            q54_ocupacion=="Ama de casa venta ambulatoria"~4,
+                            q54_ocupacion=="Docente Monotribustista, oficinistas monotributista"~3,
+                            q54_ocupacion=="Técnico Superior en Informática"~3,
+                            q54_ocupacion=="textil"~5,
+                            q54_ocupacion=="Funciones corporativas (marketing, comunicación, RRHH)"~2,
+                            q54_ocupacion=="Desarrollo de software"~3,
+                            q54_ocupacion=="Ingeniero Industrial"~5,
+                            q54_ocupacion=="Cuidadora de adulto mayor."~4,
+                            q54_ocupacion=="Empaquetar productos"~1,
+                            q54_ocupacion=="empleado público"~2,
+                            q54_ocupacion=="Gestora de proyectos"~3,
+                            q54_ocupacion=="empleada"~4,
+                            q54_ocupacion=="Texil"~5,
+                            q54_ocupacion=="Trabajador de construcción, sereno"~5,
+                            q54_ocupacion=="Atención  al cliente"~2,
+                            q54_ocupacion=="Producer"~5,
+                            q54_ocupacion=="Análisis político"~3,
+                            q54_ocupacion=="Trabajar"~5,
+                            q54_ocupacion=="Empleada domestico"~4,
+                            q54_ocupacion=="Trabajos comunitarios"~4,
+                            q54_ocupacion=="Trabajo comunitario"~4,
+                            q54_ocupacion=="Docente universitaria y como Lic en Trabajo social en el servicio social de la UNPSJB"~3,
+                            q54_ocupacion=="Estudiante y ama de casa"~4,
+                            q54_ocupacion=="limpieza"~4,
+                            q54_ocupacion=="Profesora de inglés"~3,
+                            q54_ocupacion=="trabajadora en tecnología"~5,
+                            q54_ocupacion=="Computación"~3,
+                            q54_ocupacion=="Bailarin/docente"~5,
+                            q54_ocupacion=="Limpieza, cocina"~4,
+                            q54_ocupacion=="Hago bisuteria y vendo en feria"~5,
+                            q54_ocupacion=="Trabajo en ONG"~4,
+                            q54_ocupacion=="Ama casa"~4,
+                            q54_ocupacion=="Estudio y trabajo"~5,
+                            q54_ocupacion=="Cosinera"~1,
+                            q54_ocupacion=="Cuidar ami hijo estudiar y trabajar"~4,
+                            q54_ocupacion=="Recolección de basura"~2,
+                            q54_ocupacion=="Cendedora ambulante  y ama de casa"~5,
+                            q54_ocupacion=="consultor de marca"~3,
+                            q54_ocupacion=="Analista de planificación"~3,
+                            q54_ocupacion=="Comedor"~4,
+                            q54_ocupacion=="Diseño Grafico"~5,
+                            q54_ocupacion=="Empresaria"~5,
+                            q54_ocupacion=="Ingeniera civil"~5,
+                            q54_ocupacion=="Ingeniera electrónica"~5,
+                            q54_ocupacion=="enseñanza artistica"~3,
+                            q54_ocupacion=="Empleada Domestica"~4,
+                            q54_ocupacion=="Ingeniero Software"~3,
+                            q54_ocupacion=="Administración empresa turismo en Costa Rica - teletrabajo"~2,
+                            q54_ocupacion=="Administración de Empresas"~2,
+                            q54_ocupacion=="Coordinación de un proyecto, como monotributista"~5,
+                            q54_ocupacion=="Voluntaria"~4,
+                            q54_ocupacion=="Estudiante y ama de casa y tb trabajo asiendo changas"~4,
+                            q54_ocupacion=="Freelance"~5,
+                            q54_ocupacion=="Mosa"~1,
+                            q54_ocupacion=="AT."~4,
+                            q54_ocupacion=="Secretaria de colectividades"~2,
+                            q54_ocupacion=="Auxiliar de enfermería"~4,
+                            q54_ocupacion=="Docente y No Docente en Universidad Nacional"~3,
+                            q54_ocupacion=="Amo de casa hasta encontrar trabajo"~4,
+                            q54_ocupacion=="Técnico de transmisión de Televisión"~3,
+                            q54_ocupacion=="Pwogramè"~3,
+                            q54_ocupacion=="Ama de casa y trabajadores"~4,
+                            q54_ocupacion=="Trabajador"~2,
+                            q54_ocupacion=="Desarrollador"~3,
+                            q54_ocupacion=="Limpieza de casa, ama de casa"~4,
+                            q54_ocupacion=="Mecánico y operador abastecedor de aeroplantas"~5,
+                            q54_ocupacion=="Linpiesa"~4,
+                            q54_ocupacion=="Docente Bibliotecaria"~3,
+                            q54_ocupacion=="Limpieza del hogar"~4,
+                            q54_ocupacion=="Acompañante psicoterapeuta"~4,
+                            q54_ocupacion=="ocupaciones generales"~5,
+                            q54_ocupacion=="Prostitucion"~5,
+                            q54_ocupacion=="marketing digital"~5,
+                            q54_ocupacion=="Atención al cliente en gastronomía"~2,
+                            q54_ocupacion=="Reciclado"~5,
+                            q54_ocupacion=="Ayudante de cosina"~1,
+                            q54_ocupacion=="Ama de ,cassa"~4,
+                            q54_ocupacion=="Cosechas de frutas"~1,
+                            q54_ocupacion=="Venta anbulatoria"~5,
+                            q54_ocupacion=="Albañileria"~5,
+                            q54_ocupacion=="Docente y administradora"~3,
+                            q54_ocupacion=="regularización dominial  de una ocupación de 500 familias"~2,
+                            q54_ocupacion=="Vendedor de un comercio"~2,
+                            q54_ocupacion=="DOCENTE UNIVERSITARIO"~3,
+                            q54_ocupacion=="Servicios"~5,
+                            q54_ocupacion=="chofer"~5,
+                            q54_ocupacion=="PROMOTORA SOCIAL"~4,
+                            q54_ocupacion=="Asistente geriátrica"~4,
+                            q54_ocupacion=="Trabajo por horas limpieza"~4,
+                            q54_ocupacion=="Turismo"~2,
+                            q54_ocupacion=="Marketing Digital, profesora de Pilates"~3,
+                            q54_ocupacion=="Docente del P. C. B."~3,
+                            q54_ocupacion=="Auxiliar de depósito"~2,
+                            q54_ocupacion=="Fábrica de indumentaria"~2,
+                            q54_ocupacion=="Cuidado de una persona mayor"~4,
+                            q54_ocupacion=="Trabajador en gastronomía"~2,
+                            q54_ocupacion=="Elaboradora de material educativo"~3,
+                            q54_ocupacion=="Franquero"~2,
+                            q54_ocupacion=="Musico"~5,
+                            q54_ocupacion=="RUBRO textil"~5,
+                            q54_ocupacion=="Gráfico.i"~5,
+                            q54_ocupacion=="Taller d costura"~5,
+                            q54_ocupacion=="Empleado público"~2,
+                            q54_ocupacion=="Como busco trabajo me encargo con las cosas de casa"~4,
+                            q54_ocupacion=="Domentica"~4,
+                            q54_ocupacion=="Trabajadora independiente"~5,
+                            q54_ocupacion=="Cuidado adulto"~4,
+                            q54_ocupacion=="Trabajador de la contruccion"~5,
+                            q54_ocupacion=="Verdulería"~1,
+                            q54_ocupacion=="Lic. en psicología"~5,
+                            q54_ocupacion=="Tareas de casa"~4,
+                            q54_ocupacion=="Ayudante alvañil"~2,
+                            q54_ocupacion=="Asistencia del adulto mayor."~4,
+                            q54_ocupacion=="Monotributo"~5,
+                            q54_ocupacion=="Empleada decasas particulares"~4,
+                            q54_ocupacion=="Trabajo de mantenimiento"~5,
+                            q54_ocupacion=="Gerontologa"~4,
+                            q54_ocupacion=="Tecnico en higiene y seguridad"~5,
+                            q54_ocupacion=="Seguridad"~2,
+                            q54_ocupacion=="Administrador auxiliar"~2,
+                            q54_ocupacion=="Auxiliar administrativo"~2,
+                            q54_ocupacion=="Ama de casa,cuidar a mi bebé"~4,
+                            q54_ocupacion=="Soporte técnico"~3,
+                            q54_ocupacion=="Ingeniero en Sistemas"~3,
+                            q54_ocupacion=="Tus turismo servicios y hotelería"~2,
+                            q54_ocupacion=="Técnico electrónico"~5,
+                            q54_ocupacion=="Asistencia"~4,
+                            q54_ocupacion=="Conductor profesional"~5,
+                            q54_ocupacion=="aadministrativa"~2,
+                            q54_ocupacion=="Investigadora y becaria doctoral"~3,
+                            q54_ocupacion=="BECARIA DOCTORAL CONICET"~3,
+                            q54_ocupacion=="Empleado de Comercio"~2,
+                            q54_ocupacion=="Diseñadora"~5,
+                            q54_ocupacion=="Dirección de Asociación Civil"~4,
+                            q54_ocupacion=="pasteleria"~1,
+                            q54_ocupacion=="Locutora"~5,
+                            q54_ocupacion=="Recursos humanos/administración"~2,
+                            q54_ocupacion=="Cuidado de mayores"~4,
+                            q54_ocupacion=="Trabajo de la construcción"~5,
+                            q54_ocupacion=="Fotografa y Community mannager"~5,
+                            q54_ocupacion=="Espacio de cuidado"~4,
+                            q54_ocupacion=="Plomeria"~5,
+                            q54_ocupacion=="Limpiadora"~4,
+                            q54_ocupacion=="Trabajador textil"~5,
+                            q54_ocupacion=="Cuidadora adultos mayores"~4,
+                            q54_ocupacion=="instructora de pilates"~5,
+                            q54_ocupacion=="Ama de casa y Artesana"~4,
+                            q54_ocupacion=="Operaria de limpieza"~2,
+                            q54_ocupacion=="vendedor b"~5,
+                            q54_ocupacion=="Promotor cultural y espectaculo"~5,
+                            q54_ocupacion=="Vigiladora"~2,
+                            q54_ocupacion=="Extraccionista del laboratorio"~2,
+                            q54_ocupacion=="Consultoría de migrante"~3,
+                            q54_ocupacion=="Actividad productiva"~1,
+                            q54_ocupacion=="Empleada de cooperativa"~2,
+                            q54_ocupacion=="Trabajo en cooperativa"~4,
+                            q54_ocupacion=="Auxiliar de jardin"~4,
+                            q54_ocupacion=="Pintura, electricidad"~5,
+                            q54_ocupacion=="ABOGADA"~5,
+                            q54_ocupacion=="Recoleccion"~5,
+                            q54_ocupacion=="Cuidado de menores"~4,
+                            q54_ocupacion=="Ama d3 casa"~4,
+                            q54_ocupacion=="Acompañante terapéutico"~4,
+                            q54_ocupacion=="Trabajo como relevadora territorial y trabajo socio comunitario"~2,
+                            q54_ocupacion=="Linpieza"~4,
+                            q54_ocupacion=="Comedor comunitario"~4,
+                            q54_ocupacion=="Cooperativista"~5,
+                            q54_ocupacion=="Trabajo en un centro comunitario"~4,
+                            q54_ocupacion=="Barrenderos"~5,
+                            q54_ocupacion=="Trabajo en jardín comunitario y estudio"~4,
+                            q54_ocupacion=="Trabajadora del hogar"~4,
+                            q54_ocupacion=="GESTOR JUDICIAL"~5,
+                            q54_ocupacion=="Genero"~5,
+                            q54_ocupacion=="Trabajador de la costruccion"~5,
+                            q54_ocupacion=="Local de Minimarket"~2,
+                            q54_ocupacion=="Costurera y ama de casa"~5,
+                            q54_ocupacion=="Trabajo costura"~5,
+                            q54_ocupacion=="Ama de casa, y niñera"~4,
+                            q54_ocupacion=="Licenciada en instrumentación quirúrgica"~5,
+                            q54_ocupacion=="Enfermera licenciada"~4,
+                            q54_ocupacion=="Electricidad"~5,
+                            q54_ocupacion=="Logistica"~5,
+                            q54_ocupacion=="Atención al cliente en kiosco,"~2,
+                            q54_ocupacion=="Trabajar en casa de familia"~4,
+                            q54_ocupacion=="Administrativo contable"~2,
+                            q54_ocupacion=="Consultora de belleza"~5,
+                            q54_ocupacion=="Operario de máquinas de coser"~2,
+                            q54_ocupacion=="Estudio y soy becada, realizo tareas como tutora par, tallerista, investigadora en distintos proyectos de vinculación, coordinación de voluntariados y atención general a estudiantes, acompañando sus trayectorias académicas."~3,
+                            q54_ocupacion=="Taller chaperia y pintura de autos"~5,
+                            q54_ocupacion=="Venta al público"~2,
+                            q54_ocupacion=="Ama De CAsa"~4,
+                            q54_ocupacion=="Estudiar y niñera"~4,
+                            q54_ocupacion=="Ama de casa y venta de revistas"~4,
+                            q54_ocupacion=="Empleada  Doméstica"~4,
+                            q54_ocupacion=="Gerente pyme"~2,
+                            q54_ocupacion=="Técnico Higiene y Seguridad"~5,
+                            q54_ocupacion=="Trabajo desde casa, debido a las actividades de mis dos hijos menores, trato siempre de generar algún ingreso a través de ventas por redes sociales así como ventas de cosas artesanales (tortas, yogourt)"~4,
+                            q54_ocupacion=="Protesista"~5,
+                            q54_ocupacion=="De casa particular"~4,
+                            q54_ocupacion=="Asistente Gerontológico"~4,
+                            q54_ocupacion=="Acompañamiento adulto mayor"~4,
+                            q54_ocupacion=="Contador."~5,
+                            q54_ocupacion=="Cuido a mis hijos"~4,
+                            q54_ocupacion=="Alabañil"~5,
+                            q54_ocupacion=="Area de informatica"~5,
+                            q54_ocupacion=="Ama de casa ??"~4,
+                            q54_ocupacion=="CASERO"~4,
+                            q54_ocupacion=="Trabajador de contruccion"~5,
+                            q54_ocupacion=="Chofe"~5,
+                            q54_ocupacion=="grafico"~5,
+                            q54_ocupacion=="Medio ambiente"~5,
+                            q54_ocupacion=="Traductor de canales de YouTube"~3,
+                            q54_ocupacion=="Ayudante pizzería"~1,
+                            q54_ocupacion=="Aparador de calzado"~5,
+                            q54_ocupacion=="Ejecutiva"~2,
+                            q54_ocupacion=="Costurero  o confección testil"~5,
+                            q54_ocupacion=="Asesor de repuestos"~5,
+                            q54_ocupacion=="Tarea de limpieza"~4,
+                            q54_ocupacion=="Empleado de fabrica textil"~2,
+                            q54_ocupacion=="Maenstranza"~2,
+                            q54_ocupacion=="Electrónica del.aitomotor"~5,
+                            q54_ocupacion=="Casa"~4,
+                            q54_ocupacion=="Ama de casa y vendedora independiente"~4,
+                            q54_ocupacion=="Veterinaria"~5,
+                            q54_ocupacion=="Venta ambulante de bebidas"~5,
+                            q54_ocupacion=="Venta de café"~5,
+                            q54_ocupacion=="Empleada de casa particular"~4,
+                            q54_ocupacion=="Tec. Acompañante Terapéutico"~4,
+                            q54_ocupacion=="Constructor Abañil"~5,
+                            q54_ocupacion=="Mil oficios"~5,
+                            q54_ocupacion=="Trabajador de la contrucion"~5,
+                            q54_ocupacion=="Mi profesión es profesora jardinera,estudie aquí Podologia belleza de pie."~3,
+                            q54_ocupacion=="Liguey"~5,
+                            q54_ocupacion=="Soy modelista especializada en damas"~5,
+                            q54_ocupacion=="Técnico en maquina de textil"~5,
+                            q54_ocupacion=="Internacion domiciliaria ( enfermería)"~5,
+                            q54_ocupacion=="Trabajo en taller de maniquíes, pero x la situación q se está viviendo no tengo trabajo. Para ser sincero 3 o 2 días x semana trabajo si es q hay sino trato de buscar para mis gastos."~5,
+                            q54_ocupacion=="Empleada de casa"~4,
+                            q54_ocupacion=="Peluqueria"~5,
+                            q54_ocupacion=="Cuidador domiciliario y en sanatorios"~4,
+                            q54_ocupacion=="Peluquería canina"~5,
+                            q54_ocupacion=="ama d casa"~4,
+                            q54_ocupacion=="muestrista"~5,
+                            q54_ocupacion=="Operaria de produccion"~2,
+                            q54_ocupacion=="Soy chapista y pintor automotriz..y técnico de línea blanca reparaciones e instalaciones"~5,
+                            q54_ocupacion=="Hago la calle"~5,
+                            q54_ocupacion=="Mantenimiento de vivienda"~5,
+                            q54_ocupacion=="Costura y albañil"~5,
+                            q54_ocupacion=="Enfermera Auxiliar"~4,
+                            q54_ocupacion=="Indumentaria"~5,
+                            q54_ocupacion=="En relación de dependencia"~2,
+                            q54_ocupacion=="Laboratorio clinico"~2,
+                            q54_ocupacion=="Acompañante Terapéutico"~4,
+                            q54_ocupacion=="Profesora Lic. en Enfermería"~3,
+                            q54_ocupacion=="Calzado"~5,
+                            q54_ocupacion=="Auxiliar enfermera"~4,
+                            q54_ocupacion=="Venta de comidas"~5,
+                            q54_ocupacion=="Tecnico en refrigeracion"~5,
+                            q54_ocupacion=="Trabajadora de la salud pública asistente gerontologa"~4,
+                            q54_ocupacion=="Tareas domésticas"~4,
+                            q54_ocupacion=="Técnico Superior en Farmacia Hospitalaria"~5,
+                            q54_ocupacion=="Tec cosmetólogia"~5,
+                            q54_ocupacion=="Confeccionista textil"~5,
+                            q54_ocupacion=="Empleada publica"~2,
+                            q54_ocupacion=="servicios"~5,
+                            q54_ocupacion=="Comerciante  y aministracion  publica"~5,
+                            q54_ocupacion=="Asesora legislativa externa"~5,
+                            q54_ocupacion=="Construcción empresa"~5,
+                            q54_ocupacion=="Artesana marroquinera"~5,
+                            q54_ocupacion=="Metaligico"~5,
+                            q54_ocupacion=="Empleada Municipal"~2,
+                            q54_ocupacion=="Trabajador gastronómico"~2,
+                            q54_ocupacion=="Cuidado en jardín maternal"~4,
+                            q54_ocupacion=="Ama de casa y estudiar"~4,
+                            q54_ocupacion=="Contratista"~1,
+                            q54_ocupacion=="Integradora escolar"~3,
+                            q54_ocupacion=="Operadora de radio"~2,
+                            q54_ocupacion=="Mototrabajo con app DiDi y vendo mariguana"~5,
+                            q54_ocupacion=="trabajadora social territorial"~4,
+                            q54_ocupacion=="enfermera"~4,
+                            q54_ocupacion=="REMIS"~2,
+                            q54_ocupacion=="Comunicadora Social"~3,
+                            q54_ocupacion=="Auxiliar De limpieza en bingo"~2,
+                            q54_ocupacion=="Beca doctoral"~3,
+                            q54_ocupacion=="Actor"~5,
+                            q54_ocupacion=="Cocina vegana"~1,
+                            q54_ocupacion=="Trabajo y hago curso de manicuría"~5,
+                            q54_ocupacion=="pinta caritas"~5,
+                            q54_ocupacion=="Atencion al cliente."~2,
+                            q54_ocupacion=="Operador de call center"~2,
+                            q54_ocupacion=="Becario CONICET"~3,
+                            q54_ocupacion=="Estudiante universitaria y ama de casa"~4,
+                            q54_ocupacion=="psicologo"~5,
+                            q54_ocupacion=="construcción"~5,
+                            q54_ocupacion=="At"~4,
+                            q54_ocupacion=="Técnico de mantenimiento"~5,
+                            q54_ocupacion=="Sama ligeuye"~5,
+                            q54_ocupacion=="Comerciante y ama de casa"~5,
+                            q54_ocupacion=="Ingeniera ambiental en la secretaria de integracion socio urbana de nacion"~2,
+                            q54_ocupacion=="Vendedor informal"~5,
+                            q54_ocupacion=="Productora artistica"~5,
+                            q54_ocupacion=="Asesora en política pública"~5,
+                            q54_ocupacion=="Productor rural"~1,
+                            q54_ocupacion=="Becaria del CONICET"~3,
+                            q54_ocupacion=="Chofer ejecutivo"~2,
+                            q54_ocupacion=="Profesora virtual de español como lengua extranjera"~3,
+                            q54_ocupacion=="Cuidadora de personas con discapacidad"~4,
+                            q54_ocupacion=="AHORA   AMA DE CASA"~4,
+                            q54_ocupacion=="Trabajador de obra8"~5,
+                            q54_ocupacion=="Ama de.cada"~4,
+                            q54_ocupacion=="Camarera"~1,
+                            q54_ocupacion=="Analista de seguros"~3,
+                            q54_ocupacion=="Domestico"~4,
+                            q54_ocupacion=="Trabajadora doméstica"~4,
+                            q54_ocupacion=="Cuidado del hogar"~4,
+                            q54_ocupacion=="Diseñadora Grafica"~5,
+                            q54_ocupacion=="Técnico electronico"~5,
+                            q54_ocupacion=="Ama de cas /estudiante"~4,
+                            q54_ocupacion=="Construcción de obra"~5,
+                            q54_ocupacion=="ULTIMOS 20 AÑOS,GASTRONOMIA."~1,
+                            q54_ocupacion=="Reciclador"~5,
+                            q54_ocupacion=="Encargada de edificio 4 hs"~2,
+                            q54_ocupacion=="Ventas de indumentaria"~2,
+                            q54_ocupacion=="Empleo doméstico"~4,
+                            q54_ocupacion=="Vededor"~5,
+                            q54_ocupacion=="Servicios contables"~5,
+                            q54_ocupacion=="Agente administrativa"~2,
+                            q54_ocupacion=="Auxiliar tecnico en un proyecto"~3,
+                            q54_ocupacion=="Cuidado de persona"~4,
+                            q54_ocupacion=="Operador de atención al cliente"~2,
+                            q54_ocupacion=="Soldadores"~5,
+                            q54_ocupacion=="Organizadora cultural."~5,
+                            q54_ocupacion=="Operador de maquina"~2,
+                            q54_ocupacion=="Trabajo  colaborativo"~4,
+                            q54_ocupacion=="Acompañado twraoeutica"~4,
+                            q54_ocupacion=="Estilista y más...."~5,
+                            q54_ocupacion=="Ventas por internet"~5,
+                            q54_ocupacion=="Empleado de la industria del platico."~2,
+                            q54_ocupacion=="Asistente Gerontológica lo"~4,
+                            q54_ocupacion=="Todero"~5,
+                            q54_ocupacion=="Fotógrafo publicista"~5,
+                            q54_ocupacion=="Ama de casa y empleada domestica"~4,
+                            q54_ocupacion=="Conferencista"~5,
+                            q54_ocupacion=="Chef a domicilio"~1,
+                            q54_ocupacion=="Computer Programming"~3,
+                            q54_ocupacion=="Vender"~5,
+                            q54_ocupacion=="Chófer profesional"~5,
+                            q54_ocupacion=="Trabajo remoto"~3,
+                            q54_ocupacion=="Trabajando"~5,
+                            q54_ocupacion=="ANALISTA DE RR.HH"~3,
+                            q54_ocupacion=="Urbanista"~4,
+                            q54_ocupacion=="Locución"~5,
+                            q54_ocupacion=="Ayudo en un jardín"~4,
+                            q54_ocupacion=="Encaegada de un local gastronómico"~2,
+                            q54_ocupacion=="Lashista"~5,
+                            q54_ocupacion=="Apoyo escolar"~3,
+                            q54_ocupacion=="Publicitario"~5,
+                            q54_ocupacion=="Analista Contable"~3,
+                            q54_ocupacion=="Empleo"~2,
+                            q54_ocupacion=="Ventas empresa de electrodomésticos"~2,
+                            q54_ocupacion=="Técnico en seguridad industrial"~2,
+                            q54_ocupacion=="Supervisor en comercio exterior y aduanas"~2,
+                            q54_ocupacion=="Evaluador"~5,
+                            q54_ocupacion=="Cuidadora/ enfermera"~4,
+                            q54_ocupacion=="Tester QA"~3,
+                            q54_ocupacion=="Acompañante de adultos mayores"~4,
+                            q54_ocupacion=="Cajero y repositor"~2,
+                            q54_ocupacion=="Diseñadora de modas"~5,
+                            q54_ocupacion=="Ingeniero de seguridad informática"~3,
+                            q54_ocupacion=="Farmaceutico"~2,
+                            q54_ocupacion=="geologo"~5,
+                            q54_ocupacion=="Asistente legal"~2,
+                            q54_ocupacion=="changas"~5,
+                            q54_ocupacion=="Vendedor en feria"~5,
+                            q54_ocupacion=="Diseño de indumentaria"~5,
+                            q54_ocupacion=="LIC en enfermería"~4,
+                            q54_ocupacion=="Inspector de obra"~2,
+                            q54_ocupacion=="Asesor Comercial en una empresa"~2,
+                            q54_ocupacion=="albañil"~5,
+                            q54_ocupacion=="ATENCIÓN CLIENTE"~2,
+                            q54_ocupacion=="Carpinteria fina"~5,
+                            q54_ocupacion=="Docente de Educación Inicial"~3,
+                            q54_ocupacion=="Ayudante en textil"~2,
+                            q54_ocupacion=="Barrido publicó"~2,
+                            q54_ocupacion=="Inspección de soldadura"~2,
+                            q54_ocupacion=="Empleado de fabrica"~2,
+                            q54_ocupacion=="Trabajadora bajo dependencia"~2,
+                            q54_ocupacion=="Operador de deposito"~2,
+                            q54_ocupacion=="Call Center"~2,
+                            q54_ocupacion=="Analista financiero"~3,
+                            q54_ocupacion=="Trabajador de informática"~3,
+                            q54_ocupacion=="Acompañante geriátrico"~4,
+                            q54_ocupacion=="Administrativo de recursos humanos"~2,
+                            q54_ocupacion=="Supervisor a cafetería"~2,
+                            q54_ocupacion=="Rrhh"~2,
+                            q54_ocupacion=="Consultor Sap"~3,
+                            q54_ocupacion=="Vendedora ambulante. estudiante"~5,
+                            q54_ocupacion=="Hago cabify"~5,
+                            q54_ocupacion=="Endocrinologa"~4,
+                            q54_ocupacion=="Servicio posventa y logística"~2,
+                            q54_ocupacion=="Analista funcional"~3,
+                            q54_ocupacion=="Consultor funcional de Odoo"~3,
+                            q54_ocupacion=="Agente de Tránsito"~2,
+                            q54_ocupacion=="Chófer de remis"~2,
+                            q54_ocupacion=="Diseñador"~5,
+                            q54_ocupacion=="Repartidor/ vendedor"~2,
+                            q54_ocupacion=="Municipal"~2,
+                            q54_ocupacion=="carga y descarga"~2,
+                            q54_ocupacion=="Traficcker media buyer"~5,
+                            q54_ocupacion=="Cerrajero"~5,
+                            q54_ocupacion=="Empleada municipal, estudiante, ama de casa"~2,
+                            q54_ocupacion=="Adninistrativa"~2,
+                            q54_ocupacion=="En una organización social"~4,
+                            q54_ocupacion=="Manualidades, dibujo y pintura"~5,
+                            q54_ocupacion=="Cuidador domiciliario"~4,
+                            q54_ocupacion=="Docente virtual"~3,
+                            q54_ocupacion=="Profesional integrante de equipos asistenciales en Salud Mental"~4,
+                            q54_ocupacion=="Trabajador estatal"~2,
+                            q54_ocupacion=="gestión administrativa"~2,
+                            q54_ocupacion=="Consultor informático"~3,
+                            q54_ocupacion=="Técnico relevador"~2,
+                            q54_ocupacion=="Atencion al Cliente"~2,
+                            q54_ocupacion=="Cuidadora no renumerada"~4,
+                            q54_ocupacion=="Secretaria de oficina"~2,
+                            q54_ocupacion=="Empleado municipal"~2,
+                            q54_ocupacion=="Docente de educación especial"~3,
+                            q54_ocupacion=="Universidad"~3,
+                            q54_ocupacion=="Trabajo como monotribustista para el Gobierno de la Ciudad"~2,
+                            q54_ocupacion=="Gestión cultural"~2,
+                            q54_ocupacion=="Docente Universitaria (dedicación simple), Becaria Doctoral CONICET"~3,
+                            q54_ocupacion=="Diseño instruccional"~5,
+                            q54_ocupacion=="Administrativa en comercializadora"~2,
+                            q54_ocupacion=="empleada del estado nacional"~2,
+                            q54_ocupacion=="Administrativo de plan de ahorro"~2,
+                            q54_ocupacion=="desarrollador"~3,
+                            q54_ocupacion=="Oficial maestranza"~2,
+                            q54_ocupacion=="Actrz-ama de casa"~5,
+                            q54_ocupacion=="Trabajador de limpieza"~4,
+                            q54_ocupacion=="Telefonista"~2,
+                            q54_ocupacion=="Analista de cuentas corrientes"~3,
+                            q54_ocupacion=="Ama de casa, atiendo a mi Sobrino/Nieto"~4,
+                            q54_ocupacion=="Venta on-line"~5,
+                            q54_ocupacion=="Asesor de empresas"~5,
+                            q54_ocupacion=="Yesita"~5,
+                            q54_ocupacion=="Rebobinador"~2,
+                            q54_ocupacion=="Tallerista"~2,
+                            q54_ocupacion=="Seguros"~2,
+                            q54_ocupacion=="Artesana y moza"~1,
+                            q54_ocupacion=="Ama de casa/niñera"~4,
+                            q54_ocupacion=="trabajador de limpieza, preparación, y entrega de mercadería para eventos"~4,
+                            q54_ocupacion=="Administrativa de una ONG"~2,
+                            q54_ocupacion=="manejo y administro un espacio de creación artistica"~5,
+                            q54_ocupacion=="Lic.enferemria"~4,
+                            q54_ocupacion=="Gestor cultural"~2,
+                            q54_ocupacion=="Licenciada en Psicología, Docente e Investigadora"~3,
+                            q54_ocupacion=="Costruccion"~5,
+                            q54_ocupacion=="Psicóloga social."~5,
+                            q54_ocupacion=="docente de primaria y estudiante"~3,
+                            q54_ocupacion=="Comerciantev"~5,
+                            q54_ocupacion=="Educadora en un jardin de infantes"~3,
+                            q54_ocupacion=="Cuentapropista"~5,
+                            q54_ocupacion=="Vivero"~5,
+                            q54_ocupacion=="comerciante"~5,
+                            q54_ocupacion=="Escritora"~3,
+                            q54_ocupacion=="Terapeuta"~4,
+                            q54_ocupacion=="becario de doctorado"~3,
+                            q54_ocupacion=="Hortícola"~1,
+                            q54_ocupacion=="Gastronomico"~1,
+                            q54_ocupacion=="Free lancrt"~5,
+                            q54_ocupacion=="Administrativo y estudiante"~2,
+                            q54_ocupacion=="Estudiante -investigadora"~3,
+                            q54_ocupacion=="Licenciado en enfermería"~4,
+                            q54_ocupacion=="Técnica química"~2,
+                            q54_ocupacion=="Secretario ejecutivo"~2,
+                            q54_ocupacion=="Fotógrafa"~5,
+                            q54_ocupacion=="Directora Técnica de Fútbol"~2,
+                            q54_ocupacion=="Cuidadora de Enfermos."~4,
+                            q54_ocupacion=="Costura"~5,
+                            q54_ocupacion=="Licenciada en Psicopedagogía -Docente"~4,
+                            q54_ocupacion=="Contratista de construcción"~5,
+                            q54_ocupacion=="No docente en una universidad"~5,
+                            q54_ocupacion=="Vendedor de telas de marroquinería"~2,
+                            q54_ocupacion=="Vivienda"~5,
+                            q54_ocupacion=="Cocinera de un comedor"~1,
+                            q54_ocupacion=="Comunicador social, Tecnología de la información"~3,
+                            q54_ocupacion=="Docente de un secundario y promotor de salud"~3,
+                            q54_ocupacion=="Agente municipal"~2,
+                            q54_ocupacion=="Trabajo en una organización"~4,
+                            q54_ocupacion=="Área textil"~2,
+                            q54_ocupacion=="Trabajo en un organización"~4,
+                            q54_ocupacion=="Márketing"~5,
+                            q54_ocupacion=="Docente primario"~3,
+                            q54_ocupacion=="Desarrollo inmobiliario"~3,
+                            q54_ocupacion=="Sacretaria"~2,
+                            q54_ocupacion=="escritora"~3,
+                            q54_ocupacion=="Cannabicultora"~1,
+                            q54_ocupacion=="Profesional,trabajadora social"~5,
+                            q54_ocupacion=="Camionero"~2,
+                            q54_ocupacion=="Paramedico"~4,
+                            q54_ocupacion=="Ama de casa familia"~4,
+                            q54_ocupacion=="Trabajo"~5,
+                            q54_ocupacion=="Ama de.casa"~4,
+                            q54_ocupacion=="Ordenanza"~2,
+                            q54_ocupacion=="Fonoaudióloga"~4,
+                            q54_ocupacion=="Productora de Tv"~2,
+                            q54_ocupacion=="acompañante terapéutica"~4,
+                            q54_ocupacion=="Garzona"~1,
+                            q54_ocupacion=="correctora de estilo"~3,
+                            q54_ocupacion=="Ama de casa y huertera"~4,
+                            q54_ocupacion=="Sanitarios"~4,
+                            q54_ocupacion=="Librera/trabajadora de la cultura"~2,
+                            q54_ocupacion=="Investigador científico"~3,
+                            q54_ocupacion=="Agricultura"~1,
+                            q54_ocupacion=="Trabajador del Estado nacional"~2,
+                            q54_ocupacion=="Ingeniero Químico"~5,
+                            q54_ocupacion=="Empleo público. Antropóloga"~2,
+                            q54_ocupacion=="Ingeniero de Mantenimiento Mecánico"~5,
+                            q54_ocupacion=="Cuidado de niños"~4,
+                            q54_ocupacion=="Trabajo remoto o en línea"~2,
+                            q54_ocupacion=="diseñadora"~5,
+                            q54_ocupacion=="Administración y ventas"~2,
+                            q54_ocupacion=="Grafica"~5,
+                            q54_ocupacion=="Oficial de mantenimiento"~2,
+                            q54_ocupacion=="Servicio de Estetica"~5,
+                            q54_ocupacion=="Peluquera por vocación"~5,
+                            q54_ocupacion=="Profesor de baile"~3,
+                            q54_ocupacion=="Lic terapia Ocupacional"~5,
+                            q54_ocupacion=="dibujante"~5,
+                            q54_ocupacion=="Correo privado"~2,
+                            q54_ocupacion=="Docente tallerista"~3,
+                            q54_ocupacion=="Mesero"~1,
+                            q54_ocupacion=="RECEPCIONISTA"~2,
+                            q54_ocupacion=="Ayudar a personas bulnerable en lo que yo pueda ayudar"~4,
+                            q54_ocupacion=="Administrativo Contable"~2,
+                            q54_ocupacion=="Artista plastico"~5,
+                            q54_ocupacion=="Changarin en la Cebolla"~1,
+                            q54_ocupacion=="Assistente administrativo"~2,
+                            q54_ocupacion=="Docente extra programático"~3,
+                            q54_ocupacion=="Atención en comercio"~2,
+                            q54_ocupacion=="Soy historiadora y correctora de estilo"~3,
+                            q54_ocupacion=="Cultura"~2,
+                            q54_ocupacion=="Traducción"~3,
+                            q54_ocupacion=="Diseñadora grafica"~5,
+                            q54_ocupacion=="investigadora de CONICET"~3,
+                            q54_ocupacion=="Administracion comercial"~2,
+                            q54_ocupacion=="Editora/correctora de textos"~3,
+                            q54_ocupacion=="Profesora de lenguas online y traductora"~3,
+                            q54_ocupacion=="Doméstico"~4,
+                            q54_ocupacion=="SECRETARIA"~2,
+                            q54_ocupacion=="técnico industrial"~5,
+                            q54_ocupacion=="Produtor de conteúdos educativos infantil"~3,
+                            q54_ocupacion=="Empaquista"~1,
+                            q54_ocupacion=="Trabajador en el estado como asesor técnico en vinculación tecnologica"~2,
+                            q54_ocupacion=="Ingeniera industrial"~5,
+                            q54_ocupacion=="Lavandería"~5,
+                            q54_ocupacion=="Tesorero"~2,
+                            q54_ocupacion=="Enfermera. Asistencia.  Adulto mayor"~4,
+                            q54_ocupacion=="Vivo de alquileres"~5,
+                            q54_ocupacion=="Empleada para empresa de telecomunicaciones"~2,
+                            q54_ocupacion=="administrador"~2,
+                            q54_ocupacion=="asistente administrativo"~2,
+                            q54_ocupacion=="Pastoral"~5,
+                            q54_ocupacion=="Educadora popular"~3,
+                            q54_ocupacion=="Artesania"~5,
+                            q54_ocupacion=="Dueño de local"~5,
+                            q54_ocupacion=="Autónomo"~5,
+                            q54_ocupacion=="Soporte de informática"~3,
+                            q54_ocupacion=="Changas de costura"~5,
+                            q54_ocupacion=="Bailarín ZUMBA e ingeniero Civil"~5,
+                            q54_ocupacion=="Vendedora artesanal"~5,
+                            q54_ocupacion=="Bordadora"~5,
+                            q54_ocupacion=="Empleado fabrica"~2,
+                            q54_ocupacion=="venta de pan"~5,
+                            q54_ocupacion=="Casas particulares"~4,
+                            q54_ocupacion=="Jefe de obra"~5,
+                            q54_ocupacion=="Servicios Domésticos"~4,
+                            q54_ocupacion=="Profesor particular de música"~3,
+                            q54_ocupacion=="Cuidadora de ansiana, fotógrafa"~4,
+                            q54_ocupacion=="venta"~5,
+                            q54_ocupacion=="Moso"~1,
+                            q54_ocupacion=="Trabajadora de salud"~4,
+                            q54_ocupacion=="Psicóloga y profesora"~5,
+                            q54_ocupacion=="Personal trainer"~5,
+                            q54_ocupacion=="Coaching"~5,
+                            q54_ocupacion=="Arquitecta /vendedora"~5,
+                            q54_ocupacion=="Trabajo en restaurante"~2,
+                            q54_ocupacion=="Emopleado"~2,
+                            q54_ocupacion=="Operario de limpieza"~2,
+                            q54_ocupacion=="administrativa en estudio contable"~2,
+                            q54_ocupacion=="Músico/docente"~3,
+                            q54_ocupacion=="Atención al cliente on line"~2,
+                            q54_ocupacion=="Gerente de administración, finanzas, y de proyectos."~2,
+                            q54_ocupacion=="Consultor monitoreo de proyectos"~3,
+                            q54_ocupacion=="Pintor de obras"~5,
+                            q54_ocupacion=="Psicología Comunitaria"~4,
+                            q54_ocupacion=="Asistente geriatrica"~4,
+                            q54_ocupacion=="barista"~2,
+                            q54_ocupacion=="Servicio público en México"~2,
+                            q54_ocupacion=="socióloga - gestión del proyectos sociales"~3,
+                            q54_ocupacion=="Trabajador de la economía popular"~5,
+                            q54_ocupacion=="Soy becaria Conicet y tengo unas horas docentes en un profesorado de formación musical"~3,
+                            q54_ocupacion=="Personal Traning"~5,
+                            q54_ocupacion=="Cuidador de adultos mayores  y limpieza"~4,
+                            q54_ocupacion=="Venta de comida en feria autogestiva"~5,
+                            q54_ocupacion=="Joyería"~2,
+                            q54_ocupacion=="Policía,hago lo que sea necesario para no morir de hambre"~2,
+                            q54_ocupacion=="Hogar"~4,
+                            q54_ocupacion=="Trabajo por cuenta propia"~5,
+                            q54_ocupacion=="Carpintero, herrero y amo de casa"~5,
+                            q54_ocupacion=="docente y administrativo"~3,
+                            q54_ocupacion=="Asistente juridico"~2,
+                            q54_ocupacion=="ventaa atencion al cliente etc"~2,
+                            q54_ocupacion=="Rubro textil"~5,
+                            q54_ocupacion=="Docente en discapacidad"~3,
+                            q54_ocupacion=="Videografo"~5,
+                            q54_ocupacion=="Atención al cliente y docente de jardin"~2,
+                            q54_ocupacion=="Bordados"~5,
+                            q54_ocupacion=="Trabajadora del rubro gastronómico"~5,
+                            q54_ocupacion=="Comunicación en espacio cultural"~5,
+                            q54_ocupacion=="psicóloga - socióloga"~5,
+                            q54_ocupacion=="Operadora de proyectos humanitarios"~4,
+                            q54_ocupacion=="Docente dirección coral"~3,
+                            q54_ocupacion=="Operador logístico"~2,
+                            q54_ocupacion=="Trabajos en casa,de familia"~4,
+                            q54_ocupacion=="Operaria y ama de casa"~2,
+                            q54_ocupacion=="Coordinador ONG"~4,
+                            q54_ocupacion=="Emprendedora y Estudante"~5,
+                            q54_ocupacion=="Estoy de sereno"~5,
+                            q54_ocupacion=="Funcionario"~2,
+                            q54_ocupacion=="Plomería"~5,
+                            q54_ocupacion=="Técnico de cine"~5,
+                            q54_ocupacion=="COMERCIO"~5,
+                            q54_ocupacion=="Limpieza por horas y manualidades"~4,
+                            q54_ocupacion=="Bailarina"~5,
+                            q54_ocupacion=="Mama, artistas, antropologa, gestora cultural"~3,
+                            q54_ocupacion=="CONTRUCTOR"~5,
+                            q54_ocupacion=="COCINERA"~1,
+                            q54_ocupacion=="Negocio"~5,
+                            q54_ocupacion=="Empleada domésticas"~4,
+                            q54_ocupacion=="Mecanica"~5,
+                            q54_ocupacion=="peluquera"~5,
+                            q54_ocupacion=="esteticista"~5,
+                            q54_ocupacion=="barman"~5,
+                            q54_ocupacion=="cuidadora de anciano"~4,
+                            q54_ocupacion=="vendedor ambulante"~5,
+                            q54_ocupacion=="siembra de verduras"~1,
+                            q54_ocupacion=="advogada"~5,
+                            q54_ocupacion=="podologia"~5,
+                            q54_ocupacion=="chef"~1,
+                            q54_ocupacion=="Personal de salud"~2,
+                            q54_ocupacion=="panadero"~1,
+                            q54_ocupacion=="profesora"~3,
+                            q54_ocupacion=="vendedor online"~5,
+                            q54_ocupacion=="hogar"~4,
+                            TRUE~NA))
+
+
+
+
+cc<-enma %>% 
+  filter(!is.na(q54_rec)) %>% 
+  group_by(q54_rec) %>% 
+  summarise(cantidad=sum(weightvec))
+
+cc1<- enma %>% 
+  filter(is.na(q54_rec)) %>% 
+  group_by(q54_ocupacion) %>% 
+  summarise(cantidad=n())
+
+
+getwd()
+#exporto el csv
+write.csv(enma,"datos/ENMA_pond-censal-publica_v2.csv", row.names = FALSE )
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

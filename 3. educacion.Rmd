@@ -98,7 +98,7 @@ q32_origen<-enma %>%
 
 ```
 
-###Población con hijos/as por motivos de porque no asisten a la escuela
+### Población con hijos/as por motivos de porque no asisten a la escuela
 ```{r}
 
 #Construyo gráfico 3.3

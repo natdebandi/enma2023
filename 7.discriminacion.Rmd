@@ -1,0 +1,165 @@
+---
+title: "ENMA 2023 - Análisis"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(tidyr)
+library(readr)
+
+
+rm(list = ls())
+```
+
+# ENMA 2023 - analisis por capítulos
+## DISCRIMINACION
+
+versión con ponderador censal ENMA_v2
+
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura del archivo público de ENMA 2023
+
+enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+Exploracion de variables
+
+Ver documentación (LINK)
+
+```{r exploración, include=FALSE, echo=FALSE}
+
+names(enma)
+#str(enma)
+
+source(file="variables_recat.R") 
+```
+
+```{r}
+
+
+enma<-enma %>% 
+  mutate(q62_new=case_when(q62_discriminacion=="Sí, frecuentemente" | q62_discriminacion=="Sí, alguna vez" ~ "Sí, al menos alguna vez",
+                           q62_discriminacion=="No, nunca" ~ "No, nunca",
+                           TRUE ~ NA))
+```
+
+
+```{r}
+
+#convierto q5 en numérica y elimino NA
+
+enma<-enma %>% 
+  mutate(q5_descendencia_indigena=case_when(
+    q5_descendencia_indigena==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q5_descendencia_afro=case_when(
+    q5_descendencia_afro==1 ~ 1,
+    TRUE ~ 0)) %>% 
+   mutate(q5_descendencia_asiatica=case_when(
+    q5_descendencia_asiatica==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_ninguno=case_when(
+    q5_descendencia_ninguno==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q5_descendencia_otro=case_when(
+    q5_descendencia_otro==1 ~ 1,
+    TRUE ~ 0))
+  
+#resultados
+q62_descendencia<- enma %>%
+  filter(!is.na(q62_new)) %>% 
+  group_by(q62_new) %>% 
+  summarise(Poblacion= round(sum(weightvec[!is.na(q62_new)])),
+            Indigena  = round(sum(weightvec[q5_descendencia_indigena==1])),
+            Afro = round(sum(weightvec[q5_descendencia_afro == 1])),
+            Asiatica = round(sum(weightvec[q5_descendencia_asiatica == 1])),
+            Ninguno = round(sum(weightvec[q5_descendencia_ninguno == 1]))
+                          )
+
+q62_descendencia
+
+write.xlsx2(as.data.frame(q62_descendencia), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q62_descendencia",append = TRUE)
+
+
+```
+
+```{r}
+
+#q63
+
+#limpio NA 
+enma<-enma %>% 
+  mutate(q63_discriminacion_estado=case_when(
+    q63_discriminacion_estado==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_fuerzas=case_when(
+    q63_discriminacion_fuerzas==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_atencion_medica=case_when(
+    q63_discriminacion_atencion_medica==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_educacion=case_when(
+    q63_discriminacion_educacion==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_calle=case_when(
+    q63_discriminacion_calle==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_trabajo=case_when(
+    q63_discriminacion_trabajo==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_grupos_sociales=case_when(
+    q63_discriminacion_grupos_sociales==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_transporte=case_when(
+    q63_discriminacion_transporte==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_medios_comunicacion=case_when(
+    q63_discriminacion_medios_comunicacion==1 ~1,
+    TRUE ~ 0)) %>% 
+    mutate(q63_discriminacion_otros=case_when(
+    q63_discriminacion_otros==1 ~1,
+    TRUE ~ 0))
+
+
+#RESULTADOS
+q63_genero<- enma %>% 
+  filter(q62_new=="Sí, al menos alguna vez") %>% 
+  group_by(genero_var) %>%
+    summarise(
+            Poblacion= round(sum(weightvec[!is.na(q62_new)])),
+            Estado  = round(sum(weightvec[q63_discriminacion_estado==1])),
+            Fuerzas  = round(sum(weightvec[q63_discriminacion_fuerzas==1])),
+            Atencion_medica  = round(sum(weightvec[q63_discriminacion_atencion_medica==1])),
+            Educacion  = round(sum(weightvec[q63_discriminacion_educacion==1])),
+            Calle = round(sum(weightvec[q63_discriminacion_calle==1])),
+            Trabajo = round(sum(weightvec[q63_discriminacion_trabajo==1])),
+            Grupos_soc = round(sum(weightvec[q63_discriminacion_grupos_sociales==1])),
+            Transporte = round(sum(weightvec[q63_discriminacion_transporte==1])),
+            Medios_com= round(sum(weightvec[q63_discriminacion_medios_comunicacion==1])),
+            Otros = round(sum(weightvec[q63_discriminacion_otros==1]))
+            )
+  
+q63_genero 
+
+write.xlsx2(as.data.frame(q63_genero), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q63_genero",append = TRUE)
+
+```
+
+
+
+
+
