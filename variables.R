@@ -40,3 +40,20 @@ enma<- enma %>%
     q13_anio_llegada<=2011 ~ "más de 10 años (<=2011)",
   )
   )
+
+
+
+#Recodifico nivel educativo en tres categorías:
+
+# 1) Hasta secundario incompleto
+# 2) Secundario completo (incluye terciario y universitario incompleto)
+# 3) Superior completo y más
+
+
+enma<-enma %>% 
+  mutate(niveled=case_when(
+    q46_estudios=="Primario completo" | q46_estudios=="Secundario incompleto o en curso" | q46_estudios=="Primario incompleto o en curso" ~ "Hasta secundario incompleto",
+    q46_estudios=="Secundario completo" | q46_estudios=="Terciario incompleto o en curso" | q46_estudios=="Universitario incompleto o en curso" ~ "Secundario completo",
+    q46_estudios=="Universitario completo" | q46_estudios=="Terciario completo"~ "Superior completo y más",
+    TRUE ~  NA
+  ))
