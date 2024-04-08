@@ -1,0 +1,97 @@
+---
+title: "ENMA 2023 - Análisis"
+output: html_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#install.packages("xlsx")
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(tidyr)
+library(readr)
+
+
+rm(list = ls())
+```
+
+# ENMA 2020
+
+
+```{r carga_datos, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Lectura del archivo ENMA 2020
+
+enma2020 <-  read_csv2("data\\ENMA_2020_final.csv",col_names = TRUE,col_types = NULL)
+
+
+```
+
+Exploracion de variables
+
+```{r exploración, include=FALSE, echo=FALSE}
+
+names(enma2020)
+
+```
+
+
+
+
+### q56_violencia_genero 
+
+
+```{r  }
+
+consulta <- enma2020 %>% 
+  group_by(q56_violencia_genero,Genero_i) %>% 
+  summarise (cantidad = round(sum(pesos_para_estimaciones_totales)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = Genero_i, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="enam2020_genero",append = TRUE)
+
+
+```
+
+```{r q64_edad}
+
+qry<- calculate_tabulates(base = enma, x = 'q64_violencia_fuerza_seguridad', y = 'edad_2020', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+
+write.xlsx2(as.data.frame(qry), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q64_edad_freq",append = TRUE)
+```
+
+### Gráfico 7.10: Situaciones de violencia por parte de las fuerzas de seguridad según ascendencia étnica 
+
+
+```{r}
+
+
+#Q64 y q5
+grafico_7.10<- enma %>%
+  filter(!is.na(q64_violencia_fuerza_seguridad)) %>% 
+  group_by(q64_violencia_fuerza_seguridad) %>% 
+  summarise(Poblacion= round(sum(weightvec[!is.na(q64_violencia_fuerza_seguridad)])),
+            Indigena  = round(sum(weightvec[q5_descendencia_indigena==1])),
+            Afro = round(sum(weightvec[q5_descendencia_afro == 1])),
+            Asiatica = round(sum(weightvec[q5_descendencia_asiatica == 1])),
+            Ninguno = round(sum(weightvec[q5_descendencia_ninguno == 1]))
+                          )
+
+grafico_7.10
+
+write.xlsx2(as.data.frame(grafico_7.10), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="grafico_7.10",append = TRUE)
+
+
+```
+

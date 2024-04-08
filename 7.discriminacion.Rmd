@@ -32,7 +32,7 @@ versión con ponderador censal ENMA_v2
 
 # Lectura del archivo público de ENMA 2023
 
-enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -45,7 +45,7 @@ Ver documentación (LINK)
 names(enma)
 #str(enma)
 
-source(file="variables_recat.R") 
+source(file="variables.R") 
 ```
 
 ```{r}
@@ -92,7 +92,7 @@ q62_descendencia<- enma %>%
 
 q62_descendencia
 
-write.xlsx2(as.data.frame(q62_descendencia), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q62_descendencia",append = TRUE)
+#write.xlsx2(as.data.frame(q62_descendencia), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q62_descendencia",append = TRUE)
 
 
 ```
@@ -155,10 +155,76 @@ q63_genero<- enma %>%
   
 q63_genero 
 
-write.xlsx2(as.data.frame(q63_genero), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q63_genero",append = TRUE)
+#write.xlsx2(as.data.frame(q63_genero), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q63_genero",append = TRUE)
+
+```
+### q64 x edad 
+
+
+```{r q64_edad_abs }
+
+consulta <- enma %>% 
+  group_by(q64_violencia_fuerza_seguridad,edad_2020) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = edad_2020, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q64_edad_abs",append = TRUE)
+
 
 ```
 
+```{r q64_edad}
+
+qry<- calculate_tabulates(base = enma, x = 'q64_violencia_fuerza_seguridad', y = 'edad_2020', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+
+qry
+
+
+write.xlsx2(as.data.frame(qry), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="q64_edad_freq",append = TRUE)
+```
+
+### Gráfico 7.10: Situaciones de violencia por parte de las fuerzas de seguridad según ascendencia étnica 
+
+
+```{r}
+
+
+#Q64 y q5
+grafico_7.10<- enma %>%
+  filter(!is.na(q64_violencia_fuerza_seguridad)) %>% 
+  group_by(q64_violencia_fuerza_seguridad) %>% 
+  summarise(Poblacion= round(sum(weightvec[!is.na(q64_violencia_fuerza_seguridad)])),
+            Indigena  = round(sum(weightvec[q5_descendencia_indigena==1])),
+            Afro = round(sum(weightvec[q5_descendencia_afro == 1])),
+            Asiatica = round(sum(weightvec[q5_descendencia_asiatica == 1])),
+            Ninguno = round(sum(weightvec[q5_descendencia_ninguno == 1]))
+                          )
+
+grafico_7.10
+
+write.xlsx2(as.data.frame(grafico_7.10), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="grafico_7.10",append = TRUE)
+
+
+```
+
+
+
+```{r}
+
+
+consulta <- enma %>% 
+  group_by(q62_new,niveled) %>% 
+  summarise (cantidad = round(sum(weightvec)))
+
+consulta_w<-consulta %>% pivot_wider(names_from = niveled, values_from = cantidad)
+consulta_w
+
+write.xlsx2(as.data.frame(consulta_w), "cuadros/7.discriminacion.xlsx", row.names = FALSE, sheetName ="niveled",append = TRUE)
+
+
+```
 
 
 
