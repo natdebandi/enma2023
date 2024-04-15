@@ -1,5 +1,5 @@
 ---
-title: "CAPITULO DOCUMENTACION"
+title: "CAPITULO EDUCACIÓN"
 output: html_document
 date: "`r Sys.Date()`"
 ---
@@ -35,9 +35,7 @@ Levanto la base de datos
 
 # Lectura del archivo público de ENMA 2023
 
-enma <-  read_csv2("data/ENMA_pond-censal-publica_v2.csv",col_names = TRUE,col_types = NULL)
-
-
+enma <-  read_csv("data/ENMA_pond-censal-publica_v3.csv",col_names = TRUE,col_types = NULL)
 
 ```
 
@@ -63,6 +61,7 @@ Grafico_3.1<-enma %>%
   summarise(cant=round(sum(weightvec),0)) %>%
   mutate(porc=round(cant/sum(cant)*100,1))
 
+Grafico_3.1
 
 #Población con hijos desagregada por género
 q32_genero<-enma %>%
@@ -73,6 +72,7 @@ q32_genero<-enma %>%
             Total_no=round(sum(weightvec[q32_asistencia_educacion=="No, ninguno"]),0),
             Porcentaje_si=round(Total_si/Total*100,1),
             Porcentaje_no=round(Total_no/Total*100,1))
+q32_genero
 
 #Población con hijos desagregada por región
 #construyo gráfico 3.2
@@ -85,6 +85,7 @@ Grafico_3.2<-enma %>%
             Porcentaje_si=round(Total_si/Total*100,1),
             Porcentaje_no=round(Total_no/Total*100,1))
 
+Grafico_3.2
 
 #Población desagregada por lugar de origen agregado
 q32_origen<-enma %>%
@@ -95,6 +96,8 @@ q32_origen<-enma %>%
             Total_no=round(sum(weightvec[q32_asistencia_educacion=="No, ninguno"]),0),
             Porcentaje_si=round(Total_si/Total*100,1),
             Porcentaje_no=round(Total_no/Total*100,1))
+
+q32_origen
 
 ```
 
@@ -115,6 +118,7 @@ Grafico_3.3<-enma %>%
   summarise(cant=round(sum(weightvec)),0) %>%
   mutate(porc=round(cant/sum(cant)*100,1))
 
+Grafico_3.3
 
 ```
 
@@ -145,6 +149,8 @@ q33<-enma %>%
     group_by(q33_v1) %>% 
     summarise(cant=round(sum(weightvec),0)) %>%
     mutate(porc=round(cant/sum(cant)*100,1))
+
+q33
 
 ##motivos sobre total que responden q33
 q33b<-enma %>% 
@@ -185,6 +191,7 @@ q33b<-enma %>%
 'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
 'Otros problemas'            = round(doc_otro/Poblacion*100,1))
 
+q33b
 
  #Calculo porcentaje de personas que seleccionaron únicamente haber tenido inconvenientes
 
@@ -205,6 +212,8 @@ Grafico_3.4<-enma %>%
 'Falta de documentación escolar argentina'            = round(doc_arg/Poblacion*100,1),
 'Otros problemas'            = round(doc_otro/Poblacion*100,1))
 
+Grafico_3.4
+
 #calculo porcentaje de población con inconvenientes según tenencia de DNI
 
 q33_DNI<-enma %>%
@@ -216,6 +225,7 @@ q33_DNI<-enma %>%
             Porcentaje_inconveniente=round(Total_inconvenientes/Total*100,1),
             Porcentaje_NO_inconvenientes=round(Total_NO_inconvenientes/Total*100,1))
 
+q33_DNI
 
 ```
 
@@ -230,6 +240,8 @@ Grafico_3.5<-enma %>%
   summarise(cant=round(sum(weightvec),0)) %>%
   mutate(porc=round(cant/sum(cant)*100,1))
 
+Grafico_3.5
+
 #discriminación según región
 q35_region<-enma %>%
   filter(!is.na(q35_educacion_discriminacion) & !is.na(region_amba_var) & region_amba_var!="99") %>% 
@@ -242,6 +254,7 @@ q35_region<-enma %>%
             Porcentaje_no=round(Total_no/Total*100,1),
             Porcentaje_nr=round(Total_nr/Total*100,1))
 
+q35_region
 
 #discriminación según origen
 #Construyo gráfico 3.6
@@ -255,6 +268,8 @@ Gráfico_3.6<-enma %>%
             Porcentaje_si=round(Total_si/Total*100,1),
             Porcentaje_no=round(Total_no/Total*100,1),
             Porcentaje_nr=round(Total_nr/Total*100,1))
+
+Gráfico_3.6
 
 #discriminación por ascendencia étnica
 #Construyo gráfico 3.7 (FALTA AGREGAR LOS TRES CÁLCULOS)
@@ -273,6 +288,8 @@ Grafico_3.7a<-enma %>%
 'No sufrió discriminación'          = round(Discr_no/Total*100,1),
       'Prefiere no responder'            = round(Discr_nr/Total*100,1)) 
 
+Grafico_3.7a
+
 #POBLACIÓN ASCENDENTE AFRO
 Grafico_3.7b<-enma %>% 
     mutate(q5_descendencia_afro=case_when(
@@ -289,7 +306,9 @@ Grafico_3.7b<-enma %>%
             'Sufrió discriminación'          = round(Discr_si/Total*100,1),
 'No sufrió discriminación'          = round(Discr_no/Total*100,1),
       'Prefiere no responder'            = round(Discr_nr/Total*100,1))
-  
+
+Grafico_3.7b
+
 #POBLACIÓN SIN ASCENDENCIA
   Grafico_3.7c<-enma %>% 
     mutate(q5_descendencia_ninguno=case_when(
@@ -304,9 +323,9 @@ Grafico_3.7b<-enma %>%
 'No sufrió discriminación'          = round(Discr_no/Total*100,1),
       'Prefiere no responder'            = round(Discr_nr/Total*100,1))
 
+Grafico_3.7c
 
-  names(enma)
-  total_q5<-enma %>% 
+total_q5<-enma %>% 
     filter(!is.na(q5_descendencia)) %>% 
     summarise(Total=round(sum(weightvec),0))
 ```

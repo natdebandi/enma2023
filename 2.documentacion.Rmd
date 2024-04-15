@@ -34,7 +34,7 @@ Levanto la base de datos
 
 # Lectura del archivo público de ENMA 2023
 
-enma <-  read_csv2("data\\ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+enma <-  read_csv("data/ENMA_pond-censal-publica_v3.csv",col_names = TRUE,col_types = NULL)
 
 
 ```
@@ -52,27 +52,37 @@ source(file="variables_recat.R")
 
 ```
 
-### proporción de personas sin DNI (q17)
+### Proporción de personas con DNI (q17)
 
 
 ```{r q17_dni_tenencia}
 
-qry<-enma %>% 
+q17<-enma %>% 
   group_by(q17_dni_tenencia) %>% 
-  summarise(n=sum(weightvec)) %>%
-  mutate(freq = n / sum(n) *100)
-qry
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc = round(cant/sum(cant)*100,2))
+
+q17
+
 
 ```
-El 7% de las personas migrantes cuenta con DNI
+El 93% de las personas migrantes cuenta con DNI
 
 ### Tenencia de DNI según tiempo de residencia (q17)
 
 ```{r q17_tiempo_residencia }
 
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'tiempo_residencia_3_var', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
+Grafico_2.1.2<-enma %>% 
+    filter(!is.na(q17_dni_tenencia) & !is.na(tiempo_reciente_5)) %>%
+  group_by(tiempo_reciente_5)%>%
+  summarise(Total_si=(sum(weightvec[q17_dni_tenencia=="Si"])),
+            Total_no=(sum(weightvec[q17_dni_tenencia=="No"])),
+            Total=((Total_si+Total_no)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
 
-qry
+Grafico_2.1.2
+
 
 ```
 ### Tenencia de DNI según tiempo de residencia en 5 grupos (revision) (q17)
@@ -98,43 +108,53 @@ enma<- enma %>%
              q13_anio_llegada<=2011 ~ "más de 10 años (<=2011)",
              )
       )
-  
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'tiempo_res_5', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
 
-qry
 
-write.xlsx2(as.data.frame(qry), "cuadros/q17.xlsx", row.names = FALSE, sheetName ="tiempo_res",append = TRUE)
+
+######
+
+
+Grafico_2.1.3<-enma %>% 
+    filter(!is.na(q17_dni_tenencia) & !is.na(nac_agrupada)) %>%
+  group_by(nac_agrupada)%>%
+  summarise(Total_si=(sum(weightvec[q17_dni_tenencia=="Si"])),
+            Total_no=(sum(weightvec[q17_dni_tenencia=="No"])),
+            Total=((Total_si+Total_no)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
+Grafico_2.1.3
 
 ```
-### Tenencia de DNI según region (nacionalidad agrupada)  (q17)
+
+### Tenencia de DNI según nacionalidad  (q17)
 
 ```{r q17_nac_agrupada }
 
-consulta <- enma %>% 
-  group_by(q17_dni_tenencia,nac_agrupada) %>% 
-  summarise (cantidad = round(sum(weightvec_0)))
+Grafico_2.1.4<-enma %>% 
+    filter(!is.na(q17_dni_tenencia) & !is.na(nacionalidad_var)) %>%
+  group_by(nacionalidad_var)%>%
+  summarise(Total_si=(sum(weightvec[q17_dni_tenencia=="Si"])),
+            Total_no=(sum(weightvec[q17_dni_tenencia=="No"])),
+            Total=((Total_si+Total_no)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
 
-consulta_w<-consulta %>% pivot_wider(names_from = nac_agrupada, values_from = cantidad)
-consulta_w
 
-write.xlsx2(as.data.frame(consulta_w), "cuadros/q17.xlsx", row.names = FALSE, sheetName ="region",append = TRUE)
 
 ```
 
+###Tenencia de dni según género
+```{r}
+names(enma)
 
-
-### Tenencia de DNI según pais (revision) (q17)
-
-```{r q17_pais }
-
-consulta <- enma %>% 
-  group_by(q17_dni_tenencia,nacionalidad_desagregada) %>% 
-  summarise (cantidad = round(sum(weightvec)))
-
-consulta_w<-consulta %>% pivot_wider(names_from = nacionalidad_desagregada, values_from = cantidad)
-consulta_w
-
-write.xlsx2(as.data.frame(consulta_w), "cuadros/q17.xlsx", row.names = FALSE, sheetName ="pais",append = TRUE)
+q4<-enma %>% 
+    filter(!is.na(q17_dni_tenencia) & !is.na(genero_var)) %>%
+  group_by(genero_var)%>%
+  summarise(Total_si=(sum(weightvec[q17_dni_tenencia=="Si"])),
+            Total_no=(sum(weightvec[q17_dni_tenencia=="No"])),
+            Total=((Total_si+Total_no)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
 
 ```
 
@@ -143,27 +163,39 @@ write.xlsx2(as.data.frame(consulta_w), "cuadros/q17.xlsx", row.names = FALSE, sh
 
 ```{r q18_dni_situacion  }
 
-enma<- enma %>% 
-      mutate(q18_dni_var=case_when(
+q18<-enma %>% 
+  mutate(q18_dni_var=case_when(
              q18_dni_situacion=="A la naturalización"~ "DNI por naturalización",
-             q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanent",
-             q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria)",
-             TRUE ~ NA
-             )
-      )
-
-qry<-enma %>% 
-  group_by(q18_dni_var ) %>% 
+             q18_dni_situacion=="Una radicación permanente"~ "DNI por radicación permanente",
+             q18_dni_situacion=="Una radicación temporaria"~ "DNI por radicación temporaria",
+             TRUE ~ NA)) %>% 
+  filter(!is.na(q18_dni_var)) %>%
+  group_by(q18_dni_var) %>% 
   summarise(n=round(sum(weightvec)),0) %>%
-  mutate(freq = n / sum(n) *100)
-qry
+  mutate(freq = round(n / sum(n) *100,1))
 
-
-write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName ="q18",append = TRUE)
 
 ```
 
 ### Situación documentaria (q18)
+
+```{r}
+
+Grafico_2.1.6<-enma %>% 
+    filter(!is.na(q18_dni_var) & !is.na(tiempo_residencia_3_var)) %>%
+  group_by(tiempo_residencia_3_var)%>%
+  summarise(Total_perm=(sum(weightvec[q18_dni_var=="DNI por radicación permanente"])),
+            Total_temp=(sum(weightvec[q18_dni_var=="DNI por radicación temporaria"])),
+            Total_nat=(sum(weightvec[q18_dni_var=="DNI por naturalización"])),
+            Total=((Total_perm+Total_temp+Total_nat)),
+            Porcentaje_perm=round(Total_perm/Total*100,1),
+            Porcentaje_temp=round(Total_temp/Total*100,1),
+            Porcentaje_nat=round(Total_nat/Total*100,1))
+
+Grafico_2.1.6
+
+```
+
 
 ```{r q19  }
 
@@ -176,120 +208,389 @@ write.xlsx2(as.data.frame(qry), "cuadros/q18.xlsx", row.names = FALSE, sheetName
 #              )
 #       )
 
-qry<-enma %>% 
-  group_by(q19_situacion_documentaria ) %>% 
-  summarise(n=round(sum(weightvec)),0) %>%
-  mutate(freq = n / sum(n) *100)
-qry
+
+Grafico_2.1.7<-enma %>% 
+  filter(!is.na(q19_situacion_documentaria) & q17_dni_tenencia=="No") %>%
+  group_by(q19_situacion_documentaria) %>% 
+  summarise(Total=sum(weightvec)) %>% 
+  mutate(Porcentaje=round(Total/sum(Total)*100,1))
+
+Grafico_2.1.7
+
+names(enma)
+
+q20<-enma %>% 
+  group_by(q20_dni_dificultad_binaria) %>% 
+  summarise(cant=round(sum(weightvec),0)) %>%
+  mutate(porc = round(cant/sum(cant)*100,2))
+
+Grafico_2.1.8<-enma %>% 
+  filter(!is.na(q20_dni_dificultad_binaria) & !is.na(tiempo_residencia_3_var)) %>%
+  group_by(tiempo_residencia_3_var)%>%
+  summarise(Total_si=(sum(weightvec[q20_dni_dificultad_binaria=="Si"])),
+            Total_no=(sum(weightvec[q20_dni_dificultad_binaria=="No"])),
+            Total_nr=(sum(weightvec[q20_dni_dificultad_binaria=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+  
+
+q20_edad<-enma %>% 
+  filter(!is.na(q20_dni_dificultad_binaria) & !is.na(edad_2020)) %>%
+  group_by(edad_2020)%>%
+  summarise(Total_si=(sum(weightvec[q20_dni_dificultad_binaria=="Si"])),
+            Total_no=(sum(weightvec[q20_dni_dificultad_binaria=="No"])),
+            Total_nr=(sum(weightvec[q20_dni_dificultad_binaria=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
 
 
-write.xlsx2(as.data.frame(qry), "cuadros/q19.xlsx", row.names = FALSE, sheetName ="q19",append = TRUE)
+Grafico_2.1.9<-enma %>% 
+  filter(!is.na(q20_dni_dificultad_binaria) & !is.na(nac_agrupada)) %>%
+  group_by(nac_agrupada)%>%
+  summarise(Total_si=(sum(weightvec[q20_dni_dificultad_binaria=="Si"])),
+            Total_no=(sum(weightvec[q20_dni_dificultad_binaria=="No"])),
+            Total_nr=(sum(weightvec[q20_dni_dificultad_binaria=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+
+q20_nacionalidad<-enma %>% 
+  filter(!is.na(q20_dni_dificultad_binaria) & !is.na(nacionalidad_var)) %>%
+  group_by(nacionalidad_var)%>%
+  summarise(Total_si=(sum(weightvec[q20_dni_dificultad_binaria=="Si"])),
+            Total_no=(sum(weightvec[q20_dni_dificultad_binaria=="No"])),
+            Total_nr=(sum(weightvec[q20_dni_dificultad_binaria=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+
+q20_genero<-enma %>% 
+  filter(!is.na(q20_dni_dificultad_binaria) & !is.na(genero_var)) %>%
+  group_by(genero_var)%>%
+  summarise(Total_si=(sum(weightvec[q20_dni_dificultad_binaria=="Si"])),
+            Total_no=(sum(weightvec[q20_dni_dificultad_binaria=="No"])),
+            Total_nr=(sum(weightvec[q20_dni_dificultad_binaria=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+
+
 
 ```
  ### 
+ 
+```{r}
 
-```{r, message=FALSE, warning=FALSE}
-
-
-qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'edad_2020', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q20_edad2020.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
-
+names(enma)
+Grafico_2.1.10<-enma %>%
+#convierto variables en numéricas
+  mutate(q21_dni_dificultad_turnos=case_when(
+    q21_dni_dificultad_turnos==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q21_dni_dificultad_demora=case_when(
+    q21_dni_dificultad_demora==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q21_dni_dificultad_internet=case_when(
+    q21_dni_dificultad_internet==1 ~ 1,
+    TRUE ~ 0)) %>% 
+    mutate(q21_dni_dificultad_costo=case_when(
+   q21_dni_dificultad_costo==1 ~ 1,
+    TRUE ~ 0)) %>%
+    mutate(q21_dni_dificultad_turnos.1=case_when(
+    q21_dni_dificultad_turnos.1==1 ~ 1,
+    TRUE ~ 0)) %>% 
+  mutate(q21_dni_dificultad_documentacion_origen=case_when(
+    q21_dni_dificultad_documentacion_origen==1 ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(q21_dni_dificultad_falta_info=case_when(
+    q21_dni_dificultad_falta_info==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q21_dni_dificultad_identidad_genero=case_when(
+    q21_dni_dificultad_identidad_genero==1 ~ 1,
+    TRUE ~0)) %>% 
+  mutate(q21_dni_dificultad_otros=case_when(
+    q21_dni_dificultad_otros==1 ~ 1,
+    TRUE ~0)) %>% 
+  filter(q20_dni_dificultad_binaria=="Si" & !is.na(q21_dni_dificultad))%>% # selecciono población que tuvo dificultad
+  summarise(Poblacion= sum(weightvec),
+            turnos = sum(weightvec[q21_dni_dificultad_turnos == 1]),
+            demora = sum(weightvec[q21_dni_dificultad_demora == 1]),
+            internet = sum(weightvec[q21_dni_dificultad_internet == 1]),
+            costo = sum(weightvec[q21_dni_dificultad_costo== 1]),
+            turno1 = sum(weightvec[q21_dni_dificultad_turnos.1== 1]),
+            doc = sum(weightvec[q21_dni_dificultad_documentacion_origen== 1]),
+            info = sum(weightvec[q21_dni_dificultad_falta_info== 1]),
+            genero = sum(weightvec[q21_dni_dificultad_identidad_genero== 1]),
+            otro = sum(weightvec[q21_dni_dificultad_otros== 1]),
+      'Turnos'          = round(turnos/Poblacion*100,1),
+'Demora'          = round(demora/Poblacion*100,1),
+      'Internet'            = round(internet/Poblacion*100,1),
+      'Costo'            = round(costo/Poblacion*100,1),
+'RADEX'            = round(turno1/Poblacion*100,1),
+      'Documentación de país de origen'            = round(doc/Poblacion*100,1),
+'Falta de información'            = round(info/Poblacion*100,1),
+'Identidad de género'            = round(genero/Poblacion*100,1),
+'Otros problemas'            = round(otro/Poblacion*100,1)) %>% 
+  select(1,11:19)
 
 
 ```
+ 
+```{r}
+
+Grafico_2.2.2<-enma %>% 
+  = round(otro/Poblacion*100,1)) %>% 
+  select(1,11:19)
+  
+  
+  
+  
+  filter(!is.na(q20_dni_dificultad_binaria) & !is.na(region_amba_var)) %>%
+  group_by(region_amba_var)%>%
+  summarise(Total_si=(sum(weightvec[q20_dni_dificultad_binaria=="Si"])),
+            Total_no=(sum(weightvec[q20_dni_dificultad_binaria=="No"])),
+            Total_nr=(sum(weightvec[q20_dni_dificultad_binaria=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+
+unique(enma$q17_dni_tenencia)
+
+Grafico<-enma %>% 
+  filter(!is.na(q17_dni_tenencia) & !is.na(region_amba_var)) %>%
+  group_by(region_amba_var)%>%
+  summarise(Total_si=(sum(weightvec[q17_dni_tenencia=="Si"])),
+            Total_no=(sum(weightvec[q17_dni_tenencia=="No"])),
+            Total=((Total_si+Total_no)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))
+
+q21_otros<-enma %>% 
+  filter(q21_dni_dificultad_otros==1 & !is.na(q21_dificultad_dni_detalle)) %>% 
+  group_by(q21_dificultad_dni_detalle) %>% 
+  summarise(n=n())
+  
 
 
+```
+ 
+##Naturalización 
+```{r}
 
-### tipología familia 1
+Grafico_2.2.1<-enma %>% 
+  mutate(q25_naturalizacion_agrup=case_when(
+    q25_naturalizacion=="Sí, pero no quiero naturalizarme"| q25_naturalizacion=="No, y no tengo intención de naturalizarme" ~ "No quiere naturalizarse",
+    q25_naturalizacion=="Sí, pero no entiendo bien en qué consiste el trámite" | q25_naturalizacion=="No, y tendría interés en naturalizarme" ~ "Le falta información",
+    q25_naturalizacion=="Sí, ya estoy naturalizado/a" ~  "Naturalizado/a",
+    q25_naturalizacion=="Sí, ya inicié el trámite de naturalización" ~  "Inició el trámite de naturalización",
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~  "No cumple con requisitos",
+    TRUE ~  NA)) %>% 
+  filter(!is.na(q25_naturalizacion)) %>%
+  group_by(q25_naturalizacion_agrup) %>% 
+  summarise(Total=sum(weightvec)) %>% 
+  mutate(Porcentaje=round(Total/sum(Total)*100,1))
 
-Sin conyuge/pareja ni hijos
-Sin conyuge/pareja con hijos
-Con conyuge/pareja y Sin hijos
-Con conyuge/pareja con  hijos
+Grafico_2.2.1
 
+
+```
+ 
+ 
+```{r}
+
+Grafico_2.2.2<-enma %>% 
+  mutate(q25_naturalizacion_agrup=case_when(
+    q25_naturalizacion=="Sí, pero no quiero naturalizarme"| q25_naturalizacion=="No, y no tengo intención de naturalizarme" ~ "No quiere naturalizarse",
+    q25_naturalizacion=="Sí, pero no entiendo bien en qué consiste el trámite" | q25_naturalizacion=="No, y tendría interés en naturalizarme" ~ "Le falta información",
+    q25_naturalizacion=="Sí, ya estoy naturalizado/a" ~  "Naturalizado/a",
+    q25_naturalizacion=="Sí, ya inicié el trámite de naturalización" ~  "Inició el trámite de naturalización",
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~  "No cumple con requisitos",
+    TRUE ~  NA)) %>% 
+  filter(!is.na(q25_naturalizacion) & !is.na(tiempo_residencia_3_var)) %>%
+  group_by(q25_naturalizacion_agrup, tiempo_residencia_3_var) %>% 
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=tiempo_residencia_3_var, values_from = Total)
+
+q25_genero<-enma %>% 
+  mutate(q25_naturalizacion_agrup=case_when(
+    q25_naturalizacion=="Sí, pero no quiero naturalizarme"| q25_naturalizacion=="No, y no tengo intención de naturalizarme" ~ "No quiere naturalizarse",
+    q25_naturalizacion=="Sí, pero no entiendo bien en qué consiste el trámite" | q25_naturalizacion=="No, y tendría interés en naturalizarme" ~ "Le falta información",
+    q25_naturalizacion=="Sí, ya estoy naturalizado/a" ~  "Naturalizado/a",
+    q25_naturalizacion=="Sí, ya inicié el trámite de naturalización" ~  "Inició el trámite de naturalización",
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~  "No cumple con requisitos",
+    TRUE ~  NA)) %>% 
+  filter(!is.na(q25_naturalizacion) & !is.na(genero_var)) %>%
+  group_by(q25_naturalizacion_agrup, genero_var) %>% 
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=genero_var, values_from = Total)
+
+
+q25_niveled<-enma %>% 
+  mutate(q25_naturalizacion_agrup=case_when(
+    q25_naturalizacion=="Sí, pero no quiero naturalizarme"| q25_naturalizacion=="No, y no tengo intención de naturalizarme" ~ "No quiere naturalizarse",
+    q25_naturalizacion=="Sí, pero no entiendo bien en qué consiste el trámite" | q25_naturalizacion=="No, y tendría interés en naturalizarme" ~ "Le falta información",
+    q25_naturalizacion=="Sí, ya estoy naturalizado/a" ~  "Naturalizado/a",
+    q25_naturalizacion=="Sí, ya inicié el trámite de naturalización" ~  "Inició el trámite de naturalización",
+    q25_naturalizacion=="Sí, pero no cumplo con los requisitos" ~  "No cumple con requisitos",
+    TRUE ~  NA)) %>% 
+  filter(!is.na(q25_naturalizacion) & !is.na(niveled)) %>%
+  group_by(q25_naturalizacion_agrup, niveled) %>% 
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=niveled, values_from = Total)
+
+
+Grafico_2.2.3<-enma %>% 
+  filter(q25_naturalizacion=="Sí, ya estoy naturalizado/a" & !is.na(nac_agrupada)) %>%
+  group_by(nac_agrupada)%>%
+  summarise(Total=round(sum(weightvec),0)) %>% 
+  mutate(Porcentaje=round(Total/sum(Total)*100,1))
+```
+ 
+###ASILO
+
+```{r, message=FALSE, warning=FALSE}
+
+names(enma)
+
+q22<-enma %>% 
+  filter(!is.na(q22_solicitud_asilo)) %>%
+  group_by(q22_solicitud_asilo)%>%
+  summarise(Total=round(sum(weightvec),0)) %>% 
+  mutate(Porcentaje=round(Total/sum(Total)*100,1))
+
+Grafico_2.3.1<-enma %>% 
+  filter(!is.na(q22_solicitud_asilo) & !is.na(tiempo_residencia_3_var)) %>%
+  group_by(tiempo_residencia_3_var)%>%
+  summarise(Total_si=(sum(weightvec[q22_solicitud_asilo=="Si"])),
+            Total_no=(sum(weightvec[q22_solicitud_asilo=="No"])),
+            Total_nr=(sum(weightvec[q22_solicitud_asilo=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+```
 
 
 ```{r}
 
-enma<-enma %>% 
-  mutate(
-    
-    familia_hijos=case_when(
-        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="No") ~ "Sin conyuge/pareja ni hijos",
-        (q28_hogar_convivencia=="No tengo cónyuge o pareja" & q29_hijos_num=="Si") ~ "Sin conyuge/pareja con hijos",
-        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="No") ~ "Con conyuge/pareja y Sin hijos",
-        ((q28_hogar_convivencia=="Sí, con una persona nacida en Argentina" | q28_hogar_convivencia=="Sí, con una persona nacida en otro país (migrante o extranjero/a)") & q29_hijos_num=="Si") ~ "Con conyuge/pareja con  hijos",
-    TRUE ~ NA))
+q22_nacionalidad<-enma %>% 
+  filter(!is.na(q22_solicitud_asilo) & !is.na(nacionalidad_desagregada)) %>%
+  group_by(nacionalidad_desagregada)%>%
+  summarise(Total_si=(sum(weightvec[q22_solicitud_asilo=="Si"])),
+            Total_no=(sum(weightvec[q22_solicitud_asilo=="No"])),
+            Total_nr=(sum(weightvec[q22_solicitud_asilo=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
 
-temp_qry <- enma %>% 
- group_by(familia_hijos) %>%
- summarise(cantidad= round(sum(weightvec),0)) 
-temp_qry
+Grafico_2.3.2<-enma %>% 
+  filter(!is.na(q22_solicitud_asilo) & !is.na(nac_agrupada)) %>%
+  group_by(nac_agrupada)%>%
+  summarise(Total_si=(sum(weightvec[q22_solicitud_asilo=="Si"])),
+            Total_no=(sum(weightvec[q22_solicitud_asilo=="No"])),
+            Total_nr=(sum(weightvec[q22_solicitud_asilo=="Prefiero no responder"])),
+            Total=((Total_si+Total_no+Total_nr)),
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1),
+            Porcentaje_nr=round(Total_nr/Total*100,1))
+```
 
+```{r}
+
+Grafico_2.3.3<-enma %>% 
+  filter(q22_solicitud_asilo=="Si" & !is.na(q23_solicitud_asilo_si)) %>%
+  group_by(q23_solicitud_asilo_si)%>%
+  summarise(Total=sum(weightvec)) %>% 
+  mutate(Porcentaje=round(Total/sum(Total)*100,1))
+
+
+Grafico_2.3.4<-enma %>% 
+  filter(!is.na(q23_solicitud_asilo_si) & !is.na(tiempo_residencia_3_var)) %>%
+  group_by(tiempo_residencia_3_var, q23_solicitud_asilo_si)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=tiempo_residencia_3_var, values_from = Total)
+
+
+Grafico_2.3.5<-enma %>% 
+  filter(!is.na(q23_solicitud_asilo_si) & !is.na(nac_agrupada)) %>%
+  group_by(q23_solicitud_asilo_si, nac_agrupada)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=nac_agrupada, values_from = Total)
+
+q23_nacionalidad<-enma %>% 
+  filter(!is.na(q23_solicitud_asilo_si) & !is.na(nacionalidad_var)) %>%
+  group_by(q23_solicitud_asilo_si, nacionalidad_var)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=q23_solicitud_asilo_si, values_from = Total)
+
+```
+```{r}
+
+q24<-enma %>% 
+  filter(q22_solicitud_asilo=="No" & !is.na(q24_solicitud_asilo_no)) %>%
+  group_by(q24_solicitud_asilo_no)%>%
+  summarise(Total=sum(weightvec)) %>% 
+  mutate(Porcentaje=round(Total/sum(Total)*100,1))
+
+q24_edad<-enma %>% 
+  filter(!is.na(q24_solicitud_asilo_no) & !is.na(edad_2020)) %>%
+  group_by(q24_solicitud_asilo_no, edad_2020)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=edad_2020, values_from = Total)
+
+q24_tiempo<-enma %>% 
+  filter(q22_solicitud_asilo=="No")%>%
+  group_by(q24_solicitud_asilo_no, tiempo_residencia_3_var)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=tiempo_residencia_3_var, values_from = Total)
+
+q24_niveled<-enma %>% 
+  filter(!is.na(q24_solicitud_asilo_no) & !is.na(niveled)) %>%
+  group_by(q24_solicitud_asilo_no, niveled)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=niveled, values_from = Total)
+
+q24_origen<-enma %>% 
+  filter(!is.na(q24_solicitud_asilo_no) & !is.na(nac_agrupada)) %>%
+  group_by(q24_solicitud_asilo_no, nac_agrupada)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=nac_agrupada, values_from = Total)
+
+q24_origen<-enma %>% 
+  filter(q22_solicitud_asilo=="No") %>%
+  group_by(q24_solicitud_asilo_no, nac_agrupada)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  pivot_wider(.,names_from=nac_agrupada, values_from = Total)
 
 
 ```
 
- ### Tenencia DNI según tenencia o no de hijes
 
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
+###Motivos migración y asilo
 
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'q29_hijos_num', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q17_hijes.xls", row.names = FALSE, sheetName ="q17",append = TRUE)
+```{r}
 
 
-
-```
-### dificultades de acceso a la documentación segun tenencia de hijes
-
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
-
-qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'q29_hijos_num', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q20_hijes.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
+Grafico_2.3.6<-enma %>% 
+  mutate(motivo_violencia=case_when(
+    q14_motivos_violencia_genero==1  | q14_motivos_persecucion==1 ~ 1,
+    TRUE ~0 )) %>%
+  filter(!is.na(q22_solicitud_asilo) & motivo_violencia==1) %>%
+  group_by(q22_solicitud_asilo)%>%
+  summarise(Total=round(sum(weightvec),0)) %>%
+  mutate(Porcentaje=round(Total/sum(Total)*100,1))
 
 
-
-```
-
-
-### Tenencia DNI según tipo de familia
-
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
-
-qry<- calculate_tabulates(base = enma, x = 'q17_dni_tenencia', y = 'familia_hijos', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q17_familia.xls", row.names = FALSE, sheetName ="q17",append = TRUE)
-
-
-
-```
-
-
-### dificultades de acceso a la documentación segun tenencia de hijes
-
-```{r, message=FALSE, warning=FALSE}
-#q29_hijos_num
-
-qry<- calculate_tabulates(base = enma, x = 'q20_dni_dificultad_binaria', y = 'familia_hijos', add.percentage ='col', add.totals = 'row',weights = 'weightvec')
-
-qry
-
-write.xlsx2(as.data.frame(qry), "cuadros/q20_familia.xls", row.names = FALSE, sheetName ="q20",append = TRUE)
-
+Grafico_2.3.6
 
 
 ```
