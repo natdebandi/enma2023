@@ -1,0 +1,897 @@
+---
+title: "Anuario estadístico ENMA: 8. Capítulo Participación"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F)
+library(knitr)
+library(fontawesome)
+```
+
+## CAPITULO 8 - PARTICIPACIÓN SOCIOCOMUNITARIA Y POLÍTICA 
+
+
+Este archivo contiene los datos utilizados en el capítulo 8 del anuario de la ENMA 2023.
+```{r lib, echo=FALSE, message=FALSE, warnings=FALSE}
+#INSTALO LIBRERIAS QUE VOY A USAR
+
+library(userfriendlyscience)
+library(readxl)
+library(dplyr)
+library(knitr)
+library(eph)
+library(openxlsx)
+library(xlsx)
+library(tidyr)
+library(readr)
+library(labelled)
+
+```
+
+Levanto la base de datos
+
+```{r carga_datos, echo=TRUE, message=FALSE, warnings=FALSE}
+
+# Lectura del archivo público de ENMA 2023
+
+enma <-  read_csv("data/ENMA_pond-censal-publica.csv",col_names = TRUE,col_types = NULL)
+
+```
+
+Exploracion de variables
+
+Ver documentación (LINK)
+
+```{r exploración, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+
+names(enma)
+#str(enma)
+
+source(file="variables_recat.R") 
+```
+
+# Participación sociocomunitaria 
+
+##Gráfico 8.1: Participación en organizaciones
+
+```{r grafico8.1, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.1<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q66=case_when(q66_participacion_organizacion=="Sí" ~ "Sí",
+                       q66_participacion_organizacion=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron la pregunta q66
+  filter(!is.na(q66)) %>% 
+  group_by(q66) %>%
+  #calculo el total ponderado
+  summarise(Total=round(sum(weightvec),0)) %>%
+  #calculo el porcentaje
+  mutate(Porcentaje=round(Total/sum(Total)*100,1)) %>% 
+  kable()
+
+Grafico_8.1
+
+```
+
+##Gráfico 8.2: Participación en organizaciones por región de residencia en Argentina
+
+```{r grafico8.2, echo=FALSE, message=FALSE, warning=FALSE}
+Grafico_8.2<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q66=case_when(q66_participacion_organizacion=="Sí" ~ "Sí",
+                       q66_participacion_organizacion=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y región
+  filter(!is.na(q66) & (!is.na(region_amba_var) & region_amba_var!="99")) %>%  
+  group_by(region_amba_var) %>%
+  #calculo total ponderado y porcentaje de los que participan según región
+  summarise(Total_si=round(sum(weightvec[q66=="Sí"]),0),
+            Total_no=round(sum(weightvec[q66=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+Grafico_8.2
+
+```
+
+##Participación por género
+
+```{r gen, echo=FALSE, message=FALSE, warning=FALSE}
+q66_genero<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q66=case_when(q66_participacion_organizacion=="Sí" ~ "Sí",
+                       q66_participacion_organizacion=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y género
+  filter(!is.na(q66) & !is.na(genero_var)) %>%  
+  group_by(genero_var) %>%
+  #calculo total ponderado y porcentaje de los que participan según género
+  summarise(Total_si=round(sum(weightvec[q66=="Sí"]),0),
+            Total_no=round(sum(weightvec[q66=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+q66_genero
+
+```
+
+##Partipación según grupos de edad
+
+```{r edad, echo=FALSE, message=FALSE, warning=FALSE}
+
+q66_edad<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q66=case_when(q66_participacion_organizacion=="Sí" ~ "Sí",
+                       q66_participacion_organizacion=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q66) & !is.na(edad_ag_var)) %>%  
+  group_by(edad_ag_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q66=="Sí"]),0),
+            Total_no=round(sum(weightvec[q66=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+q66_edad
+
+
+#Agrupación edad ENMA 2020
+
+q66_edad_2020<-enma %>% 
+  #creo nueva agrupación de edad según anuario ENMA 2020
+  mutate(edad_2020= case_when(
+    q2_edad< 35 ~ "18-34",
+    q2_edad> 34 & q2_edad<55 ~ "35-54",
+    TRUE ~ "55+")) %>% 
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+    mutate(q66=case_when(q66_participacion_organizacion=="Sí" ~ "Sí",
+                       q66_participacion_organizacion=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q66) & !is.na(edad_2020)) %>%  
+  group_by(edad_2020) %>%
+  #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q66=="Sí"]),0),
+            Total_no=round(sum(weightvec[q66=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  kable()
+  
+q66_edad_2020
+```
+
+##Gráfico 8.3: Participación en organizaciones según tiempo de residencia en Argentina
+
+
+```{r grafico8.3, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.3<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q66=case_when(q66_participacion_organizacion=="Sí" ~ "Sí",
+                       q66_participacion_organizacion=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y tiempo de residencia
+  filter(!is.na(q66) & !is.na(tiempo_residencia_3_var)) %>%  
+  group_by(tiempo_residencia_3_var) %>%
+  #calculo total ponderado y porcentaje de los que participan según tiempo de residencia
+  summarise(Total_si=round(sum(weightvec[q66=="Sí"]),0),
+            Total_no=round(sum(weightvec[q66=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+Grafico_8.3
+
+```
+
+##Gráfico 8.4: Participación sociocomunitaria según tipo de organización
+
+```{r grafico8.4, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.4<-enma %>% 
+  mutate(q67_organizacion_migrantes==case_when(
+    q67_organizacion_migrantes==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_social==case_when(
+    q67_organizacion_social==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_movimiento_social==case_when(
+    q67_organizacion_movimiento_social==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_partido==case_when(
+    q67_organizacion_partido==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_religiosa==case_when(
+    q67_organizacion_religiosa==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_cooperativa==case_when(
+    q67_organizacion_cooperativa==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_otra==case_when(
+    q67_organizacion_otra==1 ~ 1,
+    TRUE ~0)) %>% 
+  filter(!is.na(q67_organizacion_)) %>% 
+  summarise(Poblacion= round(sum(weightvec),0),
+            migrantes=sum(weightvec[q67_organizacion_migrantes==1]),
+            social=sum(weightvec[q67_organizacion_social==1]),
+            mov_soc=sum(weightvec[q67_organizacion_movimiento_social==1]),
+            partido=sum(weightvec[q67_organizacion_partido==1]),
+            religiosa=sum(weightvec[q67_organizacion_religiosa==1]),
+            cooperativa=sum(weightvec[q67_organizacion_cooperativa==1]),
+            otra=sum(weightvec[q67_organizacion_otra==1]),
+            'Migrantes'= round(migrantes/Poblacion*100,1),
+            'Social'= round(social/Poblacion*100,1),
+            'Movimientos sociales'= round(mov_soc/Poblacion*100,1),
+            'Partido'= round(partido/Poblacion*100,1),
+            'Religiosa'= round(religiosa/Poblacion*100,1),
+            'Cooperativa'= round(cooperativa/Poblacion*100,1),
+            'Otra'= round(otra/Poblacion*100,1)) %>% 
+  select(1,9:15) %>% 
+  kable()
+
+Grafico_8.4
+
+```
+
+##Tipo de organización en la que participa según género
+
+```{r gen2, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+q67_genero<-enma %>% 
+  mutate(q67_organizacion_migrantes==case_when(
+    q67_organizacion_migrantes==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_social==case_when(
+    q67_organizacion_social==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_movimiento_social==case_when(
+    q67_organizacion_movimiento_social==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_partido==case_when(
+    q67_organizacion_partido==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_religiosa==case_when(
+    q67_organizacion_religiosa==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_cooperativa==case_when(
+    q67_organizacion_cooperativa==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_otra==case_when(
+    q67_organizacion_otra==1 ~ 1,
+    TRUE ~0)) %>% 
+  filter(!is.na(q67_organizacion_) & !is.na(genero_var)) %>% 
+  group_by(genero_var) %>% 
+  summarise(Poblacion= round(sum(weightvec),0),
+            migrantes=sum(weightvec[q67_organizacion_migrantes==1]),
+            social=sum(weightvec[q67_organizacion_social==1]),
+            mov_soc=sum(weightvec[q67_organizacion_movimiento_social==1]),
+            partido=sum(weightvec[q67_organizacion_partido==1]),
+            religiosa=sum(weightvec[q67_organizacion_religiosa==1]),
+            cooperativa=sum(weightvec[q67_organizacion_cooperativa==1]),
+            otra=sum(weightvec[q67_organizacion_otra==1]),
+            'Migrantes'= round(migrantes/Poblacion*100,1),
+            'Social'= round(social/Poblacion*100,1),
+            'Movimientos sociales'= round(mov_soc/Poblacion*100,1),
+            'Partido'= round(partido/Poblacion*100,1),
+            'Religiosa'= round(religiosa/Poblacion*100,1),
+            'Cooperativa'= round(cooperativa/Poblacion*100,1),
+            'Otra'= round(otra/Poblacion*100,1)) %>% 
+  select(1:2,10:16) %>% 
+  kable()
+  
+q67_genero
+  
+```
+
+##Gráfico 8.5: Tipo de organización en la que participa la población migrante según nivel educativo
+
+```{r grafico8.5, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.5<-enma %>% 
+  mutate(niveled=case_when(
+    q46_estudios=="Primario completo" | q46_estudios=="Secundario incompleto o en curso" | q46_estudios=="Primario incompleto o en curso" ~ "Hasta secundario incompleto",
+    q46_estudios=="Secundario completo" | q46_estudios=="Terciario incompleto o en curso" | q46_estudios=="Universitario incompleto o en curso" ~ "Secundario completo",
+    q46_estudios=="Universitario completo" | q46_estudios=="Terciario completo"~ "Superior completo y más",
+    TRUE ~  NA
+  )) %>% 
+  mutate(q67_organizacion_migrantes==case_when(
+    q67_organizacion_migrantes==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_social==case_when(
+    q67_organizacion_social==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_movimiento_social==case_when(
+    q67_organizacion_movimiento_social==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_partido==case_when(
+    q67_organizacion_partido==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_religiosa==case_when(
+    q67_organizacion_religiosa==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_cooperativa==case_when(
+    q67_organizacion_cooperativa==1 ~ 1,
+    TRUE ~0)) %>% 
+    mutate(q67_organizacion_otra==case_when(
+    q67_organizacion_otra==1 ~ 1,
+    TRUE ~0)) %>% 
+  filter(!is.na(q67_organizacion_) & !is.na(niveled)) %>%
+  group_by(niveled) %>% 
+  summarise(Poblacion= round(sum(weightvec),0),
+            migrantes=sum(weightvec[q67_organizacion_migrantes==1]),
+            social=sum(weightvec[q67_organizacion_social==1]),
+            mov_soc=sum(weightvec[q67_organizacion_movimiento_social==1]),
+            partido=sum(weightvec[q67_organizacion_partido==1]),
+            religiosa=sum(weightvec[q67_organizacion_religiosa==1]),
+            cooperativa=sum(weightvec[q67_organizacion_cooperativa==1]),
+            otra=sum(weightvec[q67_organizacion_otra==1]),
+            'Migrantes'= round(migrantes/Poblacion*100,1),
+            'Social'= round(social/Poblacion*100,1),
+            'Movimientos sociales'= round(mov_soc/Poblacion*100,1),
+            'Partido'= round(partido/Poblacion*100,1),
+            'Religiosa'= round(religiosa/Poblacion*100,1),
+            'Cooperativa'= round(cooperativa/Poblacion*100,1),
+            'Otra'= round(otra/Poblacion*100,1)) %>% 
+  select(1:2,10:16) %>% 
+  kable()
+
+Grafico_8.5
+
+```
+
+##Gráfico 8.6: Participación en elecciones de autoridades provinciales y/o locales en Argentina
+
+```{r grafico8.6, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.6<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron la pregunta q66
+  filter(!is.na(q68)) %>% 
+  group_by(q68) %>%
+  #calculo el total ponderado
+  summarise(Total=round(sum(weightvec),0)) %>%
+  #calculo el porcentaje
+  mutate(Porcentaje=round(Total/sum(Total)*100,1)) %>% 
+  kable()
+
+Grafico_8.6
+
+
+```
+
+##Gráfico 8.7:Votación en elecciones locales según pertenencia a organizaciones
+
+```{r grafico8.7, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.7<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q66=case_when(q66_participacion_organizacion=="Sí" ~ "Sí",
+                       q66_participacion_organizacion=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & !is.na(q66)) %>%  
+  group_by(q66) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>%  
+  #selecciono columnas que me interesan conservar
+  select(1,4:6) %>% 
+  kable()
+
+Grafico_8.7
+
+```
+
+##Participación en elecciones según género
+
+```{r gen3, echo=FALSE, message=FALSE, warning=FALSE}
+
+q68_genero<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & !is.na(genero_var)) %>%  
+  group_by(genero_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>%  
+  #selecciono columnas que me interesan conservar
+  select(1,4:6) %>% 
+  kable()
+
+q68_genero
+
+
+```
+
+##Participación en elecciones según nivel educativo
+
+```{r niveled, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+q68_niveled<-enma %>% 
+  mutate(niveled=case_when(
+    q46_estudios=="Primario completo" | q46_estudios=="Secundario incompleto o en curso" | q46_estudios=="Primario incompleto o en curso" ~ "Hasta secundario incompleto",
+    q46_estudios=="Secundario completo" | q46_estudios=="Terciario incompleto o en curso" | q46_estudios=="Universitario incompleto o en curso" ~ "Secundario completo",
+    q46_estudios=="Universitario completo" | q46_estudios=="Terciario completo"~ "Superior completo y más",
+    TRUE ~  NA)) %>% 
+   #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & !is.na(niveled)) %>%  
+  group_by(niveled) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:6) %>% 
+  kable()
+  
+q68_niveled
+
+```
+
+##Participación en elecciones según grupos de edad
+
+```{r edad2, echo=FALSE, message=FALSE, warning=FALSE}
+
+q68_edad<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & !is.na(edad_ag_var)) %>%  
+  group_by(edad_ag_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>%  
+  #selecciono columnas que me interesan conservar
+  select(1,4:6) %>% 
+  kable()
+
+q68_edad
+
+```
+
+##Gráfico 8.8:Votación en elecciones locales según tiempo de residencia
+
+```{r grafico8.8, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+Grafico_8.8<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & !is.na(tiempo_residencia_3_var)) %>%  
+  group_by(tiempo_residencia_3_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>%  
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+Grafico_8.8
+
+```
+
+##Gráfico 8.9: Votación en elecciones locales según nacionalidad de origen agrupada
+
+```{r grafico8.9, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.9<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & !is.na(nac_agrupada)) %>%  
+  group_by(nac_agrupada) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+Grafico_8.9
+
+```
+
+##Participación en elecciones según nacionalidad desagregada
+
+```{r nac, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+q68_nacionalidad<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & !is.na(nacionalidad_var)) %>%  
+  group_by(nacionalidad_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>%  
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+Grafico_8.9
+```
+
+##Participación en elecciones según región de residencia
+
+
+```{r region, echo=FALSE, message=FALSE, warning=FALSE}
+
+q68_region<-enma %>%
+  #recodifico para que no me incluya la categoría "Prefiero no responder"
+  mutate(q68=case_when(q68_participacion_elecciones_locales=="Si" ~ "Si",
+                       q68_participacion_elecciones_locales=="No" ~ "No",
+                       TRUE ~ NA)) %>% 
+  #selecciono aquellos que respondieron las preguntas q66 y edad
+  filter(!is.na(q68) & (!is.na(region_amba_var) & region_amba_var!="99")) %>%  
+  group_by(region_amba_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q68=="Si"]),0),
+            Total_no=round(sum(weightvec[q68=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1))%>%  
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+q68_region
+
+```
+
+##Gráfico 8.10:Motivos por los cuales las personas no han votado en elecciones locales
+
+```{r grafico8.10, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.10<-enma %>%
+  mutate(q69_desinformacion=case_when(q69_participacion_no_sabia==1 | q69_participacion_no_desconocimiento==1 ~ 1,
+                                      TRUE ~0)) %>%
+  mutate(q69_desinteres=case_when(q69_participacion_no_interes==1~ 1,
+                                  TRUE ~ 0)) %>% 
+  mutate(q69_no_req=case_when(q69_participacion_no_antiguedad==1 | q69_participacion_no_dni==1 | q69_participacion_no_padron==1 ~ 1,
+                              TRUE ~ 0)) %>% 
+  mutate(q69_obs_mat=case_when(q69_participacion_no_lejania==1 | q69_participacion_no_permiso==1 ~ 1,
+                               TRUE~ 0)) %>% 
+  filter(!is.na(q69_participacion_no_)) %>% 
+  summarise(Poblacion= round(sum(weightvec),0),
+            desinformacion  = sum(weightvec[q69_desinformacion==1]),
+            desinteres = sum(weightvec[q69_desinteres == 1]),
+            no_cumple_requisitos = sum(weightvec[q69_no_req == 1]),
+            obstaculos_materiales        = sum(weightvec[q69_obs_mat == 1]),
+      'Desinformación'  = round(desinformacion/Poblacion*100,1),
+      'Desinterés'          = round(desinteres/Poblacion*100,1),
+'No cumple los requisitos'          = round(no_cumple_requisitos/Poblacion*100,1),
+      'Obstáculos materiales'        = round(obstaculos_materiales/Poblacion*100,1)) %>% 
+  select(1,6:9) %>% 
+  kable()
+  
+Grafico_8.10
+
+```
+
+##Motivos por los que las personas no votaron según tiempo de residencia en Argentina
+
+```{r tiempo_res, echo=FALSE, message=FALSE, warning=FALSE}
+
+q69_tiempo_res<-enma %>%
+  mutate(q69_desinformacion=case_when(q69_participacion_no_sabia==1 | q69_participacion_no_desconocimiento==1 ~ 1,
+                                      TRUE ~0)) %>%
+  mutate(q69_desinteres=case_when(q69_participacion_no_interes==1~ 1,
+                                  TRUE ~ 0)) %>% 
+  mutate(q69_no_req=case_when(q69_participacion_no_antiguedad==1 | q69_participacion_no_dni==1 | q69_participacion_no_padron==1 ~ 1,
+                              TRUE ~ 0)) %>% 
+  mutate(q69_obs_mat=case_when(q69_participacion_no_lejania==1 | q69_participacion_no_permiso==1 ~ 1,
+                               TRUE~ 0)) %>% 
+  filter(!is.na(q69_participacion_no_) & !is.na(tiempo_residencia_3_var)) %>% 
+  group_by(tiempo_residencia_3_var) %>% 
+  summarise(Poblacion= round(sum(weightvec),0),
+            desinformacion  = sum(weightvec[q69_desinformacion==1]),
+            desinteres = sum(weightvec[q69_desinteres == 1]),
+            no_cumple_requisitos = sum(weightvec[q69_no_req == 1]),
+            obstaculos_materiales        = sum(weightvec[q69_obs_mat == 1]),
+      'Desinformación'  = round(desinformacion/Poblacion*100,1),
+      'Desinterés'          = round(desinteres/Poblacion*100,1),
+'No cumple los requisitos'          = round(no_cumple_requisitos/Poblacion*100,1),
+      'Obstáculos materiales'        = round(obstaculos_materiales/Poblacion*100,1)) %>% 
+  select(1:2,7:10) %>% 
+  kable()
+
+q69_tiempo_res
+
+```
+
+
+#Participación en elecciones del país de origen
+
+##Gráfico 8.11: Participación en elecciones del país de origen
+
+```{r grafico8.11, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.11<-enma %>%
+  #recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+           #selecciono aquellos que respondieron la pregunta q70
+           filter(!is.na(q70)) %>% 
+           group_by(q70) %>%
+           #calculo el total ponderado
+           summarise(Total=round(sum(weightvec),0)) %>%
+          #calculo el porcentaje
+           mutate(Porcentaje=round(Total/sum(Total)*100,1)) %>% 
+  kable()
+
+Grafico_8.11         
+
+```
+
+##Participación en las elecciones de país de origen según género
+
+```{r gen4, echo=FALSE, message=FALSE, warning=FALSE}
+
+q70_genero<-enma %>%
+  #recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+  #selecciono aquellos que respondieron las preguntas q70 y género
+  filter(!is.na(q70) & !is.na(genero_var)) %>%  
+  group_by(genero_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según género
+  summarise(Total_si=round(sum(weightvec[q70=="Sí, al menos alguna vez"]),0),
+            Total_no=round(sum(weightvec[q70=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+q70_genero
+
+```
+
+##Participación en las elecciones de país de origen según edad
+
+```{r edad3, echo=FALSE, message=FALSE, warning=FALSE}
+
+q70_edad<-enma %>%
+  #recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+  #selecciono aquellos que respondieron las preguntas q70 y edad
+  filter(!is.na(q70) & !is.na(edad_ag_var)) %>%  
+  group_by(edad_ag_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q70=="Sí, al menos alguna vez"]),0),
+            Total_no=round(sum(weightvec[q70=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+q70_edad
+
+```
+
+##Participación en las elecciones de país de origen según tiempo de residencia en Argentina
+
+```{r tiempo_res2, echo=FALSE, message=FALSE, warning=FALSE}
+
+q70_tiempo_res<-enma %>%
+  #recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+  #selecciono aquellos que respondieron las preguntas q70 y tiempo de residencia
+  filter(!is.na(q70) & !is.na(tiempo_residencia_3_var)) %>%  
+  group_by(tiempo_residencia_3_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según tiempo de residencia
+  summarise(Total_si=round(sum(weightvec[q70=="Sí, al menos alguna vez"]),0),
+            Total_no=round(sum(weightvec[q70=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+q70_tiempo_res
+```
+
+##Gráfico 8.12: Participación en elecciones del país de origen según nivel educativo
+
+```{r grafico8.12, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.12<-enma %>% 
+  mutate(niveled=case_when(
+    q46_estudios=="Primario completo" | q46_estudios=="Secundario incompleto o en curso" | q46_estudios=="Primario incompleto o en curso" ~ "Hasta secundario incompleto",
+    q46_estudios=="Secundario completo" | q46_estudios=="Terciario incompleto o en curso" | q46_estudios=="Universitario incompleto o en curso" ~ "Secundario completo",
+    q46_estudios=="Universitario completo" | q46_estudios=="Terciario completo"~ "Superior completo y más",
+    TRUE ~  NA)) %>% 
+#recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+  #selecciono aquellos que respondieron las preguntas q70 y tiempo de residencia
+  filter(!is.na(q70) & !is.na(niveled)) %>%  
+  group_by(niveled) %>%
+    #calculo total ponderado y porcentaje de los que participan según edad
+  summarise(Total_si=round(sum(weightvec[q70=="Sí, al menos alguna vez"]),0),
+            Total_no=round(sum(weightvec[q70=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:6) %>% 
+  kable()
+  
+q68_niveled
+```
+
+##Gráfico 8.13: Paticipación en elecciones del país de origen según región de residencia
+
+```{r grafico8.13, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.13<-enma %>%
+  #recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+  #selecciono aquellos que respondieron las preguntas q70 y región de residencia
+  filter(!is.na(q70) & (!is.na(region_amba_var) & region_amba_var!="99")) %>%  
+  group_by(region_amba_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según tiempo de residencia
+  summarise(Total_si=round(sum(weightvec[q70=="Sí, al menos alguna vez"]),0),
+            Total_no=round(sum(weightvec[q70=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+Grafico_8.13
+
+```
+
+##Participación en las elecciones de país de origen según origen/nacionalidad
+
+```{r origen, echo=FALSE, message=FALSE, warning=FALSE}
+
+q70_origen<-enma %>%
+  #recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+  #selecciono aquellos que respondieron las preguntas q70 y región de residencia
+  filter(!is.na(q70) & !is.na(nac_agrupada)) %>%  
+  group_by(nac_agrupada) %>%
+    #calculo total ponderado y porcentaje de los que participan según tiempo de residencia
+  summarise(Total_si=round(sum(weightvec[q70=="Sí, al menos alguna vez"]),0),
+            Total_no=round(sum(weightvec[q70=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+
+q70_origen
+
+###
+
+q70_nacionalidad<-enma %>%
+  #recodifico en 2 categorías la pregunta q70
+  mutate(q70=case_when(q70_paricipacion_elecciones_extranjero=="Sí, siempre" | q70_paricipacion_elecciones_extranjero=="Sí, dos o más veces" | q70_paricipacion_elecciones_extranjero=="Sí, solo una vez" ~ "Sí, al menos alguna vez",
+                       q70_paricipacion_elecciones_extranjero=="No" ~ "No",
+                       TRUE ~ NA)) %>%
+  #selecciono aquellos que respondieron las preguntas q70 y región de residencia
+  filter(!is.na(q70) & !is.na(nacionalidad_var)) %>%  
+  group_by(nacionalidad_var) %>%
+    #calculo total ponderado y porcentaje de los que participan según tiempo de residencia
+  summarise(Total_si=round(sum(weightvec[q70=="Sí, al menos alguna vez"]),0),
+            Total_no=round(sum(weightvec[q70=="No"]),0),
+            Total=Total_si+Total_no,
+            Porcentaje_si=round(Total_si/Total*100,1),
+            Porcentaje_no=round(Total_no/Total*100,1)) %>% 
+  #selecciono columnas que me interesan conservar
+  select(1,4:5) %>% 
+  kable()
+  
+q70_nacionalidad
+
+```
+
+
+##Gráfico 8.14: Participación en elecciones del país de origen según región de residencia
+
+```{r grafico8.14, echo=FALSE, message=FALSE, warning=FALSE}
+
+Grafico_8.14<-enma %>%
+  #selecciono aquellos que respondieron la pregunta q66
+  filter(!is.na(q71_participacion_no_motivo)) %>% 
+  group_by(q71_participacion_no_motivo) %>%
+  #calculo el total ponderado
+  summarise(Total=round(sum(weightvec),0)) %>%
+  #calculo el porcentaje
+  mutate(Porcentaje=round(Total/sum(Total)*100,1)) %>% 
+  kable()
+
+Grafico_8.14
+
+
+```
+
